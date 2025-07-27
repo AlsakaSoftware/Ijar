@@ -10,7 +10,6 @@ interface SearchConfig {
   name: string;
   searchType: 'SALE' | 'RENT';
   locationId: string;
-  locationName: string;
   maxPrice?: number;
   minPrice?: number;
   minBedrooms?: number;
