@@ -1,10 +1,12 @@
-# Rightmove Property Monitor
+# 🏠 Rightmove Property Monitor
+
+**Get instant Telegram alerts for new properties!**
 
 A TypeScript system that:
 1. **Scrapes** property listings from Rightmove
 2. **Monitors** for new properties hourly via GitHub Actions  
-3. **Alerts** via Telegram when new properties match your criteria
-4. **Calls** estate agents automatically using Bland.ai (optional)
+3. **Sends Telegram alerts** when new properties match your criteria
+4. **Runs completely free** on GitHub Actions
 
 ## 🚀 Quick Setup (GitHub Actions)
 
@@ -99,66 +101,51 @@ npm run monitor canning-town-1bed
 🔗 https://www.rightmove.co.uk/properties/789012
 ```
 
-## ☎️ Optional: Estate Agent Calling
+## 🛠️ Manual Testing
 
-If you want to automatically call agents, set up Bland.ai:
-
-1. Sign up at https://bland.ai
-2. Add `BLAND_API_KEY` to GitHub Secrets
-3. Use the calling endpoints (see original README sections below)
-
-## API Endpoints
-
-- `POST /search-properties` - Search for properties with filters
-- `GET /locations` - Get available search locations
-- `POST /call-properties` - Initiate calls for multiple properties
-- `POST /webhook/bland` - Webhook endpoint for Bland.ai callbacks
-- `GET /call-results` - Get all call results
-- `GET /call-results/:callId` - Get specific call result
-- `GET /health` - Health check
-
-### Search Properties Example:
+### Local Testing
 ```bash
-curl -X POST http://localhost:3000/search-properties \
-  -H "Content-Type: application/json" \
-  -d '{
-    "searchType": "RENT",
-    "location": "canary wharf",
-    "maxPrice": 3000,
-    "minBedrooms": 2,
-    "getAllPages": false
-  }'
+# Install dependencies
+npm install
+
+# Set up environment
+cp .env.example .env
+# Add your Telegram credentials
+
+# Test a single search
+npm run monitor canary-wharf-2bed
 ```
 
-## Call Results
+### Add New Searches
+Edit `searches.json`:
+```json
+{
+  "my-new-search": {
+    "name": "My Custom Search",
+    "searchType": "RENT",
+    "location": "london bridge",
+    "maxPrice": 2500,
+    "minBedrooms": 1,
+    "maxBedrooms": 2
+  }
+}
+```
 
-Results are saved to `call-results/` directory and include:
-- Full transcript
-- AI-generated summary
-- Extracted viewing slots
-- Property availability status
-- Call duration and recording URL
+Then update `.github/workflows/property-monitor.yml` to include your new search.
 
-## Important Notes
+## 📊 Features
 
-1. **Phone Numbers**: The scraper doesn't extract agent phone numbers. You need to either:
-   - Manually add them to the JSON file
-   - Enhance the scraper to visit individual property pages
+✅ **Free hosting** on GitHub Actions  
+✅ **Duplicate detection** - never get the same property twice  
+✅ **Multiple searches** - monitor different areas/criteria  
+✅ **Error handling** - gets notified if monitoring fails  
+✅ **Rate limiting** - respects Rightmove's servers  
+✅ **Rich notifications** - formatted property details  
 
-2. **Rate Limiting**: The server waits 5 seconds between calls to avoid overwhelming agents
+## 🔧 Technical Details
 
-3. **Webhook**: For local testing, use ngrok:
-   ```bash
-   ngrok http 3000
-   ```
-   Then update WEBHOOK_URL in your .env file
-
-4. **Costs**: Bland.ai charges ~$0.09 per minute of calling
-
-## Next Steps
-
-1. Add database for persistent storage
-2. Extract agent phone numbers automatically
-3. Add email notifications for results
-4. Build a UI for selecting properties
-5. Add scheduling to run scraper periodically
+- **Storage**: Property tracking data stored in git commits
+- **Scheduling**: GitHub Actions cron jobs (hourly)
+- **Deduplication**: Composite keys (property ID + address)
+- **Rate limiting**: 1 second delays between requests
+- **Error handling**: Telegram notifications for failures

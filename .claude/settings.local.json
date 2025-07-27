@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "WebFetch(domain:www.rightmove.co.uk)"
+      "WebFetch(domain:www.rightmove.co.uk)",
+      "Bash(rm:*)"
     ],
     "deny": []
   }
