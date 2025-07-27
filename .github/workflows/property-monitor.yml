@@ -1,0 +1,95 @@
+name: Property Monitor
+
+on:
+  schedule:
+    # Run every hour at different minutes to spread load
+    - cron: '5 * * * *'   # Canary Wharf 2 bed - 5 minutes past every hour
+    - cron: '20 * * * *'  # London Bridge studio - 20 minutes past every hour  
+    - cron: '35 * * * *'  # Canning Town 1 bed - 35 minutes past every hour
+  
+  # Allow manual triggering for testing
+  workflow_dispatch:
+    inputs:
+      search_key:
+        description: 'Search key to run (or "all" for all searches)'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - canary-wharf-2bed
+          - london-bridge-studio
+          - canning-town-1bed
+
+jobs:
+  monitor-canary-wharf:
+    if: github.event_name == 'schedule' && github.event.schedule == '5 * * * *' || (github.event_name == 'workflow_dispatch' && (github.event.inputs.search_key == 'all' || github.event.inputs.search_key == 'canary-wharf-2bed'))
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Run Canary Wharf monitor
+        run: npm run monitor canary-wharf-2bed
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+
+  monitor-london-bridge:
+    if: github.event_name == 'schedule' && github.event.schedule == '20 * * * *' || (github.event_name == 'workflow_dispatch' && (github.event.inputs.search_key == 'all' || github.event.inputs.search_key == 'london-bridge-studio'))
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Run London Bridge monitor
+        run: npm run monitor london-bridge-studio
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+
+  monitor-canning-town:
+    if: github.event_name == 'schedule' && github.event.schedule == '35 * * * *' || (github.event_name == 'workflow_dispatch' && (github.event.inputs.search_key == 'all' || github.event.inputs.search_key == 'canning-town-1bed'))
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Run Canning Town monitor
+        run: npm run monitor canning-town-1bed
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}

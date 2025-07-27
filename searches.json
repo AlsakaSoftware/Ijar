@@ -1,0 +1,26 @@
+{
+  "canary-wharf-2bed": {
+    "name": "Canary Wharf 2 Bed",
+    "searchType": "RENT",
+    "location": "canary wharf",
+    "maxPrice": 3500,
+    "minBedrooms": 2,
+    "maxBedrooms": 2
+  },
+  "london-bridge-studio": {
+    "name": "London Bridge Studio",
+    "searchType": "RENT", 
+    "location": "london bridge",
+    "maxPrice": 2000,
+    "minBedrooms": 0,
+    "maxBedrooms": 1
+  },
+  "canning-town-1bed": {
+    "name": "Canning Town 1 Bed",
+    "searchType": "RENT",
+    "location": "canning town", 
+    "maxPrice": 2500,
+    "minBedrooms": 1,
+    "maxBedrooms": 1
+  }
+}
