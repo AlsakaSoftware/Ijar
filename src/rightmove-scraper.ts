@@ -123,7 +123,8 @@ export class RightmoveScraper {
       minPrice,
       maxPrice,
       minBedrooms,
-      maxBedrooms
+      maxBedrooms,
+      furnishTypes
     } = options;
 
     const baseUrl = searchType === 'RENT' ? 
@@ -154,6 +155,7 @@ export class RightmoveScraper {
     if (maxPrice) url += `&maxPrice=${maxPrice}`;
     if (minBedrooms) url += `&minBedrooms=${minBedrooms}`;
     if (maxBedrooms) url += `&maxBedrooms=${maxBedrooms}`;
+    if (furnishTypes) url += `&furnishTypes=${furnishTypes}`;
 
     return url;
   }

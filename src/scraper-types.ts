@@ -12,6 +12,7 @@ export interface SearchOptions {
   maxPrice?: number;
   minBedrooms?: number;
   maxBedrooms?: number;
+  furnishTypes?: 'furnished' | 'unfurnished' | 'furnished_or_unfurnished';
   getAllPages?: boolean;
   quiet?: boolean;
 }

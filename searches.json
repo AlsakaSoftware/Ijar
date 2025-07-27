@@ -1,26 +1,32 @@
 {
-  "canary-wharf-2bed": {
-    "name": "Canary Wharf 2 Bed",
+  "canary-wharf-3bed": {
+    "name": "Canary Wharf 3 Bed",
     "searchType": "RENT",
     "location": "canary wharf",
+    "minPrice": 2750,
     "maxPrice": 3500,
-    "minBedrooms": 2,
-    "maxBedrooms": 2
+    "minBedrooms": 3,
+    "maxBedrooms": 3,
+    "furnishTypes": "furnished"
   },
-  "london-bridge-studio": {
-    "name": "London Bridge Studio",
+  "london-bridge-3bed": {
+    "name": "London Bridge 3 Bed",
     "searchType": "RENT", 
     "location": "london bridge",
-    "maxPrice": 2000,
-    "minBedrooms": 0,
-    "maxBedrooms": 1
+    "minPrice": 2750,
+    "maxPrice": 3500,
+    "minBedrooms": 3,
+    "maxBedrooms": 3,
+    "furnishTypes": "furnished"
   },
-  "canning-town-1bed": {
-    "name": "Canning Town 1 Bed",
+  "canning-town-3bed": {
+    "name": "Canning Town 3 Bed",
     "searchType": "RENT",
     "location": "canning town", 
-    "maxPrice": 2500,
-    "minBedrooms": 1,
-    "maxBedrooms": 1
+    "minPrice": 2750,
+    "maxPrice": 3500,
+    "minBedrooms": 3,
+    "maxBedrooms": 3,
+    "furnishTypes": "furnished"
   }
 }

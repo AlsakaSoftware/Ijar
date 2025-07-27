@@ -14,6 +14,7 @@ interface SearchConfig {
   minPrice?: number;
   minBedrooms?: number;
   maxBedrooms?: number;
+  furnishTypes?: 'furnished' | 'unfurnished' | 'furnished_or_unfurnished';
 }
 
 interface StoredProperty {
@@ -134,6 +135,7 @@ class PropertyMonitor {
         maxPrice: this.searchConfig.maxPrice,
         minBedrooms: this.searchConfig.minBedrooms,
         maxBedrooms: this.searchConfig.maxBedrooms,
+        furnishTypes: this.searchConfig.furnishTypes,
         getAllPages: false,
         quiet: true
       };
@@ -152,15 +154,19 @@ class PropertyMonitor {
       if (newProperties.length > 0) {
         console.log(`🎉 Found ${newProperties.length} new properties for ${this.searchConfig.name}`);
         
+        // Limit to 3 properties per notification
+        const propertiesToSend = newProperties.slice(0, 3);
+        console.log(`📨 Sending ${propertiesToSend.length} of ${newProperties.length} properties`);
+        
         // Send Telegram alert
-        const message = TelegramBot.formatPropertyMessage(newProperties, this.searchConfig.name);
+        const message = TelegramBot.formatPropertyMessage(propertiesToSend, this.searchConfig.name);
         const success = await this.telegram.sendMessage(message);
         
         if (success) {
-          console.log(`📧 Alert sent for ${newProperties.length} properties`);
+          console.log(`📧 Alert sent for ${propertiesToSend.length} properties`);
           
-          // Update sent properties
-          const updatedSent = [...sentProperties, ...newProperties];
+          // Update sent properties (only the ones we actually sent)
+          const updatedSent = [...sentProperties, ...propertiesToSend];
           
           // Keep only last 1000 properties to prevent file from growing too large
           if (updatedSent.length > 1000) {
