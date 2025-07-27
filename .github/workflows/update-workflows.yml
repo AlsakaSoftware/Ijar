@@ -1,0 +1,40 @@
+name: Update Property Monitor Workflows
+
+on:
+  push:
+    paths:
+      - 'searches.json'
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  update-workflows:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          
+      - name: Install dependencies
+        run: npm install
+        
+      - name: Generate workflows
+        run: npm run generate-workflows
+        
+      - name: Commit changes
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add .github/workflows/property-monitor.yml
+          git diff --staged --quiet || git commit -m "Update property monitor workflows based on searches.json"
+          git push

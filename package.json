@@ -6,7 +6,8 @@
   "scripts": {
     "build": "tsc",
     "scrape": "tsx src/scrape.ts",
-    "monitor": "tsx src/monitor.ts"
+    "monitor": "tsx src/monitor.ts",
+    "generate-workflows": "tsx scripts/generate-workflows.ts"
   },
   "dependencies": {
     "@types/node": "^20.10.5",

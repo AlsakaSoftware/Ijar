@@ -2,7 +2,9 @@
   "canary-wharf-3bed": {
     "name": "Canary Wharf 3 Bed",
     "searchType": "RENT",
-    "location": "canary wharf",
+    "locationId": "STATION%5E1724",
+    "locationName": "Canary Wharf Station",
+    "radius": 1.0,
     "minPrice": 2750,
     "maxPrice": 3500,
     "minBedrooms": 3,
@@ -12,7 +14,9 @@
   "london-bridge-3bed": {
     "name": "London Bridge 3 Bed",
     "searchType": "RENT", 
-    "location": "london bridge",
+    "locationId": "STATION%5E5792",
+    "locationName": "London Bridge",
+    "radius": 0.5,
     "minPrice": 2750,
     "maxPrice": 3500,
     "minBedrooms": 3,
@@ -22,7 +26,9 @@
   "canning-town-3bed": {
     "name": "Canning Town 3 Bed",
     "searchType": "RENT",
-    "location": "canning town", 
+    "locationId": "REGION%5E70412",
+    "locationName": "Canning Town",
+    "radius": 0.0,
     "minPrice": 2750,
     "maxPrice": 3500,
     "minBedrooms": 3,

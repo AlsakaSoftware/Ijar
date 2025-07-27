@@ -1,9 +1,3 @@
-export interface LocationConfig {
-  id: string;
-  name: string;
-  params: string;
-}
-
 export interface SearchOptions {
   searchType?: 'SALE' | 'RENT';
   locationIdentifier?: string;
@@ -13,6 +7,8 @@ export interface SearchOptions {
   minBedrooms?: number;
   maxBedrooms?: number;
   furnishTypes?: 'furnished' | 'unfurnished' | 'furnished_or_unfurnished';
+  radius?: number;
+  propertyTypes?: string;
   getAllPages?: boolean;
   quiet?: boolean;
 }

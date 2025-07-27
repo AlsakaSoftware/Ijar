@@ -9,12 +9,15 @@ import { SearchOptions, RightmoveProperty } from './scraper-types';
 interface SearchConfig {
   name: string;
   searchType: 'SALE' | 'RENT';
-  location: string;
+  locationId: string;
+  locationName: string;
   maxPrice?: number;
   minPrice?: number;
   minBedrooms?: number;
   maxBedrooms?: number;
   furnishTypes?: 'furnished' | 'unfurnished' | 'furnished_or_unfurnished';
+  radius?: number;
+  propertyTypes?: string;
 }
 
 interface StoredProperty {
@@ -50,6 +53,7 @@ class PropertyMonitor {
     
     this.telegram = new TelegramBot(botToken, chatId);
   }
+
 
   private loadSentProperties(): StoredProperty[] {
     try {
@@ -130,12 +134,14 @@ class PropertyMonitor {
       // Build search options
       const searchOptions: SearchOptions = {
         searchType: this.searchConfig.searchType,
-        location: this.searchConfig.location,
+        locationIdentifier: this.searchConfig.locationId,
         minPrice: this.searchConfig.minPrice,
         maxPrice: this.searchConfig.maxPrice,
         minBedrooms: this.searchConfig.minBedrooms,
         maxBedrooms: this.searchConfig.maxBedrooms,
         furnishTypes: this.searchConfig.furnishTypes,
+        radius: this.searchConfig.radius,
+        propertyTypes: this.searchConfig.propertyTypes,
         getAllPages: false,
         quiet: true
       };

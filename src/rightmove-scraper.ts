@@ -1,8 +1,6 @@
 import * as https from 'https';
 import * as zlib from 'zlib';
-import * as fs from 'fs';
 import { 
-  LocationConfig, 
   SearchOptions, 
   RightmoveProperty, 
   SearchResults, 
@@ -12,7 +10,6 @@ import {
 
 export class RightmoveScraper {
   private readonly baseHeaders: Record<string, string>;
-  private readonly locationMap: Record<string, LocationConfig>;
 
   constructor() {
     this.baseHeaders = {
@@ -25,38 +22,7 @@ export class RightmoveScraper {
       'Upgrade-Insecure-Requests': '1'
     };
     
-    this.locationMap = {
-      'canary wharf': { 
-        id: 'STATION%5E1724', 
-        name: 'Canary+Wharf+Station',
-        params: '&useLocationIdentifier=true&radius=1.0&propertyTypes=flat&_includeLetAgreed=on'
-      },
-      'london': { 
-        id: 'REGION%5E87490', 
-        name: 'London',
-        params: ''
-      },
-      'manchester': { 
-        id: 'REGION%5E61045', 
-        name: 'Manchester',
-        params: ''
-      },
-      'birmingham': { 
-        id: 'REGION%5E60741', 
-        name: 'Birmingham',
-        params: ''
-      },
-      'canning town': { 
-        id: 'REGION%5E70412', 
-        name: 'Canning+Town%2C+East+London',
-        params: '&useLocationIdentifier=true&radius=0.0&_includeLetAgreed=on'
-      },
-      'london bridge': { 
-        id: 'STATION%5E5792', 
-        name: 'London+Bridge',
-        params: '&useLocationIdentifier=true&radius=0.5&_includeLetAgreed=on'
-      }
-    };
+    // No location map needed anymore - locations are in searches.json
   }
 
   private async fetchPage(url: string): Promise<ApiResponse> {
@@ -124,38 +90,33 @@ export class RightmoveScraper {
       maxPrice,
       minBedrooms,
       maxBedrooms,
-      furnishTypes
+      furnishTypes,
+      radius,
+      propertyTypes
     } = options;
 
     const baseUrl = searchType === 'RENT' ? 
       'https://www.rightmove.co.uk/property-to-rent/find.html' : 
       'https://www.rightmove.co.uk/property-for-sale/find.html';
 
-    // Resolve location to identifier
-    let actualLocationId = locationIdentifier || 'REGION%5E87490'; // Default to London
-    let extraParams = '';
-    
-    if (location) {
-      const locationKey = location.toLowerCase();
-      if (this.locationMap[locationKey]) {
-        actualLocationId = this.locationMap[locationKey].id;
-        extraParams = this.locationMap[locationKey].params;
-        if (this.locationMap[locationKey].name !== location) {
-          extraParams += `&searchLocation=${this.locationMap[locationKey].name}`;
-        }
-      } else {
-        console.warn(`Unknown location "${location}", using default London`);
-      }
-    }
+    // Use provided location identifier or default to London
+    const actualLocationId = locationIdentifier || 'REGION%5E87490';
 
     let url = `${baseUrl}?searchType=${searchType}&locationIdentifier=${actualLocationId}&index=${index}`;
-    url += extraParams;
     
+    // Add search parameters
     if (minPrice) url += `&minPrice=${minPrice}`;
     if (maxPrice) url += `&maxPrice=${maxPrice}`;
     if (minBedrooms) url += `&minBedrooms=${minBedrooms}`;
     if (maxBedrooms) url += `&maxBedrooms=${maxBedrooms}`;
     if (furnishTypes) url += `&furnishTypes=${furnishTypes}`;
+    
+    // Add optional parameters
+    if (radius !== undefined) url += `&radius=${radius}`;
+    if (propertyTypes) url += `&propertyTypes=${propertyTypes}`;
+    
+    // Always include let agreed
+    url += '&includeLetAgreed=true';
 
     return url;
   }
@@ -237,10 +198,6 @@ export class RightmoveScraper {
     }
   }
 
-  // Helper method to get available locations
-  getAvailableLocations(): string[] {
-    return Object.keys(this.locationMap);
-  }
 
   // Helper method to validate search options
   validateSearchOptions(options: SearchOptions): { isValid: boolean; errors: string[] } {
@@ -258,9 +215,7 @@ export class RightmoveScraper {
       errors.push('minBedrooms cannot be greater than maxBedrooms');
     }
 
-    if (options.location && !this.locationMap[options.location.toLowerCase()]) {
-      errors.push(`Unknown location "${options.location}". Available locations: ${this.getAvailableLocations().join(', ')}`);
-    }
+    // Location validation removed - now handled in searches.json
 
     return {
       isValid: errors.length === 0,
@@ -296,7 +251,7 @@ async function example() {
   const scraper = new RightmoveScraper();
   
   try {
-    console.log('Available locations:', scraper.getAvailableLocations());
+    console.log('Rightmove scraper initialized');
     
     const options: SearchOptions = {
       searchType: 'RENT',
