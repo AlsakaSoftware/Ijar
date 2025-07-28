@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2025-07-28T16:48:45.832Z",
+  "lastUpdated": "2025-07-28T17:46:31.201Z",
   "properties": {
     "19981454": {
       "id": "19981454",
@@ -280,6 +280,16 @@
       "propertyUrl": "/properties/163984844#/?channel=RES_LET",
       "firstSeen": "2025-07-28T07:17:23.166Z",
       "searchName": "canary-wharf-3bed"
+    },
+    "164188526": {
+      "id": "164188526",
+      "address": "Ivy Point, 5 Hannaford Walk, London, E3",
+      "price": "£3,380 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/164188526#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T17:46:30.866Z",
+      "searchName": "mile-end-3bed"
     },
     "164252411": {
       "id": "164252411",
