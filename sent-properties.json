@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2025-07-28T05:47:06.971Z",
+  "lastUpdated": "2025-07-28T05:53:08.037Z",
   "properties": {
     "114657959": {
       "id": "114657959",
@@ -141,6 +141,16 @@
       "firstSeen": "2025-07-28T05:03:31.251Z",
       "searchName": "mile-end-3bed"
     },
+    "164649695": {
+      "id": "164649695",
+      "address": "Cornwall Street, \nTower Bridge, E1",
+      "price": "£3,250 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/164649695#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T05:53:07.330Z",
+      "searchName": "mile-end-3bed"
+    },
     "164653979": {
       "id": "164653979",
       "address": "Copper Works Wharf Sugar House Island E15",
@@ -221,6 +231,16 @@
       "firstSeen": "2025-07-28T05:20:27.728Z",
       "searchName": "canary-wharf-3bed"
     },
+    "164766089": {
+      "id": "164766089",
+      "address": "Cephas Street, London",
+      "price": "£3,400 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/164766089#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T05:53:07.330Z",
+      "searchName": "mile-end-3bed"
+    },
     "164798906": {
       "id": "164798906",
       "address": "Blackwall Way, London, E14",
@@ -270,6 +290,16 @@
       "propertyUrl": "/properties/164847947#/?channel=RES_LET",
       "firstSeen": "2025-07-28T04:34:12.678Z",
       "searchName": "stratford-east-village-3bed"
+    },
+    "164869493": {
+      "id": "164869493",
+      "address": "Barry Blandford Way, Bow",
+      "price": "£2,999 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/164869493#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T05:53:07.330Z",
+      "searchName": "mile-end-3bed"
     },
     "164872622": {
       "id": "164872622",
