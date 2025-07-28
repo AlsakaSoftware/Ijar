@@ -22,7 +22,6 @@ interface SearchConfig {
 }
 
 interface StoredProperty {
-  key: string;
   id: string;
   address: string;
   price: string;
@@ -30,6 +29,12 @@ interface StoredProperty {
   bathrooms: number;
   propertyUrl: string;
   firstSeen: string;
+  searchName: string;
+}
+
+interface PropertyDatabase {
+  lastUpdated: string;
+  properties: Record<string, StoredProperty>; // keyed by property ID
 }
 
 class PropertyMonitor {
@@ -43,7 +48,7 @@ class PropertyMonitor {
     this.scraper = new RightmoveScraper();
     this.searchName = searchName;
     this.searchConfig = searchConfig;
-    this.dataFile = path.join(__dirname, '..', `sent-properties-${searchName}.json`);
+    this.dataFile = path.join(__dirname, '..', 'sent-properties.json');
 
     const botToken = process.env.TELEGRAM_BOT_TOKEN;
     const chatId = process.env.TELEGRAM_CHAT_ID;
@@ -91,22 +96,26 @@ class PropertyMonitor {
     return scoredProperties.map(item => item.property);
   }
 
-  private loadSentProperties(): StoredProperty[] {
+  private loadPropertyDatabase(): PropertyDatabase {
     try {
       if (fs.existsSync(this.dataFile)) {
         return JSON.parse(fs.readFileSync(this.dataFile, 'utf8'));
       }
     } catch (error) {
-      console.error(`Error loading sent properties for ${this.searchName}:`, error);
+      console.error(`Error loading property database:`, error);
     }
-    return [];
+    return {
+      lastUpdated: new Date().toISOString(),
+      properties: {}
+    };
   }
 
-  private saveSentProperties(properties: StoredProperty[]): void {
+  private savePropertyDatabase(database: PropertyDatabase): void {
     try {
-      fs.writeFileSync(this.dataFile, JSON.stringify(properties, null, 2));
+      database.lastUpdated = new Date().toISOString();
+      fs.writeFileSync(this.dataFile, JSON.stringify(database, null, 2));
     } catch (error) {
-      console.error(`Error saving sent properties for ${this.searchName}:`, error);
+      console.error(`Error saving property database:`, error);
     }
   }
 
@@ -235,14 +244,14 @@ class PropertyMonitor {
 
   private formatProperty(property: RightmoveProperty): StoredProperty {
     return {
-      key: this.scraper.getPropertyKey(property),
       id: property.id.toString(),
       address: property.displayAddress,
       price: property.price?.displayPrices?.[0]?.displayPrice || 'Price on request',
       bedrooms: property.bedrooms || 0,
       bathrooms: property.bathrooms || 0,
       propertyUrl: property.propertyUrl,
-      firstSeen: new Date().toISOString()
+      firstSeen: new Date().toISOString(),
+      searchName: this.searchName
     };
   }
 
@@ -272,12 +281,12 @@ class PropertyMonitor {
       const results = await this.scraper.searchProperties(searchOptions);
       const currentProperties = results.properties.map(p => this.formatProperty(p));
       
-      // Load previously sent properties
-      const sentProperties = this.loadSentProperties();
-      const sentKeys = new Set(sentProperties.map(p => p.key));
+      // Load property database
+      const database = this.loadPropertyDatabase();
+      console.log(`📊 Database contains ${Object.keys(database.properties).length} total properties`);
       
-      // Find new properties
-      const newProperties = currentProperties.filter(p => !sentKeys.has(p.key));
+      // Find new properties (not in database by property ID)
+      const newProperties = currentProperties.filter(p => !database.properties[p.id]);
       
       if (newProperties.length > 0) {
         console.log(`🎉 Found ${newProperties.length} new properties for ${this.searchConfig.name}`);
@@ -296,15 +305,29 @@ class PropertyMonitor {
         if (success) {
           console.log(`📧 Alert sent for ${propertiesToSend.length} properties`);
           
-          // Update sent properties (only the ones we actually sent)
-          const updatedSent = [...sentProperties, ...propertiesToSend];
+          // Add ALL new properties to database (not just the ones sent)
+          // This prevents duplicates even if we don't send all of them
+          newProperties.forEach(property => {
+            database.properties[property.id] = property;
+          });
           
-          // Keep only last 1000 properties to prevent file from growing too large
-          if (updatedSent.length > 1000) {
-            updatedSent.splice(0, updatedSent.length - 1000);
+          // Cleanup: Keep only properties from last 6 months to prevent file growing too large
+          const sixMonthsAgo = new Date();
+          sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+          
+          const propertyCount = Object.keys(database.properties).length;
+          Object.entries(database.properties).forEach(([id, property]) => {
+            if (new Date(property.firstSeen) < sixMonthsAgo) {
+              delete database.properties[id];
+            }
+          });
+          
+          const cleanedCount = Object.keys(database.properties).length;
+          if (cleanedCount < propertyCount) {
+            console.log(`🧹 Cleaned up ${propertyCount - cleanedCount} old properties (>6 months)`);
           }
           
-          this.saveSentProperties(updatedSent);
+          this.savePropertyDatabase(database);
           
           // Commit changes to git (in GitHub Actions)
           await this.commitChanges(newProperties.length);
