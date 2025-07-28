@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2025-07-28T04:30:58.351Z",
+  "lastUpdated": "2025-07-28T04:34:13.182Z",
   "properties": {
     "162807308": {
       "id": "162807308",
@@ -91,6 +91,16 @@
       "firstSeen": "2025-07-28T03:01:39.601Z",
       "searchName": "canary-wharf-3bed"
     },
+    "164847947": {
+      "id": "164847947",
+      "address": "Wenborn Building, Penny Brookes Street, London, E15",
+      "price": "£3,400 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/164847947#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T04:34:12.678Z",
+      "searchName": "stratford-east-village-3bed"
+    },
     "164872622": {
       "id": "164872622",
       "address": "Copper Works Wharf Sugar House Island E15",
@@ -100,6 +110,16 @@
       "propertyUrl": "/properties/164872622#/?channel=RES_LET",
       "firstSeen": "2025-07-28T03:25:04.218Z",
       "searchName": "mile-end-3bed"
+    },
+    "164878400": {
+      "id": "164878400",
+      "address": "Fortuna House, East Village, Stratford, London, E20",
+      "price": "£3,465 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/164878400#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T04:34:12.677Z",
+      "searchName": "stratford-east-village-3bed"
     },
     "164878997": {
       "id": "164878997",
@@ -150,6 +170,16 @@
       "propertyUrl": "/properties/164950172#/?channel=RES_LET",
       "firstSeen": "2025-07-28T03:17:33.231Z",
       "searchName": "canning-town-3bed"
+    },
+    "164954480": {
+      "id": "164954480",
+      "address": "Wenborn Building,  London E15",
+      "price": "£3,300 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/164954480#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T04:34:12.677Z",
+      "searchName": "stratford-east-village-3bed"
     },
     "164962442": {
       "id": "164962442",
