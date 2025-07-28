@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2025-07-28T03:16:49.614Z",
+  "lastUpdated": "2025-07-28T03:17:33.535Z",
   "properties": {
     "163083446": {
       "id": "163083446",
@@ -60,6 +60,26 @@
       "propertyUrl": "/properties/164933087#/?channel=RES_LET",
       "firstSeen": "2025-07-28T02:55:53.750Z",
       "searchName": "stratford-east-village-3bed"
+    },
+    "164950172": {
+      "id": "164950172",
+      "address": "Fortunes Dock, Canning Town London E16",
+      "price": "£3,131 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/164950172#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T03:17:33.231Z",
+      "searchName": "canning-town-3bed"
+    },
+    "164962442": {
+      "id": "164962442",
+      "address": "Silvertown Way, London, E16",
+      "price": "£3,490 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/164962442#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T03:17:33.231Z",
+      "searchName": "canning-town-3bed"
     },
     "164963585": {
       "id": "164963585",
