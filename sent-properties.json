@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2025-07-28T06:58:42.028Z",
+  "lastUpdated": "2025-07-28T07:03:25.660Z",
   "properties": {
     "51394888": {
       "id": "51394888",
@@ -60,6 +60,16 @@
       "propertyUrl": "/properties/133608086#/?channel=RES_LET",
       "firstSeen": "2025-07-28T06:53:25.386Z",
       "searchName": "canning-town-3bed"
+    },
+    "137443574": {
+      "id": "137443574",
+      "address": "Ward Road, London, E15",
+      "price": "£3,150 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/137443574#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T07:03:25.356Z",
+      "searchName": "stratford-east-village-3bed"
     },
     "148993079": {
       "id": "148993079",
@@ -321,6 +331,16 @@
       "firstSeen": "2025-07-28T05:20:27.728Z",
       "searchName": "canary-wharf-3bed"
     },
+    "164737328": {
+      "id": "164737328",
+      "address": "Olympic Park Avenue, E20",
+      "price": "£3,350 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/164737328#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T07:03:25.356Z",
+      "searchName": "stratford-east-village-3bed"
+    },
     "164752394": {
       "id": "164752394",
       "address": "Wood Close, London, E2",
@@ -539,6 +559,16 @@
       "bathrooms": 2,
       "propertyUrl": "/properties/165006146#/?channel=RES_LET",
       "firstSeen": "2025-07-28T02:55:53.750Z",
+      "searchName": "stratford-east-village-3bed"
+    },
+    "165011513": {
+      "id": "165011513",
+      "address": "Merchant House, Stratford, E20",
+      "price": "£3,300 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/165011513#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T07:03:25.356Z",
       "searchName": "stratford-east-village-3bed"
     }
   }
