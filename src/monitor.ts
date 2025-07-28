@@ -119,19 +119,19 @@ class PropertyMonitor {
     try {
       const { execSync } = require('child_process');
       
-      // Debug: Check if PAT_TOKEN is available
-      const token = process.env.PAT_TOKEN;
+      // Debug: Check if GITHUB_TOKEN is available
+      const token = process.env.GITHUB_TOKEN;
       if (!token) {
-        console.error('❌ PAT_TOKEN not found in environment variables');
+        console.error('❌ GITHUB_TOKEN not found in environment variables');
         return;
       }
-      console.log('✅ PAT_TOKEN found, configuring git authentication');
+      console.log('✅ GITHUB_TOKEN found, configuring git authentication');
       
-      // Configure git with PAT_TOKEN authentication  
+      // Configure git with GITHUB_TOKEN authentication  
       execSync('git config user.name "Property Monitor Bot"');
       execSync('git config user.email "property-monitor@github-actions.local"');
       
-      // Configure git to use PAT_TOKEN for authentication
+      // Configure git to use GITHUB_TOKEN for authentication
       execSync(`git remote set-url origin https://x-access-token:${token}@github.com/AlsakaSoftware/Rightmove-node-scraper.git`);
       
       // Add the tracking file
