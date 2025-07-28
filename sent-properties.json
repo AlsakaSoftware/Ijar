@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2025-07-28T10:50:42.928Z",
+  "lastUpdated": "2025-07-28T13:57:32.069Z",
   "properties": {
     "19981454": {
       "id": "19981454",
@@ -19,6 +19,16 @@
       "bathrooms": 2,
       "propertyUrl": "/properties/51394888#/?channel=RES_LET",
       "firstSeen": "2025-07-28T06:58:41.584Z",
+      "searchName": "mile-end-3bed"
+    },
+    "64475930": {
+      "id": "64475930",
+      "address": "Fieldgate Street, London, E1",
+      "price": "£3,300 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/64475930#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T13:57:31.739Z",
       "searchName": "mile-end-3bed"
     },
     "76007372": {
