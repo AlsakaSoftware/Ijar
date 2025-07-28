@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2025-07-28T13:57:32.069Z",
+  "lastUpdated": "2025-07-28T14:13:41.612Z",
   "properties": {
     "19981454": {
       "id": "19981454",
@@ -800,6 +800,16 @@
       "propertyUrl": "/properties/165022802#/?channel=RES_LET",
       "firstSeen": "2025-07-28T10:50:42.535Z",
       "searchName": "mile-end-3bed"
+    },
+    "165034640": {
+      "id": "165034640",
+      "address": "15 Indescon Square, London, E14 9EZ",
+      "price": "£3,500 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/165034640#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T14:13:41.165Z",
+      "searchName": "canary-wharf-3bed"
     }
   }
 }
