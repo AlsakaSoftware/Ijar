@@ -305,11 +305,12 @@ class PropertyMonitor {
         if (success) {
           console.log(`📧 Alert sent for ${propertiesToSend.length} properties`);
           
-          // Add ALL new properties to database (not just the ones sent)
-          // This prevents duplicates even if we don't send all of them
-          newProperties.forEach(property => {
+          // Only save the 3 properties that were actually sent
+          propertiesToSend.forEach(property => {
             database.properties[property.id] = property;
           });
+          
+          console.log(`📝 Saved ${propertiesToSend.length} sent properties to database`);
           
           // Cleanup: Keep only properties from last 6 months to prevent file growing too large
           const sixMonthsAgo = new Date();
@@ -330,7 +331,7 @@ class PropertyMonitor {
           this.savePropertyDatabase(database);
           
           // Commit changes to git (in GitHub Actions)
-          await this.commitChanges(newProperties.length);
+          await this.commitChanges(propertiesToSend.length);
         } else {
           console.error('❌ Failed to send Telegram alert');
         }
