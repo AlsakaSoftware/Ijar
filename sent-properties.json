@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2025-07-28T07:46:48.013Z",
+  "lastUpdated": "2025-07-28T07:55:09.519Z",
   "properties": {
     "51394888": {
       "id": "51394888",
@@ -141,6 +141,16 @@
       "firstSeen": "2025-07-28T07:46:47.461Z",
       "searchName": "mile-end-3bed"
     },
+    "163394510": {
+      "id": "163394510",
+      "address": "Olympic Avenue, Stratford City E20",
+      "price": "£3,250 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/163394510#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T07:55:08.950Z",
+      "searchName": "stratford-east-village-3bed"
+    },
     "163471439": {
       "id": "163471439",
       "address": "Heartwell Avenue, London, E16",
@@ -150,6 +160,16 @@
       "propertyUrl": "/properties/163471439#/?channel=RES_LET",
       "firstSeen": "2025-07-28T04:59:25.418Z",
       "searchName": "canning-town-3bed"
+    },
+    "163719146": {
+      "id": "163719146",
+      "address": "Prospect Row, Stratford, London, E15",
+      "price": "£3,500 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/163719146#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T07:55:08.950Z",
+      "searchName": "stratford-east-village-3bed"
     },
     "163767428": {
       "id": "163767428",
@@ -530,6 +550,16 @@
       "propertyUrl": "/properties/164913992#/?channel=RES_LET",
       "firstSeen": "2025-07-28T03:01:39.601Z",
       "searchName": "canary-wharf-3bed"
+    },
+    "164914253": {
+      "id": "164914253",
+      "address": "Tazetta House, East Village, Stratford, London, E20",
+      "price": "£3,400 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/164914253#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T07:55:08.950Z",
+      "searchName": "stratford-east-village-3bed"
     },
     "164933087": {
       "id": "164933087",
