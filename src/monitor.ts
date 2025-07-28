@@ -55,6 +55,41 @@ class PropertyMonitor {
     this.telegram = new TelegramBot(botToken, chatId);
   }
 
+  private calculatePropertyScore(property: StoredProperty, originalProperty: RightmoveProperty): number {
+    let score = 0;
+    
+    // Recency score (newer = higher score)
+    const now = Date.now();
+    const propertyDate = originalProperty.firstVisibleDate ? 
+      new Date(originalProperty.firstVisibleDate).getTime() : now;
+    const daysOld = (now - propertyDate) / (1000 * 60 * 60 * 24);
+    
+    // Give higher score for newer properties (max 50 points, decays over 7 days)
+    const recencyScore = Math.max(0, 50 - (daysOld * 7));
+    score += recencyScore;
+    
+    // Photo count score (more photos = higher score)
+    const photoScore = Math.min(originalProperty.numberOfImages || 0, 20) * 2; // Max 40 points for 20+ photos
+    score += photoScore;
+    
+    return score;
+  }
+
+  private rankProperties(newProperties: StoredProperty[], originalProperties: RightmoveProperty[]): StoredProperty[] {
+    // Create a map for quick lookup of original properties
+    const originalMap = new Map(originalProperties.map(p => [p.id.toString(), p]));
+    
+    // Calculate scores and sort
+    const scoredProperties = newProperties.map(property => ({
+      property,
+      score: this.calculatePropertyScore(property, originalMap.get(property.id) || {} as RightmoveProperty)
+    }));
+    
+    // Sort by score (highest first)
+    scoredProperties.sort((a, b) => b.score - a.score);
+    
+    return scoredProperties.map(item => item.property);
+  }
 
   private loadSentProperties(): StoredProperty[] {
     try {
@@ -163,9 +198,12 @@ class PropertyMonitor {
       if (newProperties.length > 0) {
         console.log(`🎉 Found ${newProperties.length} new properties for ${this.searchConfig.name}`);
         
-        // Limit to 3 properties per notification
-        const propertiesToSend = newProperties.slice(0, 3);
-        console.log(`📨 Sending ${propertiesToSend.length} of ${newProperties.length} properties`);
+        // Rank properties by recency and photo count
+        const rankedProperties = this.rankProperties(newProperties, results.properties);
+        
+        // Take top 3 properties
+        const propertiesToSend = rankedProperties.slice(0, 3);
+        console.log(`📨 Sending top ${propertiesToSend.length} of ${newProperties.length} properties (ranked by recency + photos)`);
         
         // Send Telegram alert
         const message = TelegramBot.formatPropertyMessage(propertiesToSend, this.searchConfig.name);
