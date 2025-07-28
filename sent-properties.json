@@ -1,6 +1,26 @@
 {
-  "lastUpdated": "2025-07-28T03:01:39.958Z",
+  "lastUpdated": "2025-07-28T03:16:49.614Z",
   "properties": {
+    "163083446": {
+      "id": "163083446",
+      "address": "City Walk, Bermondsey, London, SE1",
+      "price": "£3,500 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/163083446#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T03:16:49.061Z",
+      "searchName": "london-bridge-3bed"
+    },
+    "164252411": {
+      "id": "164252411",
+      "address": "Boughton House, Tennis Street, London",
+      "price": "£3,500 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/164252411#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T03:16:49.061Z",
+      "searchName": "london-bridge-3bed"
+    },
     "164843204": {
       "id": "164843204",
       "address": "Regents Canal House, Commercial Road, E14",
@@ -50,6 +70,16 @@
       "propertyUrl": "/properties/164963585#/?channel=RES_LET",
       "firstSeen": "2025-07-28T02:55:53.750Z",
       "searchName": "stratford-east-village-3bed"
+    },
+    "164981042": {
+      "id": "164981042",
+      "address": "Lapwing Court, 6 Swan Street, Borough, London, SE1",
+      "price": "£3,500 pcm",
+      "bedrooms": 3,
+      "bathrooms": 3,
+      "propertyUrl": "/properties/164981042#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T03:16:49.061Z",
+      "searchName": "london-bridge-3bed"
     },
     "165006146": {
       "id": "165006146",
