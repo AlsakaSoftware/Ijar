@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2025-07-28T06:18:37.347Z",
+  "lastUpdated": "2025-07-28T06:53:25.773Z",
   "properties": {
     "76007372": {
       "id": "76007372",
@@ -40,6 +40,16 @@
       "propertyUrl": "/properties/129190643#/?channel=RES_LET",
       "firstSeen": "2025-07-28T05:03:31.251Z",
       "searchName": "mile-end-3bed"
+    },
+    "133608086": {
+      "id": "133608086",
+      "address": "Botanist House, Royal Victoria, London, E16",
+      "price": "£3,098 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/133608086#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T06:53:25.386Z",
+      "searchName": "canning-town-3bed"
     },
     "148993079": {
       "id": "148993079",
@@ -99,6 +109,26 @@
       "bathrooms": 2,
       "propertyUrl": "/properties/163471439#/?channel=RES_LET",
       "firstSeen": "2025-07-28T04:59:25.418Z",
+      "searchName": "canning-town-3bed"
+    },
+    "163767428": {
+      "id": "163767428",
+      "address": "Western Gateway, Royal Docks, London, E16",
+      "price": "£3,250 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/163767428#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T06:53:25.386Z",
+      "searchName": "canning-town-3bed"
+    },
+    "163957658": {
+      "id": "163957658",
+      "address": "Hoola Apartments, Royal Victoria Dock, E16",
+      "price": "£3,250 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/163957658#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T06:53:25.386Z",
       "searchName": "canning-town-3bed"
     },
     "164252411": {
