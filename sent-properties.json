@@ -1,0 +1,35 @@
+{
+  "lastUpdated": "2025-07-28T02:55:54.048Z",
+  "properties": {
+    "164933087": {
+      "id": "164933087",
+      "address": "Merchant House, Stratford, E20",
+      "price": "£3,300 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/164933087#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T02:55:53.750Z",
+      "searchName": "stratford-east-village-3bed"
+    },
+    "164963585": {
+      "id": "164963585",
+      "address": "Cloud Street London E15",
+      "price": "£3,250 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/164963585#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T02:55:53.750Z",
+      "searchName": "stratford-east-village-3bed"
+    },
+    "165006146": {
+      "id": "165006146",
+      "address": "Olympic Park Avenue, London, E20",
+      "price": "£3,250 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/165006146#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T02:55:53.750Z",
+      "searchName": "stratford-east-village-3bed"
+    }
+  }
+}
