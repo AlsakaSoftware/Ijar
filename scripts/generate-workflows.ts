@@ -67,6 +67,10 @@ const generateWorkflow = (): string => {
 
   return `name: Property Monitor
 
+# Set permissions at workflow level
+permissions:
+  contents: write
+
 on:
   schedule:
     # Run every hour at distributed intervals
