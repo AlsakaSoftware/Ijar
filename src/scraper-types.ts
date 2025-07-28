@@ -6,6 +6,8 @@ export interface SearchOptions {
   maxPrice?: number;
   minBedrooms?: number;
   maxBedrooms?: number;
+  minBathrooms?: number;
+  maxBathrooms?: number;
   furnishTypes?: 'furnished' | 'unfurnished' | 'furnished_or_unfurnished';
   radius?: number;
   propertyTypes?: string;

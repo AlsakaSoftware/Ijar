@@ -90,6 +90,8 @@ export class RightmoveScraper {
       maxPrice,
       minBedrooms,
       maxBedrooms,
+      minBathrooms,
+      maxBathrooms,
       furnishTypes,
       radius,
       propertyTypes
@@ -109,6 +111,8 @@ export class RightmoveScraper {
     if (maxPrice) url += `&maxPrice=${maxPrice}`;
     if (minBedrooms) url += `&minBedrooms=${minBedrooms}`;
     if (maxBedrooms) url += `&maxBedrooms=${maxBedrooms}`;
+    if (minBathrooms) url += `&minBathrooms=${minBathrooms}`;
+    if (maxBathrooms) url += `&maxBathrooms=${maxBathrooms}`;
     if (furnishTypes) url += `&furnishTypes=${furnishTypes}`;
     
     // Add optional parameters

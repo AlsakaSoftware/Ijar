@@ -14,6 +14,8 @@ interface SearchConfig {
   minPrice?: number;
   minBedrooms?: number;
   maxBedrooms?: number;
+  minBathrooms?: number;
+  maxBathrooms?: number;
   furnishTypes?: 'furnished' | 'unfurnished' | 'furnished_or_unfurnished';
   radius?: number;
   propertyTypes?: string;
@@ -138,6 +140,8 @@ class PropertyMonitor {
         maxPrice: this.searchConfig.maxPrice,
         minBedrooms: this.searchConfig.minBedrooms,
         maxBedrooms: this.searchConfig.maxBedrooms,
+        minBathrooms: this.searchConfig.minBathrooms,
+        maxBathrooms: this.searchConfig.maxBathrooms,
         furnishTypes: this.searchConfig.furnishTypes,
         radius: this.searchConfig.radius,
         propertyTypes: this.searchConfig.propertyTypes,

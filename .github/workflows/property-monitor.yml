@@ -4,8 +4,10 @@ on:
   schedule:
     # Run every hour at distributed intervals
     - cron: '0 * * * *'   # Canary Wharf 3 Bed - 0 minutes past every hour
-    - cron: '20 * * * *'   # London Bridge 3 Bed - 20 minutes past every hour
-    - cron: '40 * * * *'   # Canning Town 3 Bed - 40 minutes past every hour
+    - cron: '12 * * * *'   # London Bridge 3 Bed - 12 minutes past every hour
+    - cron: '24 * * * *'   # Canning Town 3 Bed - 24 minutes past every hour
+    - cron: '36 * * * *'   # Mile End 3 Bed - 36 minutes past every hour
+    - cron: '48 * * * *'   # Stratford East Village 3 Bed - 48 minutes past every hour
   
   # Allow manual triggering for testing
   workflow_dispatch:
@@ -20,6 +22,8 @@ on:
           - canary-wharf-3bed
           - london-bridge-3bed
           - canning-town-3bed
+          - mile-end-3bed
+          - stratford-east-village-3bed
 
 jobs:
   monitor_canary_wharf_3bed:
@@ -46,7 +50,7 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
 
   monitor_london_bridge_3bed:
-    if: github.event_name == 'schedule' && github.event.schedule == '20 * * * *' || (github.event_name == 'workflow_dispatch' && (github.event.inputs.search_key == 'all' || github.event.inputs.search_key == 'london-bridge-3bed'))
+    if: github.event_name == 'schedule' && github.event.schedule == '12 * * * *' || (github.event_name == 'workflow_dispatch' && (github.event.inputs.search_key == 'all' || github.event.inputs.search_key == 'london-bridge-3bed'))
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -69,7 +73,7 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
 
   monitor_canning_town_3bed:
-    if: github.event_name == 'schedule' && github.event.schedule == '40 * * * *' || (github.event_name == 'workflow_dispatch' && (github.event.inputs.search_key == 'all' || github.event.inputs.search_key == 'canning-town-3bed'))
+    if: github.event_name == 'schedule' && github.event.schedule == '24 * * * *' || (github.event_name == 'workflow_dispatch' && (github.event.inputs.search_key == 'all' || github.event.inputs.search_key == 'canning-town-3bed'))
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -87,6 +91,52 @@ jobs:
         
       - name: Run Canning Town 3 Bed monitor
         run: npm run monitor canning-town-3bed
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+
+  monitor_mile_end_3bed:
+    if: github.event_name == 'schedule' && github.event.schedule == '36 * * * *' || (github.event_name == 'workflow_dispatch' && (github.event.inputs.search_key == 'all' || github.event.inputs.search_key == 'mile-end-3bed'))
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.PAT_TOKEN }}
+          
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          
+      - name: Install dependencies
+        run: npm install
+        
+      - name: Run Mile End 3 Bed monitor
+        run: npm run monitor mile-end-3bed
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+
+  monitor_stratford_east_village_3bed:
+    if: github.event_name == 'schedule' && github.event.schedule == '48 * * * *' || (github.event_name == 'workflow_dispatch' && (github.event.inputs.search_key == 'all' || github.event.inputs.search_key == 'stratford-east-village-3bed'))
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.PAT_TOKEN }}
+          
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          
+      - name: Install dependencies
+        run: npm install
+        
+      - name: Run Stratford East Village 3 Bed monitor
+        run: npm run monitor stratford-east-village-3bed
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}

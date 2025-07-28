@@ -9,6 +9,8 @@ interface SearchConfig {
   minPrice?: number;
   minBedrooms?: number;
   maxBedrooms?: number;
+  minBathrooms?: number;
+  maxBathrooms?: number;
   furnishTypes?: 'furnished' | 'unfurnished' | 'furnished_or_unfurnished';
   radius?: number;
   propertyTypes?: string;
@@ -43,7 +45,7 @@ const generateWorkflow = (): string => {
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          token: \${{ secrets.GITHUB_TOKEN }}
+          token: \${{ secrets.PAT_TOKEN }}
           
       - name: Setup Node.js
         uses: actions/setup-node@v4

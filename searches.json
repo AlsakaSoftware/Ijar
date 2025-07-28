@@ -8,6 +8,7 @@
     "maxPrice": 3500,
     "minBedrooms": 3,
     "maxBedrooms": 3,
+    "minBathrooms": 2,
     "furnishTypes": "furnished"
   },
   "london-bridge-3bed": {
@@ -19,6 +20,7 @@
     "maxPrice": 3500,
     "minBedrooms": 3,
     "maxBedrooms": 3,
+    "minBathrooms": 2,
     "furnishTypes": "furnished"
   },
   "canning-town-3bed": {
@@ -30,6 +32,31 @@
     "maxPrice": 3500,
     "minBedrooms": 3,
     "maxBedrooms": 3,
+    "minBathrooms": 2,
+    "furnishTypes": "furnished"
+  },
+  "mile-end-3bed": {
+    "name": "Mile End 3 Bed",
+    "searchType": "RENT",
+    "locationId": "REGION%5E85206",
+    "radius": 1.0,
+    "minPrice": 2750,
+    "maxPrice": 3500,
+    "minBedrooms": 3,
+    "maxBedrooms": 3,
+    "minBathrooms": 2,
+    "furnishTypes": "furnished"
+  },
+  "stratford-east-village-3bed": {
+    "name": "Stratford East Village 3 Bed",
+    "searchType": "RENT",
+    "locationId": "REGION%5E85313",
+    "radius": 1.0,
+    "minPrice": 2750,
+    "maxPrice": 3500,
+    "minBedrooms": 3,
+    "maxBedrooms": 3,
+    "minBathrooms": 2,
     "furnishTypes": "furnished"
   }
 }
