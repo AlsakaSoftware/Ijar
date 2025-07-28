@@ -1,6 +1,16 @@
 {
-  "lastUpdated": "2025-07-28T05:53:08.037Z",
+  "lastUpdated": "2025-07-28T05:58:21.519Z",
   "properties": {
+    "87234252": {
+      "id": "87234252",
+      "address": "Calico House, East Village, Stratford, London, E20",
+      "price": "£3,300 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/87234252#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T05:58:21.156Z",
+      "searchName": "stratford-east-village-3bed"
+    },
     "114657959": {
       "id": "114657959",
       "address": "Sky View Tower, London, E15",
@@ -131,6 +141,16 @@
       "firstSeen": "2025-07-28T05:47:06.408Z",
       "searchName": "canning-town-3bed"
     },
+    "164484035": {
+      "id": "164484035",
+      "address": "Hampton Road, Forest Gate, E7",
+      "price": "£3,200 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/164484035#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T05:58:21.156Z",
+      "searchName": "stratford-east-village-3bed"
+    },
     "164585834": {
       "id": "164585834",
       "address": "Jefferson Plaza, London, E3",
@@ -220,6 +240,16 @@
       "propertyUrl": "/properties/164709830#/?channel=RES_LET",
       "firstSeen": "2025-07-28T04:30:58.021Z",
       "searchName": "mile-end-3bed"
+    },
+    "164710931": {
+      "id": "164710931",
+      "address": "Fortuna House, East Village, Stratford, London, E20",
+      "price": "£3,495 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/164710931#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T05:58:21.156Z",
+      "searchName": "stratford-east-village-3bed"
     },
     "164733260": {
       "id": "164733260",
