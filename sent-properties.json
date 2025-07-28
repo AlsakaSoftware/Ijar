@@ -1,6 +1,16 @@
 {
-  "lastUpdated": "2025-07-28T05:58:21.519Z",
+  "lastUpdated": "2025-07-28T06:18:37.347Z",
   "properties": {
+    "76007372": {
+      "id": "76007372",
+      "address": "Westferry Road, London",
+      "price": "£3,500 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/76007372#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T06:18:36.849Z",
+      "searchName": "canary-wharf-3bed"
+    },
     "87234252": {
       "id": "87234252",
       "address": "Calico House, East Village, Stratford, London, E20",
@@ -130,6 +140,16 @@
       "propertyUrl": "/properties/164363027#/?channel=RES_LET",
       "firstSeen": "2025-07-28T04:59:25.418Z",
       "searchName": "canning-town-3bed"
+    },
+    "164420633": {
+      "id": "164420633",
+      "address": "3 Bedroom Riverside flat in Canary Wharf ",
+      "price": "£3,423 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/164420633#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T06:18:36.849Z",
+      "searchName": "canary-wharf-3bed"
     },
     "164436026": {
       "id": "164436026",
