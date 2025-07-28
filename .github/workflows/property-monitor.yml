@@ -39,7 +39,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.PAT_TOKEN }}
           
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -54,7 +54,7 @@ jobs:
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
 
   monitor_london_bridge_3bed:
     if: github.event_name == 'schedule' && github.event.schedule == '12 * * * *' || (github.event_name == 'workflow_dispatch' && (github.event.inputs.search_key == 'all' || github.event.inputs.search_key == 'london-bridge-3bed'))
@@ -65,7 +65,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.PAT_TOKEN }}
           
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -80,7 +80,7 @@ jobs:
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
 
   monitor_canning_town_3bed:
     if: github.event_name == 'schedule' && github.event.schedule == '24 * * * *' || (github.event_name == 'workflow_dispatch' && (github.event.inputs.search_key == 'all' || github.event.inputs.search_key == 'canning-town-3bed'))
@@ -91,7 +91,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.PAT_TOKEN }}
           
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -106,7 +106,7 @@ jobs:
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
 
   monitor_mile_end_3bed:
     if: github.event_name == 'schedule' && github.event.schedule == '36 * * * *' || (github.event_name == 'workflow_dispatch' && (github.event.inputs.search_key == 'all' || github.event.inputs.search_key == 'mile-end-3bed'))
@@ -117,7 +117,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.PAT_TOKEN }}
           
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -132,7 +132,7 @@ jobs:
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
 
   monitor_stratford_east_village_3bed:
     if: github.event_name == 'schedule' && github.event.schedule == '48 * * * *' || (github.event_name == 'workflow_dispatch' && (github.event.inputs.search_key == 'all' || github.event.inputs.search_key == 'stratford-east-village-3bed'))
@@ -143,7 +143,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.PAT_TOKEN }}
           
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -158,4 +158,4 @@ jobs:
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
