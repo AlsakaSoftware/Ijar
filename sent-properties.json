@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2025-07-28T17:46:31.201Z",
+  "lastUpdated": "2025-07-28T23:54:56.405Z",
   "properties": {
     "19981454": {
       "id": "19981454",
@@ -830,6 +830,16 @@
       "propertyUrl": "/properties/165045827#/?channel=RES_LET",
       "firstSeen": "2025-07-28T16:48:45.282Z",
       "searchName": "canning-town-3bed"
+    },
+    "165052367": {
+      "id": "165052367",
+      "address": "Hampton Road, Forest Gate, E7",
+      "price": "£3,250 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/165052367#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T23:54:55.822Z",
+      "searchName": "stratford-east-village-3bed"
     }
   }
 }
