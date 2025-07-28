@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2025-07-28T03:17:33.535Z",
+  "lastUpdated": "2025-07-28T03:25:04.983Z",
   "properties": {
     "163083446": {
       "id": "163083446",
@@ -21,6 +21,16 @@
       "firstSeen": "2025-07-28T03:16:49.061Z",
       "searchName": "london-bridge-3bed"
     },
+    "164820065": {
+      "id": "164820065",
+      "address": "Hackney Road, Shoreditch, E2",
+      "price": "£3,500 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/164820065#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T03:25:04.218Z",
+      "searchName": "mile-end-3bed"
+    },
     "164843204": {
       "id": "164843204",
       "address": "Regents Canal House, Commercial Road, E14",
@@ -30,6 +40,16 @@
       "propertyUrl": "/properties/164843204#/?channel=RES_LET",
       "firstSeen": "2025-07-28T03:01:39.601Z",
       "searchName": "canary-wharf-3bed"
+    },
+    "164872622": {
+      "id": "164872622",
+      "address": "Copper Works Wharf Sugar House Island E15",
+      "price": "£3,250 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/164872622#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T03:25:04.218Z",
+      "searchName": "mile-end-3bed"
     },
     "164878997": {
       "id": "164878997",
@@ -90,6 +110,16 @@
       "propertyUrl": "/properties/164963585#/?channel=RES_LET",
       "firstSeen": "2025-07-28T02:55:53.750Z",
       "searchName": "stratford-east-village-3bed"
+    },
+    "164971106": {
+      "id": "164971106",
+      "address": "Charrington House,1 Cephas Avenue, London",
+      "price": "£3,500 pcm",
+      "bedrooms": 3,
+      "bathrooms": 3,
+      "propertyUrl": "/properties/164971106#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T03:25:04.218Z",
+      "searchName": "mile-end-3bed"
     },
     "164981042": {
       "id": "164981042",
