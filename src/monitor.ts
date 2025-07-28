@@ -119,9 +119,15 @@ class PropertyMonitor {
     try {
       const { execSync } = require('child_process');
       
-      // Configure git (required in GitHub Actions)
+      // Configure git with PAT_TOKEN authentication
       execSync('git config user.name "Property Monitor Bot"');
       execSync('git config user.email "property-monitor@github-actions.local"');
+      
+      // Set up authentication using PAT_TOKEN
+      const token = process.env.PAT_TOKEN || process.env.GITHUB_TOKEN;
+      if (token) {
+        execSync(`git config url."https://${token}@github.com/".insteadOf "https://github.com/"`);
+      }
       
       // Add the tracking file
       execSync(`git add ${this.dataFile}`);
