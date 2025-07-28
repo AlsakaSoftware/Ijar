@@ -1,6 +1,16 @@
 {
-  "lastUpdated": "2025-07-28T06:53:25.773Z",
+  "lastUpdated": "2025-07-28T06:58:42.028Z",
   "properties": {
+    "51394888": {
+      "id": "51394888",
+      "address": "Fieldgate Street, London, E1",
+      "price": "£3,300 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/51394888#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T06:58:41.584Z",
+      "searchName": "mile-end-3bed"
+    },
     "76007372": {
       "id": "76007372",
       "address": "Westferry Road, London",
@@ -310,6 +320,16 @@
       "propertyUrl": "/properties/164733260#/?channel=RES_LET",
       "firstSeen": "2025-07-28T05:20:27.728Z",
       "searchName": "canary-wharf-3bed"
+    },
+    "164752394": {
+      "id": "164752394",
+      "address": "Wood Close, London, E2",
+      "price": "£3,500 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/164752394#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T06:58:41.584Z",
+      "searchName": "mile-end-3bed"
     },
     "164766089": {
       "id": "164766089",
