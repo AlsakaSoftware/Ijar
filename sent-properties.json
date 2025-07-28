@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2025-07-28T09:50:22.070Z",
+  "lastUpdated": "2025-07-28T10:50:42.928Z",
   "properties": {
     "19981454": {
       "id": "19981454",
@@ -779,6 +779,16 @@
       "bathrooms": 2,
       "propertyUrl": "/properties/165017114#/?channel=RES_LET",
       "firstSeen": "2025-07-28T09:50:21.734Z",
+      "searchName": "mile-end-3bed"
+    },
+    "165022802": {
+      "id": "165022802",
+      "address": "Marner Point, Bow",
+      "price": "£3,120 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/165022802#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T10:50:42.535Z",
       "searchName": "mile-end-3bed"
     }
   }
