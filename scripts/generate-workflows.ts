@@ -59,7 +59,8 @@ const generateWorkflow = (): string => {
         run: npm run monitor ${key}
         env:
           TELEGRAM_BOT_TOKEN: \${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: \${{ secrets.TELEGRAM_CHAT_ID }}`;
+          TELEGRAM_CHAT_ID: \${{ secrets.TELEGRAM_CHAT_ID }}
+          PAT_TOKEN: \${{ secrets.PAT_TOKEN }}`;
   }).join('\n\n');
 
   return `name: Property Monitor
