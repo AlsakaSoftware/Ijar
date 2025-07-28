@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2025-07-28T04:15:32.003Z",
+  "lastUpdated": "2025-07-28T04:30:58.351Z",
   "properties": {
     "162807308": {
       "id": "162807308",
@@ -31,6 +31,26 @@
       "firstSeen": "2025-07-28T03:16:49.061Z",
       "searchName": "london-bridge-3bed"
     },
+    "164653979": {
+      "id": "164653979",
+      "address": "Copper Works Wharf Sugar House Island E15",
+      "price": "£3,200 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/164653979#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T04:30:58.021Z",
+      "searchName": "mile-end-3bed"
+    },
+    "164689607": {
+      "id": "164689607",
+      "address": "Sugar House Lane, Sugar House Island, E15",
+      "price": "£2,950 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/164689607#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T04:30:58.021Z",
+      "searchName": "mile-end-3bed"
+    },
     "164709209": {
       "id": "164709209",
       "address": "Menara Point, London E16",
@@ -40,6 +60,16 @@
       "propertyUrl": "/properties/164709209#/?channel=RES_LET",
       "firstSeen": "2025-07-28T04:15:31.317Z",
       "searchName": "canning-town-3bed"
+    },
+    "164709830": {
+      "id": "164709830",
+      "address": "Zinc Street Sugar House Island E15",
+      "price": "£3,500 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/164709830#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T04:30:58.021Z",
+      "searchName": "mile-end-3bed"
     },
     "164820065": {
       "id": "164820065",
