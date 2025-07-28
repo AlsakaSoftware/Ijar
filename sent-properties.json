@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2025-07-28T07:17:23.504Z",
+  "lastUpdated": "2025-07-28T07:46:48.013Z",
   "properties": {
     "51394888": {
       "id": "51394888",
@@ -131,6 +131,16 @@
       "firstSeen": "2025-07-28T04:36:57.210Z",
       "searchName": "canary-wharf-3bed"
     },
+    "163347551": {
+      "id": "163347551",
+      "address": "118 Jamaica Street, London",
+      "price": "£3,200 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/163347551#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T07:46:47.461Z",
+      "searchName": "mile-end-3bed"
+    },
     "163471439": {
       "id": "163471439",
       "address": "Heartwell Avenue, London, E16",
@@ -150,6 +160,16 @@
       "propertyUrl": "/properties/163767428#/?channel=RES_LET",
       "firstSeen": "2025-07-28T06:53:25.386Z",
       "searchName": "canning-town-3bed"
+    },
+    "163784462": {
+      "id": "163784462",
+      "address": "Rotherhithe Street, Rotherhithe, SE16",
+      "price": "£2,999 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/163784462#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T07:46:47.461Z",
+      "searchName": "mile-end-3bed"
     },
     "163957658": {
       "id": "163957658",
@@ -389,6 +409,16 @@
       "bathrooms": 2,
       "propertyUrl": "/properties/164766089#/?channel=RES_LET",
       "firstSeen": "2025-07-28T05:53:07.330Z",
+      "searchName": "mile-end-3bed"
+    },
+    "164795186": {
+      "id": "164795186",
+      "address": "Keymer Place, Limehouse",
+      "price": "£2,999 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/164795186#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T07:46:47.461Z",
       "searchName": "mile-end-3bed"
     },
     "164798906": {
