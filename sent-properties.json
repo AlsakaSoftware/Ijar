@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2025-07-28T08:55:10.481Z",
+  "lastUpdated": "2025-07-28T09:01:58.640Z",
   "properties": {
     "19981454": {
       "id": "19981454",
@@ -329,6 +329,16 @@
       "bathrooms": 2,
       "propertyUrl": "/properties/164484035#/?channel=RES_LET",
       "firstSeen": "2025-07-28T05:58:21.156Z",
+      "searchName": "stratford-east-village-3bed"
+    },
+    "164493908": {
+      "id": "164493908",
+      "address": "River Heights, 90 High Street, Stratford, London, E15",
+      "price": "£3,400 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/164493908#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T09:01:58.183Z",
       "searchName": "stratford-east-village-3bed"
     },
     "164544806": {
