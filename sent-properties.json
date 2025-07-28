@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2025-07-28T05:20:28.167Z",
+  "lastUpdated": "2025-07-28T05:47:06.971Z",
   "properties": {
     "114657959": {
       "id": "114657959",
@@ -121,6 +121,16 @@
       "firstSeen": "2025-07-28T04:59:25.418Z",
       "searchName": "canning-town-3bed"
     },
+    "164436026": {
+      "id": "164436026",
+      "address": "Gateway Tower, 28 Western Gateway, London, E16",
+      "price": "£3,300 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/164436026#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T05:47:06.408Z",
+      "searchName": "canning-town-3bed"
+    },
     "164585834": {
       "id": "164585834",
       "address": "Jefferson Plaza, London, E3",
@@ -150,6 +160,16 @@
       "propertyUrl": "/properties/164666390#/?channel=RES_LET",
       "firstSeen": "2025-07-28T05:17:25.677Z",
       "searchName": "stratford-east-village-3bed"
+    },
+    "164670911": {
+      "id": "164670911",
+      "address": "Discovery Tower, Newham, E16",
+      "price": "£3,000 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/164670911#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T05:47:06.408Z",
+      "searchName": "canning-town-3bed"
     },
     "164671943": {
       "id": "164671943",
@@ -280,6 +300,16 @@
       "propertyUrl": "/properties/164878997#/?channel=RES_LET",
       "firstSeen": "2025-07-28T03:01:39.601Z",
       "searchName": "canary-wharf-3bed"
+    },
+    "164895065": {
+      "id": "164895065",
+      "address": "Tidal Basin Road, Tidal Basin Road",
+      "price": "£3,250 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/164895065#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T05:47:06.408Z",
+      "searchName": "canning-town-3bed"
     },
     "164913992": {
       "id": "164913992",
