@@ -29,6 +29,8 @@ jobs:
   monitor_canary_wharf_3bed:
     if: github.event_name == 'schedule' && github.event.schedule == '0 * * * *' || (github.event_name == 'workflow_dispatch' && (github.event.inputs.search_key == 'all' || github.event.inputs.search_key == 'canary-wharf-3bed'))
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -53,6 +55,8 @@ jobs:
   monitor_london_bridge_3bed:
     if: github.event_name == 'schedule' && github.event.schedule == '12 * * * *' || (github.event_name == 'workflow_dispatch' && (github.event.inputs.search_key == 'all' || github.event.inputs.search_key == 'london-bridge-3bed'))
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -77,6 +81,8 @@ jobs:
   monitor_canning_town_3bed:
     if: github.event_name == 'schedule' && github.event.schedule == '24 * * * *' || (github.event_name == 'workflow_dispatch' && (github.event.inputs.search_key == 'all' || github.event.inputs.search_key == 'canning-town-3bed'))
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -101,6 +107,8 @@ jobs:
   monitor_mile_end_3bed:
     if: github.event_name == 'schedule' && github.event.schedule == '36 * * * *' || (github.event_name == 'workflow_dispatch' && (github.event.inputs.search_key == 'all' || github.event.inputs.search_key == 'mile-end-3bed'))
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -125,6 +133,8 @@ jobs:
   monitor_stratford_east_village_3bed:
     if: github.event_name == 'schedule' && github.event.schedule == '48 * * * *' || (github.event_name == 'workflow_dispatch' && (github.event.inputs.search_key == 'all' || github.event.inputs.search_key == 'stratford-east-village-3bed'))
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4

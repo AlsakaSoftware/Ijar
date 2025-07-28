@@ -41,6 +41,8 @@ const generateWorkflow = (): string => {
     return `  monitor_${jobName}:
     if: github.event_name == 'schedule' && github.event.schedule == '${minute} * * * *' || (github.event_name == 'workflow_dispatch' && (github.event.inputs.search_key == 'all' || github.event.inputs.search_key == '${key}'))
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4

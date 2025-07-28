@@ -132,7 +132,7 @@ class PropertyMonitor {
       execSync('git config user.email "property-monitor@github-actions.local"');
       
       // Configure git to use PAT_TOKEN for authentication
-      execSync(`git remote set-url origin https://${token}@github.com/AlsakaSoftware/Rightmove-node-scraper.git`);
+      execSync(`git remote set-url origin https://x-access-token:${token}@github.com/AlsakaSoftware/Rightmove-node-scraper.git`);
       
       // Add the tracking file
       execSync(`git add ${this.dataFile}`);
