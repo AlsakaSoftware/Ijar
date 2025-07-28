@@ -111,8 +111,14 @@ class PropertyMonitor {
   }
 
   private async commitChanges(newPropertiesCount: number): Promise<void> {
+    console.log('🔄 Starting commitChanges process...');
+    console.log('📊 Environment check:');
+    console.log('   - GITHUB_ACTIONS:', process.env.GITHUB_ACTIONS);
+    console.log('   - Current working directory:', process.cwd());
+    console.log('   - Tracking file path:', this.dataFile);
+    
     if (process.env.GITHUB_ACTIONS !== 'true') {
-      console.log('Not in GitHub Actions, skipping git commit');
+      console.log('📝 Not in GitHub Actions environment, skipping git commit');
       return;
     }
 
@@ -123,40 +129,133 @@ class PropertyMonitor {
       const token = process.env.GITHUB_TOKEN;
       if (!token) {
         console.error('❌ GITHUB_TOKEN not found in environment variables');
+        console.log('🔍 Available environment variables:');
+        Object.keys(process.env).filter(key => key.includes('GIT') || key.includes('TOKEN')).forEach(key => {
+          console.log(`   - ${key}: ${key.includes('TOKEN') ? '[HIDDEN]' : process.env[key]}`);
+        });
         return;
       }
-      console.log('✅ GITHUB_TOKEN found, configuring git authentication');
+      console.log('✅ GITHUB_TOKEN found (length:', token.length, ')');
+      
+      // Debug: Show current git status before any changes
+      console.log('🔍 Initial git status:');
+      try {
+        const gitStatus = execSync('git status --porcelain', { encoding: 'utf8' });
+        console.log('   Git status output:', gitStatus || 'Clean working directory');
+      } catch (error) {
+        console.log('   Git status error:', error);
+      }
+      
+      // Debug: Check if tracking file exists and show its contents
+      console.log('📁 Checking tracking file:');
+      try {
+        const fs = require('fs');
+        if (fs.existsSync(this.dataFile)) {
+          const fileSize = fs.statSync(this.dataFile).size;
+          console.log(`   ✅ File exists: ${this.dataFile} (${fileSize} bytes)`);
+          
+          // Show first few lines of the file
+          const content = fs.readFileSync(this.dataFile, 'utf8');
+          const lines = content.split('\n').slice(0, 3);
+          console.log('   📄 File preview:', lines.join(' '));
+        } else {
+          console.log(`   ❌ File does not exist: ${this.dataFile}`);
+          return;
+        }
+      } catch (error) {
+        console.log('   📁 Error checking file:', error);
+        return;
+      }
       
       // Configure git with GITHUB_TOKEN authentication  
+      console.log('⚙️ Configuring git...');
       execSync('git config user.name "Property Monitor Bot"');
       execSync('git config user.email "property-monitor@github-actions.local"');
+      console.log('   ✅ Git user configured');
+      
+      // Debug: Show current remote
+      console.log('🔍 Current git remote:');
+      try {
+        const gitRemote = execSync('git remote -v', { encoding: 'utf8' });
+        console.log('   Git remote:', gitRemote.trim());
+      } catch (error) {
+        console.log('   Git remote error:', error);
+      }
       
       // Configure git to use GITHUB_TOKEN for authentication
+      console.log('🔧 Setting up authentication...');
       execSync(`git remote set-url origin https://x-access-token:${token}@github.com/AlsakaSoftware/Rightmove-node-scraper.git`);
+      console.log('   ✅ Remote URL updated with token');
       
       // Add the tracking file
+      console.log(`📁 Adding tracking file to git: ${this.dataFile}`);
       execSync(`git add ${this.dataFile}`);
+      console.log('   ✅ File added to staging area');
       
       // Check if there are changes to commit
+      console.log('🔍 Checking for staged changes...');
       try {
         execSync('git diff --staged --quiet');
-        console.log('No changes to commit');
+        console.log('❌ No changes detected in staging area');
+        
+        // Additional debug: show what's actually staged
+        try {
+          const stagedFiles = execSync('git diff --staged --name-only', { encoding: 'utf8' });
+          console.log('   Staged files:', stagedFiles || 'None');
+        } catch (e) {
+          console.log('   Error getting staged files:', e);
+        }
         return;
       } catch {
-        // Changes exist, proceed with commit
+        console.log('✅ Changes detected in staging area, proceeding with commit');
+      }
+      
+      // Show what will be committed
+      try {
+        const diffStat = execSync('git diff --staged --stat', { encoding: 'utf8' });
+        console.log('📊 Changes to be committed:');
+        console.log(diffStat);
+      } catch (error) {
+        console.log('   Error getting diff stat:', error);
       }
       
       // Commit changes
       const message = `🏠 Track ${newPropertiesCount} new properties for ${this.searchName}`;
+      console.log('📝 Creating commit with message:', message);
       execSync(`git commit -m "${message}"`);
+      console.log('   ✅ Commit created successfully');
+      
+      // Show commit info
+      try {
+        const commitInfo = execSync('git log -1 --oneline', { encoding: 'utf8' });
+        console.log('📋 Latest commit:', commitInfo.trim());
+      } catch (error) {
+        console.log('   Error getting commit info:', error);
+      }
       
       // Push changes
-      execSync('git push origin HEAD');
+      console.log('🚀 Pushing changes to remote...');
+      try {
+        const pushOutput = execSync('git push origin HEAD', { encoding: 'utf8', stdio: 'pipe' });
+        console.log('✅ Push successful!');
+        if (pushOutput) console.log('   Push output:', pushOutput);
+      } catch (pushError: any) {
+        console.error('❌ Push failed:');
+        console.error('   Exit code:', pushError.status);
+        console.error('   Stdout:', pushError.stdout?.toString());
+        console.error('   Stderr:', pushError.stderr?.toString());
+        throw pushError;
+      }
       
-      console.log(`✅ Committed tracking data for ${newPropertiesCount} new properties`);
+      console.log(`🎉 Successfully committed and pushed tracking data for ${newPropertiesCount} new properties`);
       
     } catch (error) {
       console.error('❌ Failed to commit changes:', error);
+      console.log('🔍 Error details:');
+      if (error instanceof Error) {
+        console.log('   Message:', error.message);
+        console.log('   Stack:', error.stack);
+      }
     }
   }
 
