@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2025-07-28T07:55:09.519Z",
+  "lastUpdated": "2025-07-28T08:16:25.251Z",
   "properties": {
     "51394888": {
       "id": "51394888",
@@ -161,6 +161,16 @@
       "firstSeen": "2025-07-28T04:59:25.418Z",
       "searchName": "canning-town-3bed"
     },
+    "163527860": {
+      "id": "163527860",
+      "address": "Ambassador square, Isle of dogs, London, E14",
+      "price": "£2,860 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/163527860#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T08:16:24.723Z",
+      "searchName": "canary-wharf-3bed"
+    },
     "163719146": {
       "id": "163719146",
       "address": "Prospect Row, Stratford, London, E15",
@@ -281,6 +291,16 @@
       "firstSeen": "2025-07-28T05:47:06.408Z",
       "searchName": "canning-town-3bed"
     },
+    "164473370": {
+      "id": "164473370",
+      "address": "Talisman Tower, 6 Lincoln Plaza, Canary Wharf, London, E14",
+      "price": "£3,500 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/164473370#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T08:16:24.723Z",
+      "searchName": "canary-wharf-3bed"
+    },
     "164484035": {
       "id": "164484035",
       "address": "Hampton Road, Forest Gate, E7",
@@ -290,6 +310,16 @@
       "propertyUrl": "/properties/164484035#/?channel=RES_LET",
       "firstSeen": "2025-07-28T05:58:21.156Z",
       "searchName": "stratford-east-village-3bed"
+    },
+    "164544806": {
+      "id": "164544806",
+      "address": "Ashton Street, Canary Wharf, London, E14",
+      "price": "£3,200 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/164544806#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T08:16:24.723Z",
+      "searchName": "canary-wharf-3bed"
     },
     "164585834": {
       "id": "164585834",
