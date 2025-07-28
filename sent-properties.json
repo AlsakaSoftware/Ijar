@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2025-07-28T07:03:25.660Z",
+  "lastUpdated": "2025-07-28T07:17:23.504Z",
   "properties": {
     "51394888": {
       "id": "51394888",
@@ -81,6 +81,16 @@
       "firstSeen": "2025-07-28T05:03:31.251Z",
       "searchName": "mile-end-3bed"
     },
+    "149447972": {
+      "id": "149447972",
+      "address": "Hercules House, London City Island, E14",
+      "price": "£3,497 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/149447972#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T07:17:23.166Z",
+      "searchName": "canary-wharf-3bed"
+    },
     "159431798": {
       "id": "159431798",
       "address": "Barking Road, LONDON",
@@ -150,6 +160,26 @@
       "propertyUrl": "/properties/163957658#/?channel=RES_LET",
       "firstSeen": "2025-07-28T06:53:25.386Z",
       "searchName": "canning-town-3bed"
+    },
+    "163983395": {
+      "id": "163983395",
+      "address": "Chandlers Mews, Canary Wharf",
+      "price": "£3,449 pcm",
+      "bedrooms": 3,
+      "bathrooms": 3,
+      "propertyUrl": "/properties/163983395#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T07:17:23.166Z",
+      "searchName": "canary-wharf-3bed"
+    },
+    "163984844": {
+      "id": "163984844",
+      "address": "Chandlers Mews, Canary Wharf",
+      "price": "£3,449 pcm",
+      "bedrooms": 3,
+      "bathrooms": 3,
+      "propertyUrl": "/properties/163984844#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T07:17:23.166Z",
+      "searchName": "canary-wharf-3bed"
     },
     "164252411": {
       "id": "164252411",
