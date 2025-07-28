@@ -1,6 +1,26 @@
 {
-  "lastUpdated": "2025-07-28T04:59:25.928Z",
+  "lastUpdated": "2025-07-28T05:03:31.830Z",
   "properties": {
+    "129190643": {
+      "id": "129190643",
+      "address": "Queensbury House, Poplar, E14",
+      "price": "£3,199 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/129190643#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T05:03:31.251Z",
+      "searchName": "mile-end-3bed"
+    },
+    "148993079": {
+      "id": "148993079",
+      "address": "Nelson Walk, London, E3",
+      "price": "£3,300 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/148993079#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T05:03:31.251Z",
+      "searchName": "mile-end-3bed"
+    },
     "159431798": {
       "id": "159431798",
       "address": "Barking Road, LONDON",
@@ -70,6 +90,16 @@
       "propertyUrl": "/properties/164363027#/?channel=RES_LET",
       "firstSeen": "2025-07-28T04:59:25.418Z",
       "searchName": "canning-town-3bed"
+    },
+    "164585834": {
+      "id": "164585834",
+      "address": "Jefferson Plaza, London, E3",
+      "price": "£3,250 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/164585834#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T05:03:31.251Z",
+      "searchName": "mile-end-3bed"
     },
     "164653979": {
       "id": "164653979",
