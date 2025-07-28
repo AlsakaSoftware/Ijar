@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2025-07-28T09:01:58.640Z",
+  "lastUpdated": "2025-07-28T09:17:47.407Z",
   "properties": {
     "19981454": {
       "id": "19981454",
@@ -121,6 +121,16 @@
       "firstSeen": "2025-07-28T08:55:09.954Z",
       "searchName": "mile-end-3bed"
     },
+    "162149912": {
+      "id": "162149912",
+      "address": "New Festival Avenue, Canary Wharf",
+      "price": "£3,298 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/162149912#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T09:17:46.991Z",
+      "searchName": "canary-wharf-3bed"
+    },
     "162807308": {
       "id": "162807308",
       "address": "Kelson House, Royal Wharf, London, E16",
@@ -130,6 +140,16 @@
       "propertyUrl": "/properties/162807308#/?channel=RES_LET",
       "firstSeen": "2025-07-28T04:15:31.317Z",
       "searchName": "canning-town-3bed"
+    },
+    "163006934": {
+      "id": "163006934",
+      "address": "Albert Mews, Limehouse, London, E14",
+      "price": "£2,900 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/163006934#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T09:17:46.991Z",
+      "searchName": "canary-wharf-3bed"
     },
     "163083446": {
       "id": "163083446",
@@ -299,6 +319,16 @@
       "bathrooms": 2,
       "propertyUrl": "/properties/164420633#/?channel=RES_LET",
       "firstSeen": "2025-07-28T06:18:36.849Z",
+      "searchName": "canary-wharf-3bed"
+    },
+    "164425781": {
+      "id": "164425781",
+      "address": "Westferry Road, Isle of dogs, E14 ",
+      "price": "£2,860 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/164425781#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T09:17:46.991Z",
       "searchName": "canary-wharf-3bed"
     },
     "164436026": {
