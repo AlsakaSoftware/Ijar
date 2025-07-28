@@ -47,7 +47,7 @@ const generateWorkflow = (): string => {
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          token: \${{ secrets.PAT_TOKEN }}
+          token: \${{ secrets.GITHUB_TOKEN }}
           
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -62,7 +62,7 @@ const generateWorkflow = (): string => {
         env:
           TELEGRAM_BOT_TOKEN: \${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: \${{ secrets.TELEGRAM_CHAT_ID }}
-          PAT_TOKEN: \${{ secrets.PAT_TOKEN }}`;
+          GITHUB_TOKEN: \${{ secrets.GITHUB_TOKEN }}`;
   }).join('\n\n');
 
   return `name: Property Monitor
