@@ -125,27 +125,6 @@ class PropertyMonitor {
     try {
       const { execSync } = require('child_process');
       
-      // Debug: Check if GITHUB_TOKEN is available
-      const token = process.env.GITHUB_TOKEN;
-      if (!token) {
-        console.error('❌ GITHUB_TOKEN not found in environment variables');
-        console.log('🔍 Available environment variables:');
-        Object.keys(process.env).filter(key => key.includes('GIT') || key.includes('TOKEN')).forEach(key => {
-          console.log(`   - ${key}: ${key.includes('TOKEN') ? '[HIDDEN]' : process.env[key]}`);
-        });
-        return;
-      }
-      console.log('✅ GITHUB_TOKEN found (length:', token.length, ')');
-      
-      // Debug: Show current git status before any changes
-      console.log('🔍 Initial git status:');
-      try {
-        const gitStatus = execSync('git status --porcelain', { encoding: 'utf8' });
-        console.log('   Git status output:', gitStatus || 'Clean working directory');
-      } catch (error) {
-        console.log('   Git status error:', error);
-      }
-      
       // Debug: Check if tracking file exists and show its contents
       console.log('📁 Checking tracking file:');
       try {
@@ -167,25 +146,20 @@ class PropertyMonitor {
         return;
       }
       
-      // Configure git with GITHUB_TOKEN authentication  
-      console.log('⚙️ Configuring git...');
+      // Configure git user (required for commits)
+      console.log('⚙️ Configuring git user...');
       execSync('git config user.name "Property Monitor Bot"');
       execSync('git config user.email "property-monitor@github-actions.local"');
       console.log('   ✅ Git user configured');
       
-      // Debug: Show current remote
-      console.log('🔍 Current git remote:');
+      // Debug: Show current git status before any changes
+      console.log('🔍 Initial git status:');
       try {
-        const gitRemote = execSync('git remote -v', { encoding: 'utf8' });
-        console.log('   Git remote:', gitRemote.trim());
+        const gitStatus = execSync('git status --porcelain', { encoding: 'utf8' });
+        console.log('   Git status output:', gitStatus || 'Clean working directory');
       } catch (error) {
-        console.log('   Git remote error:', error);
+        console.log('   Git status error:', error);
       }
-      
-      // Configure git to use GITHUB_TOKEN for authentication
-      console.log('🔧 Setting up authentication...');
-      execSync(`git remote set-url origin https://x-access-token:${token}@github.com/AlsakaSoftware/Rightmove-node-scraper.git`);
-      console.log('   ✅ Remote URL updated with token');
       
       // Add the tracking file
       console.log(`📁 Adding tracking file to git: ${this.dataFile}`);
@@ -233,7 +207,7 @@ class PropertyMonitor {
         console.log('   Error getting commit info:', error);
       }
       
-      // Push changes
+      // Push changes (using existing authentication from checkout)
       console.log('🚀 Pushing changes to remote...');
       try {
         const pushOutput = execSync('git push origin HEAD', { encoding: 'utf8', stdio: 'pipe' });
