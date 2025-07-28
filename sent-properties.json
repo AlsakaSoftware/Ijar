@@ -1,0 +1,245 @@
+{
+  "lastUpdated": "2025-07-28T01:44:35.837Z",
+  "properties": {
+    "76007372": {
+      "id": "76007372",
+      "address": "Westferry Road, London",
+      "price": "£3,500 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/76007372#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T01:44:35.417Z",
+      "searchName": "canary-wharf-3bed"
+    },
+    "129190643": {
+      "id": "129190643",
+      "address": "Queensbury House, Poplar, E14",
+      "price": "£3,199 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/129190643#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T01:44:35.417Z",
+      "searchName": "canary-wharf-3bed"
+    },
+    "149447972": {
+      "id": "149447972",
+      "address": "Hercules House, London City Island, E14",
+      "price": "£3,497 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/149447972#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T01:44:35.417Z",
+      "searchName": "canary-wharf-3bed"
+    },
+    "162149870": {
+      "id": "162149870",
+      "address": "New Festival Avenue, Canary Wharf",
+      "price": "£3,298 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/162149870#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T01:44:35.417Z",
+      "searchName": "canary-wharf-3bed"
+    },
+    "162149912": {
+      "id": "162149912",
+      "address": "New Festival Avenue, Canary Wharf",
+      "price": "£3,298 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/162149912#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T01:44:35.417Z",
+      "searchName": "canary-wharf-3bed"
+    },
+    "163006934": {
+      "id": "163006934",
+      "address": "Albert Mews, Limehouse, London, E14",
+      "price": "£2,900 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/163006934#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T01:44:35.417Z",
+      "searchName": "canary-wharf-3bed"
+    },
+    "163182872": {
+      "id": "163182872",
+      "address": "Franklin Building,Westferry Road,Canary, Wharf London, E14",
+      "price": "£3,120 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/163182872#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T01:44:35.417Z",
+      "searchName": "canary-wharf-3bed"
+    },
+    "163527860": {
+      "id": "163527860",
+      "address": "Ambassador square, Isle of dogs, London, E14",
+      "price": "£2,860 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/163527860#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T01:44:35.417Z",
+      "searchName": "canary-wharf-3bed"
+    },
+    "163784462": {
+      "id": "163784462",
+      "address": "Rotherhithe Street, Rotherhithe, SE16",
+      "price": "£2,999 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/163784462#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T01:44:35.417Z",
+      "searchName": "canary-wharf-3bed"
+    },
+    "163983395": {
+      "id": "163983395",
+      "address": "Chandlers Mews, Canary Wharf",
+      "price": "£3,449 pcm",
+      "bedrooms": 3,
+      "bathrooms": 3,
+      "propertyUrl": "/properties/163983395#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T01:44:35.417Z",
+      "searchName": "canary-wharf-3bed"
+    },
+    "163984844": {
+      "id": "163984844",
+      "address": "Chandlers Mews, Canary Wharf",
+      "price": "£3,449 pcm",
+      "bedrooms": 3,
+      "bathrooms": 3,
+      "propertyUrl": "/properties/163984844#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T01:44:35.417Z",
+      "searchName": "canary-wharf-3bed"
+    },
+    "164274023": {
+      "id": "164274023",
+      "address": "Lamington Heights, \n8 Madeira Street, E14",
+      "price": "£3,000 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/164274023#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T01:44:35.417Z",
+      "searchName": "canary-wharf-3bed"
+    },
+    "164420633": {
+      "id": "164420633",
+      "address": "3 Bedroom Riverside flat in Canary Wharf ",
+      "price": "£3,423 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/164420633#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T01:44:35.417Z",
+      "searchName": "canary-wharf-3bed"
+    },
+    "164425781": {
+      "id": "164425781",
+      "address": "Westferry Road, Isle of dogs, E14 ",
+      "price": "£2,860 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/164425781#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T01:44:35.417Z",
+      "searchName": "canary-wharf-3bed"
+    },
+    "164473370": {
+      "id": "164473370",
+      "address": "Talisman Tower, 6 Lincoln Plaza, Canary Wharf, London, E14",
+      "price": "£3,500 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/164473370#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T01:44:35.417Z",
+      "searchName": "canary-wharf-3bed"
+    },
+    "164544806": {
+      "id": "164544806",
+      "address": "Ashton Street, Canary Wharf, London, E14",
+      "price": "£3,200 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/164544806#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T01:44:35.417Z",
+      "searchName": "canary-wharf-3bed"
+    },
+    "164671943": {
+      "id": "164671943",
+      "address": "Pier Street, London, E14",
+      "price": "£3,250 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/164671943#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T01:44:35.417Z",
+      "searchName": "canary-wharf-3bed"
+    },
+    "164733260": {
+      "id": "164733260",
+      "address": "Three Colt Street, London, E14",
+      "price": "£3,500 pcm",
+      "bedrooms": 3,
+      "bathrooms": 3,
+      "propertyUrl": "/properties/164733260#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T01:44:35.417Z",
+      "searchName": "canary-wharf-3bed"
+    },
+    "164795186": {
+      "id": "164795186",
+      "address": "Keymer Place, Limehouse",
+      "price": "£2,999 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/164795186#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T01:44:35.417Z",
+      "searchName": "canary-wharf-3bed"
+    },
+    "164798906": {
+      "id": "164798906",
+      "address": "Blackwall Way, London, E14",
+      "price": "£3,250 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/164798906#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T01:44:35.417Z",
+      "searchName": "canary-wharf-3bed"
+    },
+    "164809958": {
+      "id": "164809958",
+      "address": "Boardwalk Place, London, E14",
+      "price": "£3,400 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/164809958#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T01:44:35.417Z",
+      "searchName": "canary-wharf-3bed"
+    },
+    "164843204": {
+      "id": "164843204",
+      "address": "Regents Canal House, Commercial Road, E14",
+      "price": "£3,300 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/164843204#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T01:44:35.417Z",
+      "searchName": "canary-wharf-3bed"
+    },
+    "164878997": {
+      "id": "164878997",
+      "address": "Ambassador Square, London, E14",
+      "price": "£2,990 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/164878997#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T01:44:35.417Z",
+      "searchName": "canary-wharf-3bed"
+    },
+    "164913992": {
+      "id": "164913992",
+      "address": "Indescon Square, London, E14 9EZ",
+      "price": "£3,500 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/164913992#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T01:44:35.417Z",
+      "searchName": "canary-wharf-3bed"
+    }
+  }
+}
