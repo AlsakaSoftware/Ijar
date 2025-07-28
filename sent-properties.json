@@ -1,6 +1,36 @@
 {
-  "lastUpdated": "2025-07-28T02:55:54.048Z",
+  "lastUpdated": "2025-07-28T03:01:39.958Z",
   "properties": {
+    "164843204": {
+      "id": "164843204",
+      "address": "Regents Canal House, Commercial Road, E14",
+      "price": "£3,300 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/164843204#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T03:01:39.601Z",
+      "searchName": "canary-wharf-3bed"
+    },
+    "164878997": {
+      "id": "164878997",
+      "address": "Ambassador Square, London, E14",
+      "price": "£2,990 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/164878997#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T03:01:39.601Z",
+      "searchName": "canary-wharf-3bed"
+    },
+    "164913992": {
+      "id": "164913992",
+      "address": "Indescon Square, London, E14 9EZ",
+      "price": "£3,500 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/164913992#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T03:01:39.601Z",
+      "searchName": "canary-wharf-3bed"
+    },
     "164933087": {
       "id": "164933087",
       "address": "Merchant House, Stratford, E20",
