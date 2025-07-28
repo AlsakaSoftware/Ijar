@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2025-07-28T05:17:26.088Z",
+  "lastUpdated": "2025-07-28T05:20:28.167Z",
   "properties": {
     "114657959": {
       "id": "114657959",
@@ -91,6 +91,16 @@
       "firstSeen": "2025-07-28T03:16:49.061Z",
       "searchName": "london-bridge-3bed"
     },
+    "164274023": {
+      "id": "164274023",
+      "address": "Lamington Heights, \n8 Madeira Street, E14",
+      "price": "£3,000 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/164274023#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T05:20:27.728Z",
+      "searchName": "canary-wharf-3bed"
+    },
     "164316614": {
       "id": "164316614",
       "address": "Forrester Way, Stratford, London, E15",
@@ -180,6 +190,26 @@
       "propertyUrl": "/properties/164709830#/?channel=RES_LET",
       "firstSeen": "2025-07-28T04:30:58.021Z",
       "searchName": "mile-end-3bed"
+    },
+    "164733260": {
+      "id": "164733260",
+      "address": "Three Colt Street, London, E14",
+      "price": "£3,500 pcm",
+      "bedrooms": 3,
+      "bathrooms": 3,
+      "propertyUrl": "/properties/164733260#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T05:20:27.728Z",
+      "searchName": "canary-wharf-3bed"
+    },
+    "164798906": {
+      "id": "164798906",
+      "address": "Blackwall Way, London, E14",
+      "price": "£3,250 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/164798906#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T05:20:27.728Z",
+      "searchName": "canary-wharf-3bed"
     },
     "164809958": {
       "id": "164809958",
