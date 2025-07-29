@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2025-07-28T10:50:42.928Z",
+  "lastUpdated": "2025-07-28T23:54:56.405Z",
   "properties": {
     "19981454": {
       "id": "19981454",
@@ -19,6 +19,16 @@
       "bathrooms": 2,
       "propertyUrl": "/properties/51394888#/?channel=RES_LET",
       "firstSeen": "2025-07-28T06:58:41.584Z",
+      "searchName": "mile-end-3bed"
+    },
+    "64475930": {
+      "id": "64475930",
+      "address": "Fieldgate Street, London, E1",
+      "price": "£3,300 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/64475930#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T13:57:31.739Z",
       "searchName": "mile-end-3bed"
     },
     "76007372": {
@@ -270,6 +280,16 @@
       "propertyUrl": "/properties/163984844#/?channel=RES_LET",
       "firstSeen": "2025-07-28T07:17:23.166Z",
       "searchName": "canary-wharf-3bed"
+    },
+    "164188526": {
+      "id": "164188526",
+      "address": "Ivy Point, 5 Hannaford Walk, London, E3",
+      "price": "£3,380 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/164188526#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T17:46:30.866Z",
+      "searchName": "mile-end-3bed"
     },
     "164252411": {
       "id": "164252411",
@@ -790,6 +810,36 @@
       "propertyUrl": "/properties/165022802#/?channel=RES_LET",
       "firstSeen": "2025-07-28T10:50:42.535Z",
       "searchName": "mile-end-3bed"
+    },
+    "165034640": {
+      "id": "165034640",
+      "address": "15 Indescon Square, London, E14 9EZ",
+      "price": "£3,500 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/165034640#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T14:13:41.165Z",
+      "searchName": "canary-wharf-3bed"
+    },
+    "165045827": {
+      "id": "165045827",
+      "address": "Silvertown Way, London, E16",
+      "price": "£3,490 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/165045827#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T16:48:45.282Z",
+      "searchName": "canning-town-3bed"
+    },
+    "165052367": {
+      "id": "165052367",
+      "address": "Hampton Road, Forest Gate, E7",
+      "price": "£3,250 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/165052367#/?channel=RES_LET",
+      "firstSeen": "2025-07-28T23:54:55.822Z",
+      "searchName": "stratford-east-village-3bed"
     }
   }
 }
