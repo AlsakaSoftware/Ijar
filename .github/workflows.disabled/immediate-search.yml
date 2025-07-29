@@ -1,0 +1,38 @@
+name: Immediate Property Search
+
+on:
+  workflow_dispatch:
+    inputs:
+      query_id:
+        description: 'Search query ID to process immediately'
+        required: true
+        type: string
+
+jobs:
+  search-properties:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+          
+      - name: Install dependencies
+        run: |
+          cd backend
+          npm ci
+          
+      - name: Run immediate property search
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          cd backend
+          npm run search:immediate -- "${{ github.event.inputs.query_id }}"
