@@ -1,151 +1,92 @@
-# 🏠 Rightmove Property Monitor
+# Ijar - Property Search Platform
 
-**Get instant Telegram alerts for new properties!**
+A comprehensive property search platform with iOS app and automated backend scraping.
 
-A TypeScript system that:
-1. **Scrapes** property listings from Rightmove
-2. **Monitors** for new properties hourly via GitHub Actions  
-3. **Sends Telegram alerts** when new properties match your criteria
-4. **Runs completely free** on GitHub Actions
-
-## 🚀 Quick Setup (GitHub Actions)
-
-### 1. Fork this repository
-
-### 2. Set up Telegram Bot
-1. Message [@BotFather](https://t.me/BotFather) on Telegram
-2. Create bot: `/newbot`
-3. Get your bot token
-4. Message your bot, then visit: `https://api.telegram.org/bot<YOUR_BOT_TOKEN>/getUpdates`
-5. Find your chat ID in the response
-
-### 3. Add GitHub Secrets
-Go to your repo → Settings → Secrets and variables → Actions:
-
-- `TELEGRAM_BOT_TOKEN`: Your bot token from BotFather
-- `TELEGRAM_CHAT_ID`: Your chat ID from step 2
-
-### 4. Configure Searches
-Edit `searches.json` with your preferred locations and criteria:
-
-```json
-{
-  "my-search": {
-    "name": "My Search Name",
-    "searchType": "RENT",
-    "location": "canary wharf", 
-    "maxPrice": 3000,
-    "minBedrooms": 2,
-    "maxBedrooms": 2
-  }
-}
-```
-
-### 5. Update Workflow
-Edit `.github/workflows/property-monitor.yml` to match your search keys.
-
-### 6. Push to GitHub
-The system will automatically run every hour and send Telegram alerts for new properties!
-
-## 🏠 Available Locations
-- `canary wharf`
-- `london bridge`
-- `canning town`
-- `london`
-- `manchester` 
-- `birmingham`
-
-## 💻 Local Development
-
-### Setup
-```bash
-npm install
-cp .env.example .env
-# Add your Telegram bot credentials to .env
-```
-
-### Run Single Search
-```bash
-npm run monitor canary-wharf-2bed
-```
-
-### Test All Searches
-```bash
-npm run monitor canary-wharf-2bed
-npm run monitor london-bridge-studio
-npm run monitor canning-town-1bed
-```
-
-## 🔧 How It Works
-
-1. **GitHub Actions runs hourly** (different times for each search)
-2. **Scrapes Rightmove** with your search criteria  
-3. **Compares** against previously found properties
-4. **Sends Telegram alerts** for new properties only
-5. **Commits tracking data** back to the repo
-
-## 📱 Telegram Alert Format
+## 🏗 Project Structure
 
 ```
-🏠 2 New Property Alerts
-📍 Canary Wharf 2 Bed
-
-1. Flat 2, Landmark East Tower, Canary Wharf
-💰 £3,200 pcm
-🛏️ 2 bed | 🚿 2 bath
-🔗 https://www.rightmove.co.uk/properties/123456
-
-2. Apartment 15, Pan Peninsula East, Canary Wharf  
-💰 £3,000 pcm
-🛏️ 2 bed | 🚿 1 bath
-🔗 https://www.rightmove.co.uk/properties/789012
+├── Ijar-app/          # iOS SwiftUI Application
+├── backend/           # Node.js Backend & Scraper
+└── README.md          # This file
 ```
 
-## 🛠️ Manual Testing
+## 📱 iOS App (Ijar-app/)
 
-### Local Testing
-```bash
-# Install dependencies
-npm install
+Modern SwiftUI app for property searching and browsing.
 
-# Set up environment
-cp .env.example .env
-# Add your Telegram credentials
+### Features
+- **Sign in with Apple** authentication
+- **Swipe-based property browsing** (like/dismiss)
+- **Custom search queries** with location, price, and property filters
+- **Favorites system** for saved properties
+- **Real-time updates** from daily scraping
 
-# Test a single search
-npm run monitor canary-wharf-2bed
-```
+### Tech Stack
+- SwiftUI + iOS 18+
+- Supabase (Database + Authentication)
+- NavigationStack architecture
+- MVVM-C pattern
 
-### Add New Searches
-Edit `searches.json`:
-```json
-{
-  "my-new-search": {
-    "name": "My Custom Search",
-    "searchType": "RENT",
-    "location": "london bridge",
-    "maxPrice": 2500,
-    "minBedrooms": 1,
-    "maxBedrooms": 2
-  }
-}
-```
+### Getting Started
+1. Open `Ijar-app/Ijar.xcodeproj` in Xcode
+2. Add Supabase URL and API key to `SupabaseClient.swift`
+3. Configure Sign in with Apple capability
+4. Build and run
 
-Then update `.github/workflows/property-monitor.yml` to include your new search.
+## 🔧 Backend (backend/)
 
-## 📊 Features
+Node.js scraper that fetches property data from Rightmove and saves to Supabase.
 
-✅ **Free hosting** on GitHub Actions  
-✅ **Duplicate detection** - never get the same property twice  
-✅ **Multiple searches** - monitor different areas/criteria  
-✅ **Error handling** - gets notified if monitoring fails  
-✅ **Rate limiting** - respects Rightmove's servers  
-✅ **Rich notifications** - formatted property details  
+### Features
+- **Automated scraping** via GitHub Actions (runs daily at 9 AM)
+- **Property ranking** by recency and photo count
+- **Supabase integration** for data storage
+- **Duplicate detection** and data cleanup
 
-## 🔧 Technical Details
+### Getting Started
+1. `cd backend && npm install`
+2. Set up environment variables for Supabase
+3. Configure `searches.json` with your property queries
+4. Run locally: `npm run dev`
 
-- **Storage**: Property tracking data stored in git commits
-- **Scheduling**: GitHub Actions cron jobs (hourly)
-- **Deduplication**: Composite keys (property ID + address)
-- **Rate limiting**: 1 second delays between requests
-- **Error handling**: Telegram notifications for failures
+## 🚀 Deployment
+
+### iOS App
+Deploy to App Store Connect after setting up:
+- Supabase database schema
+- Sign in with Apple configuration
+- App Store app registration
+
+### Backend
+- Runs automatically via GitHub Actions
+- Configure secrets for Supabase credentials
+- Modify schedule in `.github/workflows/` if needed
+
+## 🔄 How It Works
+
+1. **Users create searches** in the iOS app (location, price, bedrooms, etc.)
+2. **Queries are saved** to Supabase database
+3. **GitHub Actions runs** the scraper daily at 9 AM
+4. **New properties are fetched** from Rightmove and saved to database
+5. **Users see new properties** in the app to swipe through
+6. **Liked properties** are saved to favorites
+
+## 🛠 Tech Stack
+
+- **Frontend**: SwiftUI, iOS 18+
+- **Backend**: Node.js, TypeScript
+- **Database**: Supabase (PostgreSQL)
+- **Authentication**: Sign in with Apple
+- **Automation**: GitHub Actions
+- **Data Source**: Rightmove
+
+## 📋 Setup Requirements
+
+1. **Supabase Project** with database schema
+2. **Apple Developer Account** for Sign in with Apple
+3. **GitHub Repository** with Actions enabled
+4. **Environment Variables** for API keys
+
+---
+
+Built with ❤️ for finding the perfect home 🏠

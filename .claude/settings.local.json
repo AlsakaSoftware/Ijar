@@ -2,7 +2,10 @@
   "permissions": {
     "allow": [
       "WebFetch(domain:www.rightmove.co.uk)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(xcodebuild:*)",
+      "Bash(mv:*)",
+      "Bash(git add:*)"
     ],
     "deny": []
   }
