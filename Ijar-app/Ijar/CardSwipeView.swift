@@ -1,10 +1,13 @@
 import SwiftUI
 
 struct CardSwipeView: View {
+    @EnvironmentObject var coordinator: HomeFeedCoordinator
     @State private var properties = Property.mockProperties
     @State private var currentIndex = 0
     @State private var dragAmount = CGSize.zero
     @State private var dragDirection: SwipeDirection = .none
+    @State private var selectedProperty: Property?
+    @State private var showingPropertyDetails = false
     
     enum SwipeDirection {
         case left, right, none
@@ -62,13 +65,19 @@ struct CardSwipeView: View {
                     } else {
                         ForEach(Array(properties.enumerated()), id: \.element.id) { index, property in
                             if index >= currentIndex && index < currentIndex + 3 {
-                                PropertyCard(property: property)
-                                    .offset(cardOffset(for: index))
-                                    .scaleEffect(cardScale(for: index))
-                                    .rotationEffect(cardRotation(for: index))
-                                    .opacity(cardOpacity(for: index))
-                                    .zIndex(Double(properties.count - index))
-                                    .animation(.spring(response: 0.3, dampingFraction: 0.7, blendDuration: 0), value: dragAmount)
+                                PropertyCard(property: property) {
+                                    // Only allow details for the current (top) card
+                                    if index == currentIndex {
+                                        selectedProperty = property
+                                        showingPropertyDetails = true
+                                    }
+                                }
+                                .offset(cardOffset(for: index))
+                                .scaleEffect(cardScale(for: index))
+                                .rotationEffect(cardRotation(for: index))
+                                .opacity(cardOpacity(for: index))
+                                .zIndex(Double(properties.count - index))
+                                .animation(.spring(response: 0.3, dampingFraction: 0.7, blendDuration: 0), value: dragAmount)
                             }
                         }
                         
@@ -125,6 +134,11 @@ struct CardSwipeView: View {
                     .disabled(currentIndex >= properties.count)
                 }
                 .padding(.bottom, 30)
+            }
+        }
+        .sheet(isPresented: $showingPropertyDetails) {
+            if let property = selectedProperty {
+                PropertyDetailView(property: property)
             }
         }
     }

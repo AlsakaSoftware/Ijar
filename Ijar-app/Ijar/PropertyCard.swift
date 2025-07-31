@@ -2,6 +2,7 @@ import SwiftUI
 
 struct PropertyCard: View {
     let property: Property
+    let onTap: () -> Void
     @State private var currentImageIndex = 0
     
     var body: some View {
@@ -76,6 +77,7 @@ struct PropertyCard: View {
                 
                 // Property details
                 VStack(alignment: .leading, spacing: 8) {
+                    // Price and bed/bath info
                     HStack {
                         Text(property.price)
                             .font(.system(size: 24, weight: .semibold))
@@ -97,13 +99,46 @@ struct PropertyCard: View {
                         .foregroundColor(.warmCream.opacity(0.9))
                     }
                     
-                    Text(property.address)
-                        .font(.system(size: 17, weight: .regular))
-                        .foregroundColor(.warmCream)
-                    
-                    Text(property.area)
-                        .font(.system(size: 14, weight: .regular))
-                        .foregroundColor(.warmCream.opacity(0.7))
+                    // Address and Details button
+                    HStack(alignment: .bottom) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(property.address)
+                                .font(.system(size: 17, weight: .regular))
+                                .foregroundColor(.warmCream)
+                            
+                            Text(property.area)
+                                .font(.system(size: 14, weight: .regular))
+                                .foregroundColor(.warmCream.opacity(0.7))
+                            
+                            HStack(spacing: 4) {
+                                Image(systemName: "train.side.front.car")
+                                    .font(.system(size: 12))
+                                    .foregroundColor(.goldenYellow)
+                                Text("\(property.nearestTubeStation) • \(String(format: "%.1f", property.tubeStationDistance)) mi")
+                                    .font(.system(size: 12, weight: .medium))
+                                    .foregroundColor(.warmCream.opacity(0.8))
+                            }
+                        }
+                        
+                        Spacer()
+                        
+                        Button(action: onTap) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "info.circle.fill")
+                                    .font(.system(size: 16))
+                                Text("Details")
+                                    .font(.system(size: 16, weight: .medium))
+                            }
+                            .foregroundColor(.coffeeBean)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 10)
+                            .background(
+                                Capsule()
+                                    .fill(Color.warmCream.opacity(0.95))
+                                    .shadow(color: .coffeeBean.opacity(0.3), radius: 6, y: 3)
+                            )
+                        }
+                    }
                 }
                 .padding()
                 .frame(maxWidth: .infinity)
@@ -126,3 +161,28 @@ struct PropertyCard: View {
         .padding(.vertical, 50)
     }
 }
+
+#Preview {
+    PropertyCard(
+        property: Property(
+            images: [
+                "https://images.unsplash.com/photo-1560184897-ae75f418493e?w=800&q=80",
+                "https://images.unsplash.com/photo-1560185007-cde436f6a4d0?w=800&q=80",
+                "https://images.unsplash.com/photo-1560185009-5bf9f2849dbe?w=800&q=80"
+            ],
+            price: "£2,500/month",
+            bedrooms: 3,
+            bathrooms: 2,
+            address: "123 Canary Wharf",
+            area: "London E14",
+            nearestTubeStation: "Canary Wharf",
+            tubeStationDistance: 0.2
+        ),
+        onTap: {
+            print("Details tapped")
+        }
+    )
+    .frame(height: 600)
+    .background(Color.warmCream)
+}
+

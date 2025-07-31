@@ -8,6 +8,8 @@ struct Property: Identifiable {
     let bathrooms: Int
     let address: String
     let area: String
+    let nearestTubeStation: String
+    let tubeStationDistance: Double // Distance in miles
     
     static let mockProperties: [Property] = [
         Property(
@@ -21,7 +23,9 @@ struct Property: Identifiable {
             bedrooms: 3,
             bathrooms: 2,
             address: "123 Canary Wharf",
-            area: "London E14"
+            area: "London E14",
+            nearestTubeStation: "Canary Wharf",
+            tubeStationDistance: 0.2
         ),
         Property(
             images: [
@@ -33,7 +37,9 @@ struct Property: Identifiable {
             bedrooms: 4,
             bathrooms: 3,
             address: "45 Royal Docks",
-            area: "London E16"
+            area: "London E16",
+            nearestTubeStation: "Royal Victoria",
+            tubeStationDistance: 0.4
         ),
         Property(
             images: [
@@ -47,7 +53,9 @@ struct Property: Identifiable {
             bedrooms: 2,
             bathrooms: 1,
             address: "78 Mile End Road",
-            area: "London E1"
+            area: "London E1",
+            nearestTubeStation: "Mile End",
+            tubeStationDistance: 0.1
         ),
         Property(
             images: [
@@ -58,7 +66,9 @@ struct Property: Identifiable {
             bedrooms: 5,
             bathrooms: 3,
             address: "12 St Katharine Docks",
-            area: "London E1W"
+            area: "London E1W",
+            nearestTubeStation: "Tower Hill",
+            tubeStationDistance: 0.3
         ),
         Property(
             images: [
@@ -71,7 +81,9 @@ struct Property: Identifiable {
             bedrooms: 2,
             bathrooms: 2,
             address: "89 Stratford High Street",
-            area: "London E15"
+            area: "London E15",
+            nearestTubeStation: "Stratford",
+            tubeStationDistance: 0.5
         )
     ]
 }
