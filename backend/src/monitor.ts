@@ -3,7 +3,7 @@
 import fs from 'fs';
 import path from 'path';
 import RightmoveScraper from './rightmove-scraper';
-import { TelegramBot } from './telegram';
+import { SupabasePropertyClient, DatabaseProperty } from './supabase-client';
 import { SearchOptions, RightmoveProperty } from './scraper-types';
 
 interface SearchConfig {
@@ -39,25 +39,17 @@ interface PropertyDatabase {
 
 class PropertyMonitor {
   private scraper: RightmoveScraper;
-  private telegram: TelegramBot;
+  private supabase: SupabasePropertyClient;
   private searchName: string;
   private searchConfig: SearchConfig;
-  private dataFile: string;
+  private dataFile: string; // Keep for backward compatibility during transition
 
   constructor(searchName: string, searchConfig: SearchConfig) {
     this.scraper = new RightmoveScraper();
+    this.supabase = new SupabasePropertyClient();
     this.searchName = searchName;
     this.searchConfig = searchConfig;
     this.dataFile = path.join(__dirname, '..', 'sent-properties.json');
-
-    const botToken = process.env.TELEGRAM_BOT_TOKEN;
-    const chatId = process.env.TELEGRAM_CHAT_ID;
-    
-    if (!botToken || !chatId) {
-      throw new Error('TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID environment variables are required');
-    }
-    
-    this.telegram = new TelegramBot(botToken, chatId);
   }
 
   private calculatePropertyScore(property: StoredProperty, originalProperty: RightmoveProperty): number {
@@ -255,6 +247,79 @@ class PropertyMonitor {
     };
   }
 
+  // Rank enriched properties with transport info
+  private rankPropertiesEnriched(properties: RightmoveProperty[]): RightmoveProperty[] {
+    const scoredProperties = properties.map(property => ({
+      property,
+      score: this.calculateEnrichedPropertyScore(property)
+    }));
+    
+    // Sort by score (highest first)
+    scoredProperties.sort((a, b) => b.score - a.score);
+    
+    return scoredProperties.map(item => item.property);
+  }
+
+  private calculateEnrichedPropertyScore(property: RightmoveProperty): number {
+    let score = 0;
+    
+    // Recency score (newer = higher score)
+    const now = Date.now();
+    const propertyDate = property.firstVisibleDate ? 
+      new Date(property.firstVisibleDate).getTime() : now;
+    const daysOld = (now - propertyDate) / (1000 * 60 * 60 * 24);
+    
+    // Give higher score for newer properties (max 50 points, decays over 7 days)
+    const recencyScore = Math.max(0, 50 - (daysOld * 7));
+    score += recencyScore;
+    
+    // Photo count score (more photos = higher score)
+    const photoScore = Math.min(property.numberOfImages || 0, 20) * 2; // Max 40 points for 20+ photos
+    score += photoScore;
+    
+    // Transport score (nearby stations = higher score)
+    if (property.nearbyStations && property.nearbyStations.length > 0) {
+      // Bonus for having nearby stations
+      score += 20;
+      
+      // Extra bonus for tube stations
+      const hasUnderground = property.nearbyStations.some(station => 
+        station.types.includes('LONDON_UNDERGROUND')
+      );
+      if (hasUnderground) {
+        score += 15;
+      }
+      
+      // Distance bonus (closer = better)
+      const nearestStation = property.nearbyStations
+        .sort((a, b) => a.distance - b.distance)[0];
+      if (nearestStation.distance < 0.25) { // Very close (< 0.25 miles)
+        score += 10;
+      } else if (nearestStation.distance < 0.5) { // Close (< 0.5 miles)
+        score += 5;
+      }
+    }
+    
+    return score;
+  }
+
+
+  // Save to JSON file for backward compatibility
+  private async saveToJsonFile(properties: RightmoveProperty[]): Promise<void> {
+    try {
+      const storedProperties = properties.map(p => this.formatProperty(p));
+      const database = this.loadPropertyDatabase();
+      
+      storedProperties.forEach(property => {
+        database.properties[property.id] = property;
+      });
+      
+      this.savePropertyDatabase(database);
+    } catch (error) {
+      console.error('Error saving to JSON file:', error);
+    }
+  }
+
   async run(): Promise<void> {
     const timestamp = new Date().toLocaleString();
     console.log(`[${timestamp}] 🔍 Monitoring: ${this.searchConfig.name}`);
@@ -278,62 +343,50 @@ class PropertyMonitor {
       };
 
       // Get current properties (first page only)
+      console.log('🔍 Fetching properties from Rightmove...');
       const results = await this.scraper.searchProperties(searchOptions);
-      const currentProperties = results.properties.map(p => this.formatProperty(p));
+      console.log(`📊 Found ${results.properties.length} properties from search`);
       
-      // Load property database
-      const database = this.loadPropertyDatabase();
-      console.log(`📊 Database contains ${Object.keys(database.properties).length} total properties`);
-      
-      // Find new properties (not in database by property ID)
-      const newProperties = currentProperties.filter(p => !database.properties[p.id]);
+      // Find new properties using Supabase
+      const newProperties = await this.supabase.getNewProperties(results.properties);
       
       if (newProperties.length > 0) {
         console.log(`🎉 Found ${newProperties.length} new properties for ${this.searchConfig.name}`);
         
+        // Enrich with transport information (for top properties only to avoid rate limiting)
+        const topNewProperties = newProperties.slice(0, 5); // Get details for top 5
+        console.log(`🚇 Enriching top ${topNewProperties.length} properties with transport data...`);
+        
+        const enrichedProperties = await this.scraper.getEnrichedProperties(topNewProperties, true);
+        
         // Rank properties by recency and photo count
-        const rankedProperties = this.rankProperties(newProperties, results.properties);
+        const rankedProperties = this.rankPropertiesEnriched(enrichedProperties);
         
-        // Take top 3 properties
+        // Take top 3 properties to process
         const propertiesToSend = rankedProperties.slice(0, 3);
-        console.log(`📨 Sending top ${propertiesToSend.length} of ${newProperties.length} properties (ranked by recency + photos)`);
+        console.log(`📨 Processing top ${propertiesToSend.length} of ${newProperties.length} properties (ranked by recency + photos)`);
         
-        // Send Telegram alert
-        const message = TelegramBot.formatPropertyMessage(propertiesToSend, this.searchConfig.name);
-        const success = await this.telegram.sendMessage(message);
+        // Save enriched properties to Supabase
+        console.log('💾 Saving properties to Supabase...');
+        const saveResult = await this.supabase.upsertProperties(enrichedProperties, this.searchName);
+        console.log(`📝 Saved ${saveResult.count} properties to Supabase`);
         
-        if (success) {
-          console.log(`📧 Alert sent for ${propertiesToSend.length} properties`);
-          
-          // Only save the 3 properties that were actually sent
-          propertiesToSend.forEach(property => {
-            database.properties[property.id] = property;
-          });
-          
-          console.log(`📝 Saved ${propertiesToSend.length} sent properties to database`);
-          
-          // Cleanup: Keep only properties from last 6 months to prevent file growing too large
-          const sixMonthsAgo = new Date();
-          sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-          
-          const propertyCount = Object.keys(database.properties).length;
-          Object.entries(database.properties).forEach(([id, property]) => {
-            if (new Date(property.firstSeen) < sixMonthsAgo) {
-              delete database.properties[id];
-            }
-          });
-          
-          const cleanedCount = Object.keys(database.properties).length;
-          if (cleanedCount < propertyCount) {
-            console.log(`🧹 Cleaned up ${propertyCount - cleanedCount} old properties (>6 months)`);
-          }
-          
-          this.savePropertyDatabase(database);
-          
-          // Commit changes to git (in GitHub Actions)
-          await this.commitChanges(propertiesToSend.length);
-        } else {
-          console.error('❌ Failed to send Telegram alert');
+        if (saveResult.errors.length > 0) {
+          console.warn('⚠️ Some properties failed to save:', saveResult.errors);
+        }
+        
+        console.log(`✅ Successfully processed ${propertiesToSend.length} new properties`);
+        
+        // Also save to JSON for backward compatibility and git tracking
+        await this.saveToJsonFile(propertiesToSend);
+        
+        // Commit changes to git (in GitHub Actions)
+        await this.commitChanges(propertiesToSend.length);
+        
+        // Cleanup old properties in Supabase
+        const deactivatedCount = await this.supabase.deactivateOldProperties(this.searchName, 30);
+        if (deactivatedCount > 0) {
+          console.log(`🧹 Deactivated ${deactivatedCount} old properties (>30 days)`);
         }
         
       } else {
@@ -342,17 +395,6 @@ class PropertyMonitor {
       
     } catch (error) {
       console.error(`❌ Error monitoring ${this.searchConfig.name}:`, error);
-      
-      // Send error notification
-      try {
-        await this.telegram.sendMessage(
-          `⚠️ <b>Monitor Error</b>\n` +
-          `Search: ${this.searchConfig.name}\n` +
-          `Error: ${error instanceof Error ? error.message : 'Unknown error'}`
-        );
-      } catch (telegramError) {
-        console.error('Failed to send error notification:', telegramError);
-      }
     }
   }
 }

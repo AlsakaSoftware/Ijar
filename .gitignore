@@ -171,3 +171,4 @@ Package.resolved
 # CocoaPods
 /Pods/
 Podfile.lock
+.claude/settings.local.json

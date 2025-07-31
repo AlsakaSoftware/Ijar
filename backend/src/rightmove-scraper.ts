@@ -3,6 +3,7 @@ import * as zlib from 'zlib';
 import { 
   SearchOptions, 
   RightmoveProperty, 
+  RightmoveStation,
   SearchResults, 
   ApiResponse, 
   NextData 
@@ -202,6 +203,64 @@ export class RightmoveScraper {
     }
   }
 
+  // Extract transport/station information from property details
+  private extractTransportInfo(pageProps: any): { stations: RightmoveStation[], description?: string } {
+    const stations: RightmoveStation[] = [];
+    let transportDescription: string | undefined;
+
+    try {
+      // Look for stations in various locations in the response
+      if (pageProps.stations && Array.isArray(pageProps.stations)) {
+        pageProps.stations.forEach((station: any) => {
+          if (station.name && station.distance !== undefined) {
+            stations.push({
+              name: station.name,
+              types: station.types || [],
+              distance: station.distance,
+              unit: station.unit || 'miles'
+            });
+          }
+        });
+      }
+
+      // Also check for transport info in property description
+      const description = pageProps.propertyDetails?.description || 
+                         pageProps.propertyData?.description ||
+                         pageProps.description;
+      
+      if (description && typeof description === 'string') {
+        // Extract transport mentions from description
+        const transportKeywords = ['station', 'tube', 'underground', 'DLR', 'railway', 'transport'];
+        if (transportKeywords.some(keyword => description.toLowerCase().includes(keyword))) {
+          transportDescription = description;
+        }
+      }
+
+      // Look in features/amenities for transport info
+      const features = pageProps.propertyDetails?.features || 
+                      pageProps.propertyData?.features ||
+                      pageProps.features;
+      
+      if (features && Array.isArray(features)) {
+        const transportFeatures = features.filter((feature: string) => 
+          typeof feature === 'string' && 
+          ['station', 'tube', 'underground', 'DLR', 'transport'].some(keyword => 
+            feature.toLowerCase().includes(keyword)
+          )
+        );
+        
+        if (transportFeatures.length > 0 && !transportDescription) {
+          transportDescription = transportFeatures.join('; ');
+        }
+      }
+
+    } catch (error) {
+      console.warn('Error extracting transport info:', error);
+    }
+
+    return { stations, description: transportDescription };
+  }
+
 
   // Helper method to validate search options
   validateSearchOptions(options: SearchOptions): { isValid: boolean; errors: string[] } {
@@ -242,6 +301,38 @@ export class RightmoveScraper {
       if (!quiet) console.error(`Failed to extract agent phone for property ${propertyId}:`, error);
       return null;
     }
+  }
+
+  // Get property with enriched transport/station information
+  async getEnrichedProperty(property: RightmoveProperty, quiet = false): Promise<RightmoveProperty> {
+    try {
+      const details = await this.getPropertyDetails(property.id, quiet);
+      const transportInfo = this.extractTransportInfo(details);
+      
+      return {
+        ...property,
+        nearbyStations: transportInfo.stations,
+        transportDescription: transportInfo.description
+      };
+    } catch (error) {
+      if (!quiet) console.warn(`Failed to enrich property ${property.id} with transport info:`, error);
+      return property; // Return original property if enrichment fails
+    }
+  }
+
+  // Get enriched properties for a list (with rate limiting)
+  async getEnrichedProperties(properties: RightmoveProperty[], quiet = false): Promise<RightmoveProperty[]> {
+    const enrichedProperties: RightmoveProperty[] = [];
+    
+    for (const property of properties) {
+      const enriched = await this.getEnrichedProperty(property, quiet);
+      enrichedProperties.push(enriched);
+      
+      // Add delay to avoid rate limiting
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+    
+    return enrichedProperties;
   }
 
   // Helper method to generate unique property key for deduplication
