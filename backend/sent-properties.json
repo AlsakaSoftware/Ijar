@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2025-07-28T23:54:56.405Z",
+  "lastUpdated": "2025-07-31T23:03:43.482Z",
   "properties": {
     "19981454": {
       "id": "19981454",
@@ -219,6 +219,16 @@
       "bathrooms": 2,
       "propertyUrl": "/properties/163527860#/?channel=RES_LET",
       "firstSeen": "2025-07-28T08:16:24.723Z",
+      "searchName": "canary-wharf-3bed"
+    },
+    "163556093": {
+      "id": "163556093",
+      "address": "Blondin Way, London, SE16",
+      "price": "£3,150 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/163556093#/?channel=RES_LET",
+      "firstSeen": "2025-07-31T23:03:43.479Z",
       "searchName": "canary-wharf-3bed"
     },
     "163719146": {
@@ -840,6 +850,26 @@
       "propertyUrl": "/properties/165052367#/?channel=RES_LET",
       "firstSeen": "2025-07-28T23:54:55.822Z",
       "searchName": "stratford-east-village-3bed"
+    },
+    "165100991": {
+      "id": "165100991",
+      "address": "Rotherhithe Street, Rotherhithe, SE16",
+      "price": "£2,999 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/165100991#/?channel=RES_LET",
+      "firstSeen": "2025-07-31T23:03:43.479Z",
+      "searchName": "canary-wharf-3bed"
+    },
+    "165181013": {
+      "id": "165181013",
+      "address": "Hutchings Wharf, Canary Wharf, E14",
+      "price": "£3,500 pcm",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "propertyUrl": "/properties/165181013#/?channel=RES_LET",
+      "firstSeen": "2025-07-31T23:03:43.479Z",
+      "searchName": "canary-wharf-3bed"
     }
   }
 }
