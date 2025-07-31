@@ -12,15 +12,15 @@ struct CardSwipeView: View {
     
     var body: some View {
         ZStack {
-            Color(.systemBackground)
+            Color.warmCream
                 .ignoresSafeArea()
             
             VStack {
                 // Header
                 HStack {
                     Text("Ijar")
-                        .font(.largeTitle)
-                        .fontWeight(.bold)
+                        .font(.system(size: 32, weight: .semibold, design: .rounded))
+                        .foregroundColor(.coffeeBean)
                     Spacer()
                 }
                 .padding()
@@ -30,40 +30,31 @@ struct CardSwipeView: View {
                     if currentIndex >= properties.count {
                         // Empty state
                         VStack(spacing: 20) {
-                            Image(systemName: "house.circle.fill")
-                                .font(.system(size: 80))
+                            Image(systemName: "sparkles")
+                                .font(.system(size: 60, weight: .light))
                                 .foregroundStyle(
-                                    LinearGradient(
-                                        colors: [Color.blue, Color.purple],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    )
+                                    Color.sunsetGradient
                                 )
                             
-                            Text("No More Properties")
-                                .font(.title2)
-                                .fontWeight(.semibold)
+                            Text("All caught up")
+                                .font(.system(size: 28, weight: .medium, design: .rounded))
+                                .foregroundColor(.coffeeBean)
                             
-                            Text("Check back tomorrow for fresh listings")
-                                .font(.body)
-                                .foregroundColor(.secondary)
+                            Text("Check back tomorrow for new listings")
+                                .font(.system(size: 16, weight: .regular))
+                                .foregroundColor(.warmBrown.opacity(0.8))
                                 .multilineTextAlignment(.center)
                             
                             Button(action: { currentIndex = 0 }) {
-                                Label("Start Over", systemImage: "arrow.clockwise")
-                                    .font(.callout)
-                                    .fontWeight(.medium)
-                                    .foregroundColor(.white)
+                                Text("Start Over")
+                                    .font(.system(size: 15, weight: .medium))
+                                    .foregroundColor(.warmCream)
                                     .padding(.horizontal, 20)
                                     .padding(.vertical, 10)
                                     .background(
-                                        LinearGradient(
-                                            colors: [Color.blue, Color.purple],
-                                            startPoint: .leading,
-                                            endPoint: .trailing
-                                        )
+                                        Capsule()
+                                            .fill(Color.rusticOrange)
                                     )
-                                    .cornerRadius(20)
                             }
                             .padding(.top, 10)
                         }
@@ -85,7 +76,7 @@ struct CardSwipeView: View {
                         HStack {
                             Image(systemName: "heart.fill")
                                 .font(.system(size: 60))
-                                .foregroundColor(.green)
+                                .foregroundColor(.rusticOrange)
                                 .opacity(dragDirection == .right ? min(1.0, Double(dragAmount.width / 100)) : 0)
                                 .rotationEffect(.degrees(dragDirection == .right ? -15 : 0))
                                 .animation(.spring(response: 0.3, dampingFraction: 0.7), value: dragDirection)
@@ -94,7 +85,7 @@ struct CardSwipeView: View {
                             
                             Image(systemName: "xmark")
                                 .font(.system(size: 60))
-                                .foregroundColor(.red)
+                                .foregroundColor(.warmBrown)
                                 .opacity(dragDirection == .left ? min(1.0, Double(-dragAmount.width / 100)) : 0)
                                 .rotationEffect(.degrees(dragDirection == .left ? 15 : 0))
                                 .animation(.spring(response: 0.3, dampingFraction: 0.7), value: dragDirection)
@@ -109,19 +100,27 @@ struct CardSwipeView: View {
                 HStack(spacing: 60) {
                     Button(action: dismissCard) {
                         Image(systemName: "xmark")
-                            .font(.title)
-                            .foregroundColor(.white)
-                            .frame(width: 60, height: 60)
-                            .background(Circle().fill(Color.red))
+                            .font(.system(size: 22, weight: .medium))
+                            .foregroundColor(.warmBrown)
+                            .frame(width: 54, height: 54)
+                            .background(
+                                Circle()
+                                    .fill(Color.warmCream)
+                                    .shadow(color: .warmBrown.opacity(0.1), radius: 8, y: 2)
+                            )
                     }
                     .disabled(currentIndex >= properties.count)
                     
                     Button(action: saveCard) {
                         Image(systemName: "heart.fill")
-                            .font(.title)
-                            .foregroundColor(.white)
-                            .frame(width: 60, height: 60)
-                            .background(Circle().fill(Color.green))
+                            .font(.system(size: 24, weight: .medium))
+                            .foregroundColor(.rusticOrange)
+                            .frame(width: 54, height: 54)
+                            .background(
+                                Circle()
+                                    .fill(Color.warmCream)
+                                    .shadow(color: .rusticOrange.opacity(0.15), radius: 8, y: 2)
+                            )
                     }
                     .disabled(currentIndex >= properties.count)
                 }
