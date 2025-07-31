@@ -109,15 +109,6 @@ struct PropertyCard: View {
                             Text(property.area)
                                 .font(.system(size: 14, weight: .regular))
                                 .foregroundColor(.warmCream.opacity(0.7))
-                            
-                            HStack(spacing: 4) {
-                                Image(systemName: "train.side.front.car")
-                                    .font(.system(size: 12))
-                                    .foregroundColor(.goldenYellow)
-                                Text("\(property.nearestTubeStation) • \(String(format: "%.1f", property.tubeStationDistance)) mi")
-                                    .font(.system(size: 12, weight: .medium))
-                                    .foregroundColor(.warmCream.opacity(0.8))
-                            }
                         }
                         
                         Spacer()
@@ -174,9 +165,7 @@ struct PropertyCard: View {
             bedrooms: 3,
             bathrooms: 2,
             address: "123 Canary Wharf",
-            area: "London E14",
-            nearestTubeStation: "Canary Wharf",
-            tubeStationDistance: 0.2
+            area: "London E14"
         ),
         onTap: {
             print("Details tapped")

@@ -10,9 +10,9 @@
     "generate-workflows": "tsx scripts/generate-workflows.ts"
   },
   "dependencies": {
-    "@types/node": "^20.10.5",
     "@supabase/supabase-js": "^2.39.0",
-    "dotenv": "^16.3.1",
+    "@types/node": "^20.10.5",
+    "dotenv": "^16.6.1",
     "tsx": "^4.7.0",
     "typescript": "^5.3.3"
   }

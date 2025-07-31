@@ -1,5 +1,6 @@
 #!/usr/bin/env tsx
 
+import 'dotenv/config';
 import fs from 'fs';
 import path from 'path';
 import RightmoveScraper from './rightmove-scraper';
@@ -247,61 +248,6 @@ class PropertyMonitor {
     };
   }
 
-  // Rank enriched properties with transport info
-  private rankPropertiesEnriched(properties: RightmoveProperty[]): RightmoveProperty[] {
-    const scoredProperties = properties.map(property => ({
-      property,
-      score: this.calculateEnrichedPropertyScore(property)
-    }));
-    
-    // Sort by score (highest first)
-    scoredProperties.sort((a, b) => b.score - a.score);
-    
-    return scoredProperties.map(item => item.property);
-  }
-
-  private calculateEnrichedPropertyScore(property: RightmoveProperty): number {
-    let score = 0;
-    
-    // Recency score (newer = higher score)
-    const now = Date.now();
-    const propertyDate = property.firstVisibleDate ? 
-      new Date(property.firstVisibleDate).getTime() : now;
-    const daysOld = (now - propertyDate) / (1000 * 60 * 60 * 24);
-    
-    // Give higher score for newer properties (max 50 points, decays over 7 days)
-    const recencyScore = Math.max(0, 50 - (daysOld * 7));
-    score += recencyScore;
-    
-    // Photo count score (more photos = higher score)
-    const photoScore = Math.min(property.numberOfImages || 0, 20) * 2; // Max 40 points for 20+ photos
-    score += photoScore;
-    
-    // Transport score (nearby stations = higher score)
-    if (property.nearbyStations && property.nearbyStations.length > 0) {
-      // Bonus for having nearby stations
-      score += 20;
-      
-      // Extra bonus for tube stations
-      const hasUnderground = property.nearbyStations.some(station => 
-        station.types.includes('LONDON_UNDERGROUND')
-      );
-      if (hasUnderground) {
-        score += 15;
-      }
-      
-      // Distance bonus (closer = better)
-      const nearestStation = property.nearbyStations
-        .sort((a, b) => a.distance - b.distance)[0];
-      if (nearestStation.distance < 0.25) { // Very close (< 0.25 miles)
-        score += 10;
-      } else if (nearestStation.distance < 0.5) { // Close (< 0.5 miles)
-        score += 5;
-      }
-    }
-    
-    return score;
-  }
 
 
   // Save to JSON file for backward compatibility
@@ -353,22 +299,16 @@ class PropertyMonitor {
       if (newProperties.length > 0) {
         console.log(`🎉 Found ${newProperties.length} new properties for ${this.searchConfig.name}`);
         
-        // Enrich with transport information (for top properties only to avoid rate limiting)
-        const topNewProperties = newProperties.slice(0, 5); // Get details for top 5
-        console.log(`🚇 Enriching top ${topNewProperties.length} properties with transport data...`);
-        
-        const enrichedProperties = await this.scraper.getEnrichedProperties(topNewProperties, true);
-        
         // Rank properties by recency and photo count
-        const rankedProperties = this.rankPropertiesEnriched(enrichedProperties);
+        const rankedProperties = this.rankProperties(newProperties, results.properties);
         
         // Take top 3 properties to process
         const propertiesToSend = rankedProperties.slice(0, 3);
         console.log(`📨 Processing top ${propertiesToSend.length} of ${newProperties.length} properties (ranked by recency + photos)`);
         
-        // Save enriched properties to Supabase
+        // Save properties to Supabase
         console.log('💾 Saving properties to Supabase...');
-        const saveResult = await this.supabase.upsertProperties(enrichedProperties, this.searchName);
+        const saveResult = await this.supabase.upsertProperties(propertiesToSend, this.searchName);
         console.log(`📝 Saved ${saveResult.count} properties to Supabase`);
         
         if (saveResult.errors.length > 0) {

@@ -48,12 +48,14 @@ jobs:
           
       - name: Install dependencies
         run: npm install
+        working-directory: backend
         
       - name: Run Canary Wharf 3 Bed monitor
         run: npm run monitor canary-wharf-3bed
+        working-directory: backend
         env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
   monitor_london_bridge_3bed:
     if: github.event_name == 'schedule' && github.event.schedule == '12 * * * *' || (github.event_name == 'workflow_dispatch' && (github.event.inputs.search_key == 'all' || github.event.inputs.search_key == 'london-bridge-3bed'))
@@ -73,12 +75,14 @@ jobs:
           
       - name: Install dependencies
         run: npm install
+        working-directory: backend
         
       - name: Run London Bridge 3 Bed monitor
         run: npm run monitor london-bridge-3bed
+        working-directory: backend
         env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
   monitor_canning_town_3bed:
     if: github.event_name == 'schedule' && github.event.schedule == '24 * * * *' || (github.event_name == 'workflow_dispatch' && (github.event.inputs.search_key == 'all' || github.event.inputs.search_key == 'canning-town-3bed'))
@@ -98,12 +102,14 @@ jobs:
           
       - name: Install dependencies
         run: npm install
+        working-directory: backend
         
       - name: Run Canning Town 3 Bed monitor
         run: npm run monitor canning-town-3bed
+        working-directory: backend
         env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
   monitor_mile_end_3bed:
     if: github.event_name == 'schedule' && github.event.schedule == '36 * * * *' || (github.event_name == 'workflow_dispatch' && (github.event.inputs.search_key == 'all' || github.event.inputs.search_key == 'mile-end-3bed'))
@@ -123,12 +129,14 @@ jobs:
           
       - name: Install dependencies
         run: npm install
+        working-directory: backend
         
       - name: Run Mile End 3 Bed monitor
         run: npm run monitor mile-end-3bed
+        working-directory: backend
         env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
   monitor_stratford_east_village_3bed:
     if: github.event_name == 'schedule' && github.event.schedule == '48 * * * *' || (github.event_name == 'workflow_dispatch' && (github.event.inputs.search_key == 'all' || github.event.inputs.search_key == 'stratford-east-village-3bed'))
@@ -148,9 +156,11 @@ jobs:
           
       - name: Install dependencies
         run: npm install
+        working-directory: backend
         
       - name: Run Stratford East Village 3 Bed monitor
         run: npm run monitor stratford-east-village-3bed
+        working-directory: backend
         env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
