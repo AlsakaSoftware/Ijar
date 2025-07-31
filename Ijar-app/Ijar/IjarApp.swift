@@ -4,7 +4,7 @@ import SwiftUI
 struct IjarApp: App {
     var body: some Scene {
         WindowGroup {
-            CardSwipeView()
+            RootView()
         }
     }
 }
