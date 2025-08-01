@@ -6,32 +6,14 @@ permissions:
 
 on:
   schedule:
-    # Run every hour at distributed intervals
-    - cron: '0 * * * *'   # Canary Wharf 3 Bed - 0 minutes past every hour
-    - cron: '12 * * * *'   # London Bridge 3 Bed - 12 minutes past every hour
-    - cron: '24 * * * *'   # Canning Town 3 Bed - 24 minutes past every hour
-    - cron: '36 * * * *'   # Mile End 3 Bed - 36 minutes past every hour
-    - cron: '48 * * * *'   # Stratford East Village 3 Bed - 48 minutes past every hour
+    # Run every hour to process all user queries from Supabase
+    - cron: '0 * * * *'   # Every hour at the top of the hour
   
   # Allow manual triggering for testing
   workflow_dispatch:
-    inputs:
-      search_key:
-        description: 'Search key to run (or "all" for all searches)'
-        required: true
-        default: 'all'
-        type: choice
-        options:
-          - all
-          - canary-wharf-3bed
-          - london-bridge-3bed
-          - canning-town-3bed
-          - mile-end-3bed
-          - stratford-east-village-3bed
 
 jobs:
-  monitor_canary_wharf_3bed:
-    if: github.event_name == 'schedule' && github.event.schedule == '0 * * * *' || (github.event_name == 'workflow_dispatch' && (github.event.inputs.search_key == 'all' || github.event.inputs.search_key == 'canary-wharf-3bed'))
+  monitor_properties:
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -50,116 +32,8 @@ jobs:
         run: npm install
         working-directory: backend
         
-      - name: Run Canary Wharf 3 Bed monitor
-        run: npm run monitor canary-wharf-3bed
-        working-directory: backend
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-
-  monitor_london_bridge_3bed:
-    if: github.event_name == 'schedule' && github.event.schedule == '12 * * * *' || (github.event_name == 'workflow_dispatch' && (github.event.inputs.search_key == 'all' || github.event.inputs.search_key == 'london-bridge-3bed'))
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          
-      - name: Install dependencies
-        run: npm install
-        working-directory: backend
-        
-      - name: Run London Bridge 3 Bed monitor
-        run: npm run monitor london-bridge-3bed
-        working-directory: backend
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-
-  monitor_canning_town_3bed:
-    if: github.event_name == 'schedule' && github.event.schedule == '24 * * * *' || (github.event_name == 'workflow_dispatch' && (github.event.inputs.search_key == 'all' || github.event.inputs.search_key == 'canning-town-3bed'))
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          
-      - name: Install dependencies
-        run: npm install
-        working-directory: backend
-        
-      - name: Run Canning Town 3 Bed monitor
-        run: npm run monitor canning-town-3bed
-        working-directory: backend
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-
-  monitor_mile_end_3bed:
-    if: github.event_name == 'schedule' && github.event.schedule == '36 * * * *' || (github.event_name == 'workflow_dispatch' && (github.event.inputs.search_key == 'all' || github.event.inputs.search_key == 'mile-end-3bed'))
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          
-      - name: Install dependencies
-        run: npm install
-        working-directory: backend
-        
-      - name: Run Mile End 3 Bed monitor
-        run: npm run monitor mile-end-3bed
-        working-directory: backend
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-
-  monitor_stratford_east_village_3bed:
-    if: github.event_name == 'schedule' && github.event.schedule == '48 * * * *' || (github.event_name == 'workflow_dispatch' && (github.event.inputs.search_key == 'all' || github.event.inputs.search_key == 'stratford-east-village-3bed'))
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          
-      - name: Install dependencies
-        run: npm install
-        working-directory: backend
-        
-      - name: Run Stratford East Village 3 Bed monitor
-        run: npm run monitor stratford-east-village-3bed
+      - name: Process all user queries from Supabase
+        run: npm run monitor
         working-directory: backend
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}

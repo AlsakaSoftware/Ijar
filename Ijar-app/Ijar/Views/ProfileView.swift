@@ -32,6 +32,14 @@ struct ProfileView: View {
             // Menu options
             VStack(spacing: 0) {
                 ProfileMenuRow(
+                    icon: "magnifyingglass.circle.fill",
+                    title: "My Searches",
+                    action: {
+                        coordinator.navigate(to: .searchQueries)
+                    }
+                )
+                
+                ProfileMenuRow(
                     icon: "heart.fill",
                     title: "Saved Properties",
                     action: {

@@ -5,7 +5,11 @@
       "Bash(rm:*)",
       "Bash(xcodebuild:*)",
       "Bash(mv:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(ls:*)",
+      "Bash(npm run monitor:*)",
+      "Bash(tsx test-scraper.ts:*)",
+      "Bash(node:*)"
     ],
     "deny": []
   }

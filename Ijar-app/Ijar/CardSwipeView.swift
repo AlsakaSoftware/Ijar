@@ -2,7 +2,7 @@ import SwiftUI
 
 struct CardSwipeView: View {
     @EnvironmentObject var coordinator: HomeFeedCoordinator
-    @State private var properties = Property.mockProperties
+    @StateObject private var propertyService = PropertyService()
     @State private var currentIndex = 0
     @State private var dragAmount = CGSize.zero
     @State private var dragDirection: SwipeDirection = .none
@@ -30,7 +30,7 @@ struct CardSwipeView: View {
                 
                 // Cards
                 ZStack {
-                    if currentIndex >= properties.count {
+                    if currentIndex >= propertyService.properties.count {
                         // Empty state
                         VStack(spacing: 20) {
                             Image(systemName: "sparkles")
@@ -63,7 +63,7 @@ struct CardSwipeView: View {
                         }
                         .padding()
                     } else {
-                        ForEach(Array(properties.enumerated()), id: \.element.id) { index, property in
+                        ForEach(Array(propertyService.properties.enumerated()), id: \.element.id) { index, property in
                             if index >= currentIndex && index < currentIndex + 3 {
                                 PropertyCard(property: property) {
                                     // Only allow details for the current (top) card
@@ -76,7 +76,7 @@ struct CardSwipeView: View {
                                 .scaleEffect(cardScale(for: index))
                                 .rotationEffect(cardRotation(for: index))
                                 .opacity(cardOpacity(for: index))
-                                .zIndex(Double(properties.count - index))
+                                .zIndex(Double(propertyService.properties.count - index))
                                 .animation(.spring(response: 0.3, dampingFraction: 0.7, blendDuration: 0), value: dragAmount)
                             }
                         }
@@ -118,7 +118,7 @@ struct CardSwipeView: View {
                                     .shadow(color: .warmBrown.opacity(0.1), radius: 8, y: 2)
                             )
                     }
-                    .disabled(currentIndex >= properties.count)
+                    .disabled(currentIndex >= propertyService.properties.count)
                     
                     Button(action: saveCard) {
                         Image(systemName: "heart.fill")
@@ -131,7 +131,7 @@ struct CardSwipeView: View {
                                     .shadow(color: .rusticOrange.opacity(0.15), radius: 8, y: 2)
                             )
                     }
-                    .disabled(currentIndex >= properties.count)
+                    .disabled(currentIndex >= propertyService.properties.count)
                 }
                 .padding(.bottom, 30)
             }
@@ -140,6 +140,13 @@ struct CardSwipeView: View {
             if let property = selectedProperty {
                 PropertyDetailView(property: property)
             }
+        }
+        .task {
+            await propertyService.loadPropertiesForUser()
+        }
+        .refreshable {
+            currentIndex = 0
+            await propertyService.loadPropertiesForUser()
         }
     }
     
@@ -223,12 +230,16 @@ struct CardSwipeView: View {
     }
     
     private func saveCard() {
-        print("Saved: \(properties[currentIndex].address)")
+        if currentIndex < propertyService.properties.count {
+            print("Saved: \(propertyService.properties[currentIndex].address)")
+        }
         currentIndex += 1
     }
     
     private func dismissCard() {
-        print("Dismissed: \(properties[currentIndex].address)")
+        if currentIndex < propertyService.properties.count {
+            print("Dismissed: \(propertyService.properties[currentIndex].address)")
+        }
         currentIndex += 1
     }
 }
