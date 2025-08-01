@@ -9,7 +9,8 @@
       "Bash(ls:*)",
       "Bash(npm run monitor:*)",
       "Bash(tsx test-scraper.ts:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(mkdir:*)"
     ],
     "deny": []
   }

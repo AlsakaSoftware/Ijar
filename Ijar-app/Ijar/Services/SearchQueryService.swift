@@ -66,6 +66,9 @@ class SearchQueryService: ObservableObject {
             // Get current user
             let user = try await supabase.auth.user()
             
+            // Check if this is the user's first query
+            let isFirstQuery = queries.isEmpty
+            
             let queryRow = QueryRow(
                 id: query.id.uuidString,
                 user_id: user.id.uuidString,
@@ -90,6 +93,11 @@ class SearchQueryService: ObservableObject {
                 .insert(queryRow)
                 .execute()
             
+            // If this is the first query, trigger GitHub workflow
+            if isFirstQuery {
+                await triggerGitHubWorkflow()
+            }
+            
             await loadUserQueries() // Refresh the list
             isLoading = false
             return true
@@ -99,6 +107,32 @@ class SearchQueryService: ObservableObject {
             isLoading = false
             return false
         }
+    }
+    
+    private func triggerGitHubWorkflow() async {
+        // For production, you'd want to call your backend API that has the GitHub token
+        // For now, we'll just log that we would trigger the workflow
+        print("🚀 Would trigger GitHub workflow for first query")
+        
+        // In production, uncomment and update this:
+        /*
+        let url = URL(string: "https://your-backend.com/api/trigger-workflow")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        let payload = ["event_type": "user-first-query"]
+        request.httpBody = try? JSONSerialization.data(withJSONObject: payload)
+        
+        do {
+            let (_, response) = try await URLSession.shared.data(for: request)
+            if let httpResponse = response as? HTTPURLResponse {
+                print("Workflow trigger response: \(httpResponse.statusCode)")
+            }
+        } catch {
+            print("Failed to trigger workflow: \(error)")
+        }
+        */
     }
     
     @discardableResult

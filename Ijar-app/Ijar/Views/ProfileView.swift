@@ -3,6 +3,8 @@ import SwiftUI
 struct ProfileView: View {
     @EnvironmentObject var coordinator: ProfileCoordinator
     @EnvironmentObject var authService: AuthenticationService
+    @State private var isTriggering = false
+    @State private var triggerMessage: String?
     
     var body: some View {
         VStack(spacing: 30) {
@@ -69,6 +71,34 @@ struct ProfileView: View {
             
             Spacer()
             
+            // TEMPORARY: Manual workflow trigger button
+            Button(action: {
+                Task {
+                    await triggerWorkflowManually()
+                }
+            }) {
+                HStack {
+                    if isTriggering {
+                        ProgressView()
+                            .scaleEffect(0.8)
+                            .tint(.blue)
+                    } else {
+                        Image(systemName: "arrow.triangle.2.circlepath")
+                    }
+                    Text("Run Property Search (Test)")
+                }
+                .font(.system(size: 16, weight: .medium))
+                .foregroundColor(.blue)
+                .padding(.horizontal, 24)
+                .padding(.vertical, 12)
+                .background(
+                    Capsule()
+                        .stroke(Color.blue, lineWidth: 1)
+                )
+            }
+            .padding(.bottom, 10)
+            .disabled(isTriggering)
+            
             // Sign out button
             Button(action: {
                 Task {
@@ -99,6 +129,57 @@ struct ProfileView: View {
         .background(Color.warmCream.opacity(0.3))
         .navigationTitle("Profile")
         .navigationBarTitleDisplayMode(.large)
+        .alert("Workflow Trigger", isPresented: .constant(triggerMessage != nil), presenting: triggerMessage) { _ in
+            Button("OK") {
+                triggerMessage = nil
+            }
+        } message: { message in
+            Text(message)
+        }
+    }
+    
+    // TEMPORARY: Function to manually trigger GitHub workflow
+    private func triggerWorkflowManually() async {
+        isTriggering = true
+        
+        // Create the workflow dispatch request
+        let url = URL(string: "https://api.github.com/repos/karimalsaka/Ijar/dispatches")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/vnd.github.v3+json", forHTTPHeaderField: "Accept")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        // Get GitHub token from Config.plist
+        guard let githubToken = ConfigManager.shared.githubToken else {
+            triggerMessage = "⚠️ GitHub token not configured"
+            isTriggering = false
+            return
+        }
+        request.setValue("token \(githubToken)", forHTTPHeaderField: "Authorization")
+        
+        let payload = [
+            "event_type": "manual-test-trigger",
+            "client_payload": [
+                "triggered_from": "ios_app_test_button"
+            ]
+        ] as [String : Any]
+        
+        do {
+            request.httpBody = try JSONSerialization.data(withJSONObject: payload)
+            let (_, response) = try await URLSession.shared.data(for: request)
+            
+            if let httpResponse = response as? HTTPURLResponse {
+                if httpResponse.statusCode == 204 {
+                    triggerMessage = "✅ Successfully triggered workflow!"
+                } else {
+                    triggerMessage = "⚠️ Workflow trigger returned status: \(httpResponse.statusCode)"
+                }
+            }
+        } catch {
+            triggerMessage = "❌ Failed to trigger workflow: \(error.localizedDescription)"
+        }
+        
+        isTriggering = false
     }
 }
 

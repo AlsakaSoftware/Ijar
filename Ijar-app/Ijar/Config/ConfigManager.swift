@@ -42,6 +42,10 @@ struct ConfigManager {
     var isProduction: Bool {
         return environment == "Production"
     }
+    
+    var githubToken: String? {
+        return config["GitHubToken"] as? String
+    }
 }
 
 // MARK: - Debug Helper

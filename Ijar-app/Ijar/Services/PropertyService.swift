@@ -21,7 +21,7 @@ class PropertyService: ObservableObject {
         
         do {
             // Get current user
-            let user = try await supabase.auth.user()
+            let _ = try await supabase.auth.user()
             
             // Load properties from the user_properties view which shows all user's properties
             let response: [PropertyRow] = try await supabase

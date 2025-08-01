@@ -1,0 +1,41 @@
+name: Monitor Properties
+
+on:
+  schedule:
+    # Run at 8am, 12pm, and 5pm GMT every day
+    - cron: '0 8 * * *'
+    - cron: '0 12 * * *'
+    - cron: '0 17 * * *'
+  
+  # Allow manual trigger
+  workflow_dispatch:
+  
+  # Webhook trigger for when user creates first query
+  repository_dispatch:
+    types: [user-first-query, manual-test-trigger]
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: backend/package-lock.json
+    
+    - name: Install dependencies
+      working-directory: ./backend
+      run: npm ci
+    
+    - name: Run property monitor
+      working-directory: ./backend
+      env:
+        SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+        SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      run: npm run monitor
