@@ -22,6 +22,8 @@ struct CardSwipeView: View {
                 .padding(.horizontal)
                 
                 // Card Stack
+                Spacer()
+                
                 if propertyService.properties.isEmpty {
                     // Empty state
                     VStack(spacing: 20) {
@@ -68,25 +70,35 @@ struct CardSwipeView: View {
                         leftOverlay: { EmptyView() },
                         rightOverlay: { EmptyView() },
                         onSwipeLeft: { property in
+#if DEBUG
                             print("🔥 CardSwipeView: Swiped LEFT on property \(property.id)")
                             print("🔥 Properties count before swipe: \(propertyService.properties.count)")
+#endif
                             Task {
                                 let success = await propertyService.trackPropertyAction(propertyId: property.id, action: .passed)
+#if DEBUG
                                 print("🔥 CardSwipeView: Track action result: \(success)")
                                 print("🔥 Properties count after swipe: \(propertyService.properties.count)")
+#endif
                             }
                         },
                         onSwipeRight: { property in
+#if DEBUG
                             print("🔥 CardSwipeView: Swiped RIGHT on property \(property.id)")
                             print("🔥 Properties count before swipe: \(propertyService.properties.count)")
+#endif
                             Task {
                                 let success = await propertyService.trackPropertyAction(propertyId: property.id, action: .saved)
+#if DEBUG
                                 print("🔥 CardSwipeView: Track action result: \(success)")
                                 print("🔥 Properties count after swipe: \(propertyService.properties.count)")
+#endif
                             }
                         }
                     )
                 }
+                
+                Spacer()
                 
                 // Action buttons
                 HStack(spacing: 60) {
@@ -135,12 +147,16 @@ struct CardSwipeView: View {
     private func saveCard() {
         if !propertyService.properties.isEmpty {
             let property = propertyService.properties[0]
+#if DEBUG
             print("🔥 CardSwipeView: BUTTON SAVE on property \(property.id)")
             print("🔥 Properties count before button: \(propertyService.properties.count)")
+#endif
             Task {
                 let success = await propertyService.trackPropertyAction(propertyId: property.id, action: .saved)
+#if DEBUG
                 print("🔥 CardSwipeView: Button track result: \(success)")
                 print("🔥 Properties count after button: \(propertyService.properties.count)")
+#endif
             }
         }
     }
@@ -148,12 +164,16 @@ struct CardSwipeView: View {
     private func dismissCard() {
         if !propertyService.properties.isEmpty {
             let property = propertyService.properties[0]
+#if DEBUG
             print("🔥 CardSwipeView: BUTTON DISMISS on property \(property.id)")
             print("🔥 Properties count before button: \(propertyService.properties.count)")
+#endif
             Task {
                 let success = await propertyService.trackPropertyAction(propertyId: property.id, action: .passed)
+#if DEBUG
                 print("🔥 CardSwipeView: Button track result: \(success)")
                 print("🔥 Properties count after button: \(propertyService.properties.count)")
+#endif
             }
         }
     }

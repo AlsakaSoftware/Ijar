@@ -30,7 +30,7 @@ struct CardStackView<Content: View, Overlay: View>: View {
                     .opacity(cardOpacity(for: stackIndex))
                     .zIndex(Double(maxVisibleCards - stackIndex))
                     .allowsHitTesting(isTopCard)
-                    .animation(.spring(response: 0.3, dampingFraction: 0.7), value: dragAmount)
+                    .animation(isTopCard ? .interactiveSpring(response: 0.3, dampingFraction: 0.8) : .none, value: dragAmount)
             }
             
             // Swipe indicators
@@ -52,7 +52,7 @@ struct CardStackView<Content: View, Overlay: View>: View {
                 }
                 .padding(.horizontal, 60)
                 .allowsHitTesting(false)
-                .animation(.spring(response: 0.3, dampingFraction: 0.7), value: dragDirection)
+                .animation(.interactiveSpring(response: 0.2, dampingFraction: 0.9), value: dragDirection)
             }
         }
         .gesture(swipeGesture)
@@ -70,8 +70,8 @@ struct CardStackView<Content: View, Overlay: View>: View {
     
     private func cardScale(for stackIndex: Int) -> CGFloat {
         if stackIndex == 0 {
-            let dragScale = 1.0 - (abs(dragAmount.width) / 1500.0)
-            return max(0.9, dragScale)
+            let dragScale = 1.0 - (abs(dragAmount.width) / 2000.0)
+            return max(0.92, dragScale)
         } else if stackIndex == 1 {
             return 0.95
         } else {
@@ -81,8 +81,8 @@ struct CardStackView<Content: View, Overlay: View>: View {
     
     private func cardRotation(for stackIndex: Int) -> Angle {
         if stackIndex == 0 {
-            let rotation = Double(dragAmount.width) / 20
-            return .degrees(min(max(rotation, -15), 15))
+            let rotation = Double(dragAmount.width) / 25
+            return .degrees(min(max(rotation, -12), 12))
         }
         return .zero
     }
@@ -100,27 +100,29 @@ struct CardStackView<Content: View, Overlay: View>: View {
     }
     
     private var swipeGesture: some Gesture {
-        DragGesture()
+        DragGesture(minimumDistance: 0)
             .onChanged { value in
-                dragAmount = value.translation
-                
-                if value.translation.width > 30 {
-                    dragDirection = .right
-                } else if value.translation.width < -30 {
-                    dragDirection = .left
-                } else {
-                    dragDirection = .none
+                withAnimation(.interactiveSpring(response: 0.3, dampingFraction: 0.8, blendDuration: 0)) {
+                    dragAmount = CGSize(width: value.translation.width, height: 0)
+                    
+                    if value.translation.width > 30 {
+                        dragDirection = .right
+                    } else if value.translation.width < -30 {
+                        dragDirection = .left
+                    } else {
+                        dragDirection = .none
+                    }
                 }
             }
             .onEnded { value in
                 let threshold: CGFloat = 100
                 let velocity = value.predictedEndLocation.x - value.location.x
                 
-                withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                     if value.translation.width > threshold || velocity > 200 {
                         // Swipe right - save
-                        dragAmount = CGSize(width: 500, height: 100)
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        dragAmount = CGSize(width: 500, height: 0)
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
                             if topItem < items.count {
                                 onSwipeRight(items[topItem])
                             }
@@ -128,8 +130,8 @@ struct CardStackView<Content: View, Overlay: View>: View {
                         }
                     } else if value.translation.width < -threshold || velocity < -200 {
                         // Swipe left - dismiss
-                        dragAmount = CGSize(width: -500, height: 100)
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        dragAmount = CGSize(width: -500, height: 0)
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
                             if topItem < items.count {
                                 onSwipeLeft(items[topItem])
                             }

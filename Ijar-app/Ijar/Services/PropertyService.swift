@@ -16,16 +16,22 @@ class PropertyService: ObservableObject {
     }
     
     func loadPropertiesForUser() async {
+#if DEBUG
         print("🔥 PropertyService: loadPropertiesForUser called")
+#endif
         isLoading = true
         error = nil
         
         do {
+#if DEBUG
             print("🔥 PropertyService: Getting user for property load...")
+#endif
             // Get current user
             let _ = try await supabase.auth.user()
             
+#if DEBUG
             print("🔥 PropertyService: Querying property_feed...")
+#endif
             // Load properties from the property_feed view which shows new recommendations
             let response: [PropertyRow] = try await supabase
                 .from("property_feed")
@@ -33,8 +39,10 @@ class PropertyService: ObservableObject {
                 .execute()
                 .value
             
+#if DEBUG
             print("🔥 PropertyService: Got \(response.count) properties from Supabase")
             print("🔥 PropertyService: Property IDs from DB: \(response.map { $0.id })")
+#endif
             
             properties = response.map { row in
                 Property(
@@ -48,20 +56,26 @@ class PropertyService: ObservableObject {
                 )
             }
             
+#if DEBUG
             print("✅ PropertyService: Loaded \(properties.count) properties from Supabase")
             print("🔥 PropertyService: Final property IDs: \(properties.map { $0.id })")
+#endif
             
         } catch {
-            self.error = error.localizedDescription
+            self.error = "Unable to load properties. Please check your connection and try again."
+#if DEBUG
             print("❌ PropertyService: Error loading properties: \(error)")
             print("❌ PropertyService: Error details: \(error.localizedDescription)")
+#endif
             
             // Fallback to mock data if there's an error
             loadMockProperties()
         }
         
         isLoading = false
+#if DEBUG
         print("🔥 PropertyService: loadPropertiesForUser completed")
+#endif
     }
     
     private func loadMockProperties() {
@@ -78,14 +92,18 @@ class PropertyService: ObservableObject {
                 area: "London E14"
             )
         ]
+#if DEBUG
         print("📝 Using mock data")
+#endif
     }
     
     // Track user action on property and remove it from the list
     func trackPropertyAction(propertyId: String, action: PropertyAction) async -> Bool {
+#if DEBUG
         print("🔥 PropertyService: trackPropertyAction called for \(propertyId) with action \(action.rawValue)")
         print("🔥 PropertyService: Current properties count: \(properties.count)")
         print("🔥 PropertyService: Property IDs: \(properties.map { $0.id })")
+#endif
         
         // Remove property from local list immediately for UI responsiveness - ON MAIN THREAD
         await MainActor.run {
@@ -94,6 +112,7 @@ class PropertyService: ObservableObject {
             properties.removeAll { $0.id == propertyId }
             let afterCount = properties.count
             
+#if DEBUG
             print("🔥 PropertyService: Removed property \(propertyId) from local list ON MAIN THREAD")
             print("🔥 PropertyService: Properties count: \(beforeCount) -> \(afterCount)")
             print("🔥 PropertyService: Remaining property IDs: \(properties.map { $0.id })")
@@ -101,12 +120,17 @@ class PropertyService: ObservableObject {
             if removedProperty == nil {
                 print("⚠️ PropertyService: WARNING - Property \(propertyId) was not found in local list!")
             }
+#endif
         }
         
         do {
+#if DEBUG
             print("🔥 PropertyService: Getting user...")
+#endif
             let user = try await supabase.auth.user()
+#if DEBUG
             print("🔥 PropertyService: User ID: \(user.id.uuidString)")
+#endif
             
             let actionData = UserPropertyAction(
                 user_id: user.id.uuidString,
@@ -114,20 +138,26 @@ class PropertyService: ObservableObject {
                 action: action.rawValue
             )
             
+#if DEBUG
             print("🔥 PropertyService: Inserting action data to Supabase...")
+#endif
             try await supabase
                 .from("user_property_action")
                 .insert(actionData)
                 .execute()
             
+#if DEBUG
             print("✅ PropertyService: Successfully tracked \(action.rawValue) action for property \(propertyId)")
+#endif
             return true
         } catch {
+#if DEBUG
             print("❌ PropertyService: Error tracking property action: \(error)")
             print("❌ PropertyService: Error details: \(error.localizedDescription)")
             if let supabaseError = error as? Error {
                 print("❌ PropertyService: Supabase error: \(supabaseError)")
             }
+#endif
             // If API call fails, we could optionally re-add the property back
             // but for now we'll keep it removed to prevent it from returning
             return false

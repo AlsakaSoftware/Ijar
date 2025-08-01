@@ -80,8 +80,7 @@ struct PropertyCard: View {
             }
             .padding()
         }
-        .frame(width: 350)
-        .aspectRatio(322 / 550, contentMode: .fit)
+        .frame(width: 350, height: 450)
         .background {
             TabView(selection: $currentImageIndex) {
                 ForEach(0..<property.images.count, id: \.self) { index in
