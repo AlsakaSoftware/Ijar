@@ -1,5 +1,9 @@
 import SwiftUI
 
+enum SwipeDirection {
+    case left, right, none
+}
+
 struct CardStackView<Content: View, Overlay: View>: View {
     let items: [Property]
     @Binding var topItem: Int
@@ -9,13 +13,9 @@ struct CardStackView<Content: View, Overlay: View>: View {
     let rightOverlay: () -> Overlay
     let onSwipeLeft: (Property) -> Void
     let onSwipeRight: (Property) -> Void
+    @Binding var dragDirection: SwipeDirection
     
     @State private var dragAmount = CGSize.zero
-    @State private var dragDirection: SwipeDirection = .none
-    
-    enum SwipeDirection {
-        case left, right, none
-    }
     
     var body: some View {
         ZStack {
@@ -33,27 +33,6 @@ struct CardStackView<Content: View, Overlay: View>: View {
                     .animation(isTopCard ? .interactiveSpring(response: 0.3, dampingFraction: 0.8) : .none, value: dragAmount)
             }
             
-            // Swipe indicators
-            if dragDirection != .none && !items.isEmpty {
-                HStack {
-                    Image(systemName: "heart.fill")
-                        .font(.system(size: 50))
-                        .foregroundColor(.rusticOrange)
-                        .opacity(dragDirection == .right ? min(1.0, Double(dragAmount.width / 100)) : 0)
-                        .rotationEffect(.degrees(dragDirection == .right ? -15 : 0))
-                    
-                    Spacer()
-                    
-                    Image(systemName: "xmark")
-                        .font(.system(size: 50))
-                        .foregroundColor(.warmBrown)
-                        .opacity(dragDirection == .left ? min(1.0, Double(-dragAmount.width / 100)) : 0)
-                        .rotationEffect(.degrees(dragDirection == .left ? 15 : 0))
-                }
-                .padding(.horizontal, 60)
-                .allowsHitTesting(false)
-                .animation(.interactiveSpring(response: 0.2, dampingFraction: 0.9), value: dragDirection)
-            }
         }
         .gesture(swipeGesture)
     }

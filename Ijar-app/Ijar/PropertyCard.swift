@@ -11,8 +11,9 @@ struct PropertyCard: View {
             HStack(spacing: 4) {
                 ForEach(0..<property.images.count, id: \.self) { index in
                     Capsule()
-                        .fill(index == currentImageIndex ? Color.warmCream : Color.warmCream.opacity(0.4))
+                        .fill(index == currentImageIndex ? Color.white : Color.white.opacity(0.5))
                         .frame(width: index == currentImageIndex ? 24 : 16, height: 3)
+                        .shadow(color: .black.opacity(0.15), radius: 1, y: 0.5)
                         .animation(.easeInOut(duration: 0.2), value: currentImageIndex)
                 }
             }
@@ -29,6 +30,7 @@ struct PropertyCard: View {
                     Text(property.price)
                         .font(.system(size: 24, weight: .semibold))
                         .foregroundColor(.warmCream)
+                        .shadow(color: .black.opacity(0.5), radius: 2, x: 0, y: 1)
                     
                     Spacer()
                     
@@ -44,6 +46,7 @@ struct PropertyCard: View {
                     }
                     .font(.system(size: 14, weight: .medium))
                     .foregroundColor(.warmCream.opacity(0.9))
+                    .shadow(color: .black.opacity(0.5), radius: 2, x: 0, y: 1)
                 }
                 
                 // Address and Details button
@@ -52,10 +55,12 @@ struct PropertyCard: View {
                         Text(property.address)
                             .font(.system(size: 17, weight: .regular))
                             .foregroundColor(.warmCream)
+                            .shadow(color: .black.opacity(0.5), radius: 2, x: 0, y: 1)
                         
                         Text(property.area)
                             .font(.system(size: 14, weight: .regular))
                             .foregroundColor(.warmCream.opacity(0.7))
+                            .shadow(color: .black.opacity(0.5), radius: 2, x: 0, y: 1)
                     }
                     
                     Spacer()
@@ -82,12 +87,32 @@ struct PropertyCard: View {
         }
         .frame(width: 350, height: 450)
         .background {
-            TabView(selection: $currentImageIndex) {
-                ForEach(0..<property.images.count, id: \.self) { index in
-                    AsyncImage(url: URL(string: property.images[index])) { phase in
-                        switch phase {
-                        case .empty:
-                            ZStack {
+            ZStack {
+                TabView(selection: $currentImageIndex) {
+                    ForEach(0..<property.images.count, id: \.self) { index in
+                        AsyncImage(url: URL(string: property.images[index])) { phase in
+                            switch phase {
+                            case .empty:
+                                ZStack {
+                                    LinearGradient(
+                                        gradient: Gradient(colors: [
+                                            Color.warmCream,
+                                            Color.warmBrown
+                                        ]),
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                    ProgressView()
+                                        .scaleEffect(1.2)
+                                        .tint(.coffeeBean)
+                                }
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            case .success(let image):
+                                image
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fill)
+                                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            case .failure(_):
                                 LinearGradient(
                                     gradient: Gradient(colors: [
                                         Color.warmCream,
@@ -96,30 +121,33 @@ struct PropertyCard: View {
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                 )
-                                ProgressView()
-                                    .scaleEffect(1.2)
-                                    .tint(.coffeeBean)
+                                .overlay {
+                                    Image(systemName: "photo")
+                                        .font(.system(size: 60))
+                                        .foregroundColor(.coffeeBean.opacity(0.6))
+                                }
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            @unknown default:
+                                EmptyView()
                             }
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        case .success(let image):
-                            image
-                                .resizable()
-                                .aspectRatio(contentMode: .fill)
-                                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        case .failure(_):
-                            Image(systemName: "photo")
-                                .font(.system(size: 60))
-                                .foregroundColor(.gray)
-                                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                .background(Color.warmCream)
-                        @unknown default:
-                            EmptyView()
                         }
+                        .tag(index)
                     }
-                    .tag(index)
                 }
+                .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
+                
+                // Gradient overlay for text readability
+                LinearGradient(
+                    gradient: Gradient(colors: [
+                        Color.clear,
+                        Color.clear,
+                        Color.black.opacity(0.3),
+                        Color.black.opacity(0.7)
+                    ]),
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
             }
-            .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
         }
         .clipShape(RoundedRectangle(cornerRadius: 20))
         .shadow(color: .coffeeBean.opacity(0.08), radius: 16, y: 8)

@@ -5,6 +5,8 @@ struct CardSwipeView: View {
     @StateObject private var propertyService = PropertyService()
     @State private var selectedProperty: Property?
     @State private var showingPropertyDetails = false
+    @State private var dragDirection: SwipeDirection = .none
+    @State private var buttonPressed: SwipeDirection = .none
     
     var body: some View {
         ZStack {
@@ -94,7 +96,8 @@ struct CardSwipeView: View {
                                 print("🔥 Properties count after swipe: \(propertyService.properties.count)")
 #endif
                             }
-                        }
+                        },
+                        dragDirection: $dragDirection
                     )
                 }
                 
@@ -102,7 +105,13 @@ struct CardSwipeView: View {
                 
                 // Action buttons
                 HStack(spacing: 60) {
-                    Button(action: dismissCard) {
+                    Button(action: {
+                        buttonPressed = .left
+                        dismissCard()
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                            buttonPressed = .none
+                        }
+                    }) {
                         Image(systemName: "xmark")
                             .font(.system(size: 22, weight: .medium))
                             .foregroundColor(.warmBrown)
@@ -110,12 +119,27 @@ struct CardSwipeView: View {
                             .background(
                                 Circle()
                                     .fill(Color.warmCream)
-                                    .shadow(color: .warmBrown.opacity(0.1), radius: 8, y: 2)
+                                    .shadow(color: .warmBrown.opacity((dragDirection == .left || buttonPressed == .left) ? 0.4 : 0.1), radius: (dragDirection == .left || buttonPressed == .left) ? 16 : 8, y: 2)
+                            )
+                            .scaleEffect((dragDirection == .left || buttonPressed == .left) ? 1.1 : 1.0)
+                            .overlay(
+                                Circle()
+                                    .stroke(Color.warmBrown.opacity((dragDirection == .left || buttonPressed == .left) ? 0.3 : 0), lineWidth: 2)
+                                    .scaleEffect((dragDirection == .left || buttonPressed == .left) ? 1.2 : 1.0)
+                                    .opacity((dragDirection == .left || buttonPressed == .left) ? 0.6 : 0)
                             )
                     }
                     .disabled(propertyService.properties.isEmpty)
+                    .animation(.easeOut(duration: 0.15), value: dragDirection)
+                    .animation(.easeOut(duration: 0.15), value: buttonPressed)
                     
-                    Button(action: saveCard) {
+                    Button(action: {
+                        buttonPressed = .right
+                        saveCard()
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                            buttonPressed = .none
+                        }
+                    }) {
                         Image(systemName: "heart.fill")
                             .font(.system(size: 24, weight: .medium))
                             .foregroundColor(.rusticOrange)
@@ -123,10 +147,19 @@ struct CardSwipeView: View {
                             .background(
                                 Circle()
                                     .fill(Color.warmCream)
-                                    .shadow(color: .rusticOrange.opacity(0.15), radius: 8, y: 2)
+                                    .shadow(color: .rusticOrange.opacity((dragDirection == .right || buttonPressed == .right) ? 0.4 : 0.15), radius: (dragDirection == .right || buttonPressed == .right) ? 16 : 8, y: 2)
+                            )
+                            .scaleEffect((dragDirection == .right || buttonPressed == .right) ? 1.1 : 1.0)
+                            .overlay(
+                                Circle()
+                                    .stroke(Color.rusticOrange.opacity((dragDirection == .right || buttonPressed == .right) ? 0.3 : 0), lineWidth: 2)
+                                    .scaleEffect((dragDirection == .right || buttonPressed == .right) ? 1.2 : 1.0)
+                                    .opacity((dragDirection == .right || buttonPressed == .right) ? 0.6 : 0)
                             )
                     }
                     .disabled(propertyService.properties.isEmpty)
+                    .animation(.easeOut(duration: 0.15), value: dragDirection)
+                    .animation(.easeOut(duration: 0.15), value: buttonPressed)
                 }
                 .padding(.bottom, 20)
             }
