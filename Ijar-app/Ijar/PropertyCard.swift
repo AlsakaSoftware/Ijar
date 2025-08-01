@@ -85,7 +85,7 @@ struct PropertyCard: View {
             }
             .padding()
         }
-        .frame(width: 350, height: 450)
+        .frame(width: 340, height: 460)
         .background {
             ZStack {
                 TabView(selection: $currentImageIndex) {
