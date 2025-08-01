@@ -77,11 +77,11 @@ class PropertyService: ObservableObject {
         do {
             let user = try await supabase.auth.user()
             
-            let actionData: [String: Any] = [
-                "user_id": user.id.uuidString,
-                "property_id": propertyId,
-                "action": action.rawValue
-            ]
+            let actionData = UserPropertyAction(
+                user_id: user.id.uuidString,
+                property_id: propertyId,
+                action: action.rawValue
+            )
             
             try await supabase
                 .from("user_property_action")
@@ -117,4 +117,11 @@ private struct PropertyRow: Codable {
     let area: String?
     let found_at: String
     let found_by_query: String
+}
+
+// Structure for inserting user property actions
+private struct UserPropertyAction: Codable {
+    let user_id: String
+    let property_id: String
+    let action: String
 }

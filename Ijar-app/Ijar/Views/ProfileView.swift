@@ -154,20 +154,31 @@ struct ProfileView: View {
         }
         listRequest.setValue("token \(githubToken)", forHTTPHeaderField: "Authorization")
         
+        var workflowUrl = "https://api.github.com/repos/AlsakaSoftware/ijar/actions/workflows/monitor-properties.yml/dispatches"
+        
         do {
             let (data, response) = try await URLSession.shared.data(for: listRequest)
-            if let httpResponse = response as? HTTPURLResponse {
-                print("List workflows status: \(httpResponse.statusCode)")
-                if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
-                    print("Workflows response: \(json)")
+            if let httpResponse = response as? HTTPURLResponse,
+               httpResponse.statusCode == 200,
+               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+               let workflows = json["workflows"] as? [[String: Any]] {
+                
+                // Look for our monitor-properties workflow
+                for workflow in workflows {
+                    if let path = workflow["path"] as? String,
+                       path.contains("monitor-properties"),
+                       let id = workflow["id"] as? Int {
+                        workflowUrl = "https://api.github.com/repos/AlsakaSoftware/ijar/actions/workflows/\(id)/dispatches"
+                        print("🔍 Found workflow, using ID: \(id)")
+                        break
+                    }
                 }
             }
         } catch {
-            print("Error listing workflows: \(error)")
+            print("⚠️ Could not list workflows, using default path")
         }
         
-        // Now try to trigger the workflow
-        let url = URL(string: "https://api.github.com/repos/AlsakaSoftware/ijar/actions/workflows/monitor-properties.yml/dispatches")!
+        let url = URL(string: workflowUrl)!
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/vnd.github.v3+json", forHTTPHeaderField: "Accept")
@@ -182,16 +193,27 @@ struct ProfileView: View {
         
         do {
             request.httpBody = try JSONSerialization.data(withJSONObject: payload)
-            let (_, response) = try await URLSession.shared.data(for: request)
+            let (responseData, response) = try await URLSession.shared.data(for: request)
             
             if let httpResponse = response as? HTTPURLResponse {
                 if httpResponse.statusCode == 204 {
+                    print("🚀 Workflow triggered successfully")
                     triggerMessage = "✅ Successfully triggered workflow!"
                 } else {
-                    triggerMessage = "⚠️ Workflow trigger returned status: \(httpResponse.statusCode)"
+                    print("⚠️ Workflow trigger failed with status: \(httpResponse.statusCode)")
+                    var message = "⚠️ Workflow trigger returned status: \(httpResponse.statusCode)"
+                    
+                    // Try to get error details
+                    if let errorJson = try? JSONSerialization.jsonObject(with: responseData) as? [String: Any],
+                       let errorMessage = errorJson["message"] as? String {
+                        message += "\n\(errorMessage)"
+                    }
+                    
+                    triggerMessage = message
                 }
             }
         } catch {
+            print("❌ Failed to trigger workflow: \(error)")
             triggerMessage = "❌ Failed to trigger workflow: \(error.localizedDescription)"
         }
         
