@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 enum SwipeDirection {
     case left, right, none
@@ -16,6 +17,10 @@ struct CardStackView<Content: View, Overlay: View>: View {
     @Binding var dragDirection: SwipeDirection
     
     @State private var dragAmount = CGSize.zero
+    @State private var lastHapticDirection: SwipeDirection = .none
+    @State private var cardRotations: [String: Double] = [:]
+    private let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+    private let selectionFeedback = UISelectionFeedbackGenerator()
     
     var body: some View {
         ZStack {
@@ -26,11 +31,17 @@ struct CardStackView<Content: View, Overlay: View>: View {
                 cardContent(property, isTopCard)
                     .scaleEffect(cardScale(for: stackIndex))
                     .offset(cardOffset(for: stackIndex))
-                    .rotationEffect(cardRotation(for: stackIndex))
+                    .rotationEffect(cardRotation(for: stackIndex, propertyId: property.id))
                     .opacity(cardOpacity(for: stackIndex))
                     .zIndex(Double(maxVisibleCards - stackIndex))
                     .allowsHitTesting(isTopCard)
-                    .animation(isTopCard ? .interactiveSpring(response: 0.3, dampingFraction: 0.8) : .none, value: dragAmount)
+                    .animation(isTopCard ? .interactiveSpring(response: 0.25, dampingFraction: 0.9) : .spring(response: 0.6, dampingFraction: 0.85), value: stackIndex)
+                    .onAppear {
+                        // Generate a random tilt for background cards if not already set
+                        if cardRotations[property.id] == nil && stackIndex > 0 {
+                            cardRotations[property.id] = Double.random(in: -5...5)
+                        }
+                    }
             }
             
         }
@@ -52,18 +63,22 @@ struct CardStackView<Content: View, Overlay: View>: View {
             let dragScale = 1.0 - (abs(dragAmount.width) / 2000.0)
             return max(0.92, dragScale)
         } else if stackIndex == 1 {
-            return 0.95
+            return 1
         } else {
             return 0.90
         }
     }
     
-    private func cardRotation(for stackIndex: Int) -> Angle {
+    private func cardRotation(for stackIndex: Int, propertyId: String) -> Angle {
         if stackIndex == 0 {
+            // Top card rotation based on drag
             let rotation = Double(dragAmount.width) / 25
             return .degrees(min(max(rotation, -12), 12))
+        } else {
+            // Background cards have their pre-assigned random tilt
+            let randomTilt = cardRotations[propertyId] ?? 0
+            return .degrees(randomTilt)
         }
-        return .zero
     }
     
     private func cardOpacity(for stackIndex: Int) -> Double {
@@ -81,42 +96,61 @@ struct CardStackView<Content: View, Overlay: View>: View {
     private var swipeGesture: some Gesture {
         DragGesture(minimumDistance: 0)
             .onChanged { value in
-                withAnimation(.interactiveSpring(response: 0.3, dampingFraction: 0.8, blendDuration: 0)) {
+                withAnimation(.interactiveSpring(response: 0.2, dampingFraction: 0.95, blendDuration: 0)) {
                     dragAmount = CGSize(width: value.translation.width, height: 0)
                     
-                    if value.translation.width > 30 {
-                        dragDirection = .right
-                    } else if value.translation.width < -30 {
-                        dragDirection = .left
+                    let newDirection: SwipeDirection
+                    if value.translation.width > 40 {
+                        newDirection = .right
+                    } else if value.translation.width < -40 {
+                        newDirection = .left
                     } else {
-                        dragDirection = .none
+                        newDirection = .none
                     }
+                    
+                    // Trigger haptic feedback when crossing direction threshold
+                    if newDirection != lastHapticDirection && newDirection != .none {
+                        impactFeedback.impactOccurred()
+                        lastHapticDirection = newDirection
+                    } else if newDirection == .none && lastHapticDirection != .none {
+                        lastHapticDirection = .none
+                    }
+                    
+                    dragDirection = newDirection
                 }
             }
             .onEnded { value in
-                let threshold: CGFloat = 100
+                let threshold: CGFloat = 90
                 let velocity = value.predictedEndLocation.x - value.location.x
                 
-                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                    if value.translation.width > threshold || velocity > 200 {
-                        // Swipe right - save
-                        dragAmount = CGSize(width: 500, height: 0)
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
-                            if topItem < items.count {
-                                onSwipeRight(items[topItem])
-                            }
-                            resetDrag()
+                if value.translation.width > threshold || velocity > 150 {
+                    // Swipe right - save
+                    selectionFeedback.selectionChanged() // Success haptic
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
+                        dragAmount = CGSize(width: 400, height: 0)
+                    }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                        if topItem < items.count {
+                            onSwipeRight(items[topItem])
                         }
-                    } else if value.translation.width < -threshold || velocity < -200 {
-                        // Swipe left - dismiss
-                        dragAmount = CGSize(width: -500, height: 0)
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
-                            if topItem < items.count {
-                                onSwipeLeft(items[topItem])
-                            }
-                            resetDrag()
+                        resetDrag()
+                    }
+                } else if value.translation.width < -threshold || velocity < -150 {
+                    // Swipe left - dismiss
+                    selectionFeedback.selectionChanged() // Success haptic
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
+                        dragAmount = CGSize(width: -400, height: 0)
+                    }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                        if topItem < items.count {
+                            onSwipeLeft(items[topItem])
                         }
-                    } else {
+                        resetDrag()
+                    }
+                } else {
+                    // Snap back - subtle haptic
+                    impactFeedback.impactOccurred()
+                    withAnimation(.spring(response: 0.25, dampingFraction: 0.9)) {
                         resetDrag()
                     }
                 }
@@ -126,5 +160,6 @@ struct CardStackView<Content: View, Overlay: View>: View {
     private func resetDrag() {
         dragAmount = .zero
         dragDirection = .none
+        lastHapticDirection = .none
     }
 }

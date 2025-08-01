@@ -101,8 +101,6 @@ struct CardSwipeView: View {
                     )
                 }
                 
-                Spacer()
-                
                 // Action buttons
                 HStack(spacing: 60) {
                     Button(action: {
@@ -161,7 +159,9 @@ struct CardSwipeView: View {
                     .animation(.easeOut(duration: 0.15), value: dragDirection)
                     .animation(.easeOut(duration: 0.15), value: buttonPressed)
                 }
-                .padding(.bottom, 20)
+                .padding(.vertical, 30)
+                
+                Spacer()
             }
         }
         .sheet(isPresented: $showingPropertyDetails) {
