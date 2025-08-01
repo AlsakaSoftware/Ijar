@@ -105,8 +105,27 @@ CREATE POLICY "Users view own query results" ON query_property
         )
     );
 
--- Simple view for iOS app - get user's latest properties
-CREATE OR REPLACE VIEW user_properties AS
+-- Track user actions on properties (saved/passed)
+CREATE TABLE IF NOT EXISTS user_property_action (
+    user_id UUID NOT NULL,
+    property_id UUID NOT NULL REFERENCES property(id) ON DELETE CASCADE,
+    action TEXT NOT NULL CHECK (action IN ('saved', 'passed')),
+    created TIMESTAMP DEFAULT NOW(),
+    
+    PRIMARY KEY (user_id, property_id)
+);
+
+-- Index for fast lookups
+CREATE INDEX IF NOT EXISTS idx_user_property_action_user ON user_property_action(user_id);
+
+-- RLS for user actions
+ALTER TABLE user_property_action ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users manage own property actions" ON user_property_action
+    FOR ALL USING (auth.uid() = user_id);
+
+-- Property feed - shows new recommendations for the user (excluding seen ones)
+CREATE OR REPLACE VIEW property_feed AS
 SELECT 
     p.*,
     qp.found_at,
@@ -115,5 +134,32 @@ FROM query_property qp
 JOIN property p ON qp.property_id = p.id
 JOIN query q ON qp.query_id = q.id
 WHERE q.user_id = auth.uid()
+AND p.id NOT IN (
+    SELECT property_id 
+    FROM user_property_action 
+    WHERE user_id = auth.uid()
+)
 ORDER BY qp.found_at DESC
 LIMIT 50;
+
+-- View for saved properties
+CREATE OR REPLACE VIEW saved_properties AS
+SELECT 
+    p.*,
+    upa.created as saved_at
+FROM user_property_action upa
+JOIN property p ON upa.property_id = p.id
+WHERE upa.user_id = auth.uid()
+AND upa.action = 'saved'
+ORDER BY upa.created DESC;
+
+-- View for all properties user has interacted with (saved or passed)
+CREATE OR REPLACE VIEW user_property_history AS
+SELECT 
+    p.*,
+    upa.action,
+    upa.created as action_date
+FROM user_property_action upa
+JOIN property p ON upa.property_id = p.id
+WHERE upa.user_id = auth.uid()
+ORDER BY upa.created DESC;

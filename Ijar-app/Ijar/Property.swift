@@ -1,13 +1,23 @@
 import Foundation
 
 struct Property: Identifiable {
-    let id = UUID()
+    let id: String
     let images: [String]
     let price: String
     let bedrooms: Int
     let bathrooms: Int
     let address: String
     let area: String
+    
+    init(id: String = UUID().uuidString, images: [String], price: String, bedrooms: Int, bathrooms: Int, address: String, area: String) {
+        self.id = id
+        self.images = images
+        self.price = price
+        self.bedrooms = bedrooms
+        self.bathrooms = bathrooms
+        self.address = address
+        self.area = area
+    }
     
     static let mockProperties: [Property] = [
         Property(

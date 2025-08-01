@@ -231,14 +231,24 @@ struct CardSwipeView: View {
     
     private func saveCard() {
         if currentIndex < propertyService.properties.count {
-            print("Saved: \(propertyService.properties[currentIndex].address)")
+            let property = propertyService.properties[currentIndex]
+            print("Saved: \(property.address)")
+            
+            Task {
+                await propertyService.trackPropertyAction(propertyId: property.id, action: .saved)
+            }
         }
         currentIndex += 1
     }
     
     private func dismissCard() {
         if currentIndex < propertyService.properties.count {
-            print("Dismissed: \(propertyService.properties[currentIndex].address)")
+            let property = propertyService.properties[currentIndex]
+            print("Dismissed: \(property.address)")
+            
+            Task {
+                await propertyService.trackPropertyAction(propertyId: property.id, action: .passed)
+            }
         }
         currentIndex += 1
     }

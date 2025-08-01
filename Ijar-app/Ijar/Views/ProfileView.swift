@@ -142,26 +142,42 @@ struct ProfileView: View {
     private func triggerWorkflowManually() async {
         isTriggering = true
         
-        // Create the workflow dispatch request
-        let url = URL(string: "https://api.github.com/repos/karimalsaka/Ijar/dispatches")!
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/vnd.github.v3+json", forHTTPHeaderField: "Accept")
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        // First, let's list workflows to debug
+        let listUrl = URL(string: "https://api.github.com/repos/AlsakaSoftware/ijar/actions/workflows")!
+        var listRequest = URLRequest(url: listUrl)
+        listRequest.setValue("application/vnd.github.v3+json", forHTTPHeaderField: "Accept")
         
-        // Get GitHub token from Config.plist
         guard let githubToken = ConfigManager.shared.githubToken else {
             triggerMessage = "⚠️ GitHub token not configured"
             isTriggering = false
             return
         }
+        listRequest.setValue("token \(githubToken)", forHTTPHeaderField: "Authorization")
+        
+        do {
+            let (data, response) = try await URLSession.shared.data(for: listRequest)
+            if let httpResponse = response as? HTTPURLResponse {
+                print("List workflows status: \(httpResponse.statusCode)")
+                if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                    print("Workflows response: \(json)")
+                }
+            }
+        } catch {
+            print("Error listing workflows: \(error)")
+        }
+        
+        // Now try to trigger the workflow
+        let url = URL(string: "https://api.github.com/repos/AlsakaSoftware/ijar/actions/workflows/monitor-properties.yml/dispatches")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/vnd.github.v3+json", forHTTPHeaderField: "Accept")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
         request.setValue("token \(githubToken)", forHTTPHeaderField: "Authorization")
         
+        // For workflow_dispatch, we need to specify the ref (branch)
         let payload = [
-            "event_type": "manual-test-trigger",
-            "client_payload": [
-                "triggered_from": "ios_app_test_button"
-            ]
+            "ref": "main"
         ] as [String : Any]
         
         do {

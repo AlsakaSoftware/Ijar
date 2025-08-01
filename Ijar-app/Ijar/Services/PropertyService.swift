@@ -23,15 +23,16 @@ class PropertyService: ObservableObject {
             // Get current user
             let _ = try await supabase.auth.user()
             
-            // Load properties from the user_properties view which shows all user's properties
+            // Load properties from the property_feed view which shows new recommendations
             let response: [PropertyRow] = try await supabase
-                .from("user_properties")
+                .from("property_feed")
                 .select()
                 .execute()
                 .value
             
             properties = response.map { row in
                 Property(
+                    id: row.id,
                     images: row.images,
                     price: row.price,
                     bedrooms: row.bedrooms,
@@ -70,9 +71,41 @@ class PropertyService: ObservableObject {
         ]
         print("📝 Using mock data")
     }
+    
+    // Track user action on property
+    func trackPropertyAction(propertyId: String, action: PropertyAction) async -> Bool {
+        do {
+            let user = try await supabase.auth.user()
+            
+            let actionData: [String: Any] = [
+                "user_id": user.id.uuidString,
+                "property_id": propertyId,
+                "action": action.rawValue
+            ]
+            
+            try await supabase
+                .from("user_property_action")
+                .insert(actionData)
+                .execute()
+            
+            // Remove property from local list
+            properties.removeAll { $0.id == propertyId }
+            
+            print("✅ Tracked \(action.rawValue) action for property")
+            return true
+        } catch {
+            print("❌ Error tracking property action: \(error)")
+            return false
+        }
+    }
 }
 
-// Database row structure matching Supabase user_properties view
+enum PropertyAction: String {
+    case saved = "saved"
+    case passed = "passed"
+}
+
+// Database row structure matching Supabase property_feed view
 private struct PropertyRow: Codable {
     let id: String
     let rightmove_id: Int
