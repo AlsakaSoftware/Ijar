@@ -14,28 +14,39 @@ struct CardSwipeView: View {
     
     
     var body: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 20) {
+            // Top section with greeting
             TimeBasedGreeting()
-                .padding(.horizontal, 20)
-                .padding(.top, 50)
-
+            
             if propertyService.properties.isEmpty {
                 emptyStateView
             } else {
+                // Main card area - expand to fill available space
                 cardStackSection
-                actionButtons
-                    .padding(.top, 10)
+                    .frame(maxWidth: .infinity)
+                    .layoutPriority(1) // Give this priority in space allocation
+                    .clipped()
                 
-                propertyCounter
-                    .padding(.horizontal, 24)
-                    .padding(.bottom, 50)
-                
-                Spacer()
+                // Bottom controls - fixed size
+                VStack(spacing: 12) {
+                    propertyCounter
+                    actionButtons
+                }
             }
         }
-        .padding(.vertical, 100)
+        .padding(.bottom, 10)
+        .padding(.horizontal, 15)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.warmCream)
+        .background(
+            Color.warmCream
+                .ignoresSafeArea() // Only background extends to edges
+        )
+        .safeAreaInset(edge: .top, spacing: 0) {
+            Color.clear.frame(height: 0) // Ensure content starts below notch
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            Color.clear.frame(height: 0) // Ensure content ends above home indicator
+        }
         .sheet(isPresented: $showingPropertyDetails) {
             if let property = selectedProperty {
                 PropertyDetailView(property: property)
@@ -92,16 +103,21 @@ struct CardSwipeView: View {
             onSwipeLeft: { property in
                 Task {
                     await propertyService.trackPropertyAction(propertyId: property.id, action: .passed)
+                    await MainActor.run {
+                        propertyService.removeTopProperty()
+                    }
                 }
             },
             onSwipeRight: { property in
                 Task {
                     await propertyService.trackPropertyAction(propertyId: property.id, action: .saved)
+                    await MainActor.run {
+                        propertyService.removeTopProperty()
+                    }
                 }
             },
             dragDirection: $dragDirection
         )
-        .frame(maxWidth: .infinity)
     }
     
     private var actionButtons: some View {
@@ -203,6 +219,9 @@ struct CardSwipeView: View {
             let property = propertyService.properties[0]
             Task {
                 await propertyService.trackPropertyAction(propertyId: property.id, action: .saved)
+                await MainActor.run {
+                    propertyService.removeTopProperty()
+                }
             }
         }
     }
@@ -212,13 +231,35 @@ struct CardSwipeView: View {
             let property = propertyService.properties[0]
             Task {
                 await propertyService.trackPropertyAction(propertyId: property.id, action: .passed)
+                await MainActor.run {
+                    propertyService.removeTopProperty()
+                }
             }
         }
     }
 }
 
-#Preview {
-    CardSwipeView()
-        .environmentObject(HomeFeedCoordinator())
+#Preview("iPhone 15 Pro") {
+    NavigationStack {
+        CardSwipeView()
+            .environmentObject(HomeFeedCoordinator())
+    }
+    .previewDevice("iPhone 15 Pro")
+}
+
+#Preview("iPhone SE") {
+    NavigationStack {
+        CardSwipeView()
+            .environmentObject(HomeFeedCoordinator())
+    }
+    .previewDevice("iPhone SE (3rd generation)")
+}
+
+#Preview("iPhone 15 Pro Max") {
+    NavigationStack {
+        CardSwipeView()
+            .environmentObject(HomeFeedCoordinator())
+    }
+    .previewDevice("iPhone 15 Pro Max")
 }
 

@@ -19,13 +19,10 @@ struct PropertyCard: View {
             }
             .padding(.top, 16)
             .padding(.horizontal, 20)
-            .frame(maxWidth: 310)
             
             Spacer()
             
-            // Property details at bottom
             VStack(alignment: .leading, spacing: 8) {
-                // Price and bed/bath info
                 HStack {
                     Text(property.price)
                         .font(.system(size: 24, weight: .semibold))
@@ -85,69 +82,10 @@ struct PropertyCard: View {
             }
             .padding()
         }
-        .frame(width: 340, height: 460)
+        .frame(maxWidth: 350, maxHeight: .infinity) 
+        .aspectRatio(0.75, contentMode: .fit) // 3:4 aspect ratio
         .background {
-            ZStack {
-                TabView(selection: $currentImageIndex) {
-                    ForEach(0..<property.images.count, id: \.self) { index in
-                        AsyncImage(url: URL(string: property.images[index])) { phase in
-                            switch phase {
-                            case .empty:
-                                ZStack {
-                                    LinearGradient(
-                                        gradient: Gradient(colors: [
-                                            Color.warmCream,
-                                            Color.warmBrown
-                                        ]),
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    )
-                                    ProgressView()
-                                        .scaleEffect(1.2)
-                                        .tint(.coffeeBean)
-                                }
-                                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            case .success(let image):
-                                image
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fill)
-                                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            case .failure(_):
-                                LinearGradient(
-                                    gradient: Gradient(colors: [
-                                        Color.warmCream,
-                                        Color.warmBrown
-                                    ]),
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                                .overlay {
-                                    Image(systemName: "photo")
-                                        .font(.system(size: 60))
-                                        .foregroundColor(.coffeeBean.opacity(0.6))
-                                }
-                                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            @unknown default:
-                                EmptyView()
-                            }
-                        }
-                        .tag(index)
-                    }
-                }
-                .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
-                
-                // Gradient overlay for text readability
-                LinearGradient(
-                    gradient: Gradient(colors: [
-                        Color.clear,
-                        Color.clear,
-                        Color.black.opacity(0.3),
-                        Color.black.opacity(0.7)
-                    ]),
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-            }
+            imagesCarousel
         }
         .clipShape(RoundedRectangle(cornerRadius: 20))
         .shadow(color: .coffeeBean.opacity(0.08), radius: 16, y: 8)
@@ -173,28 +111,96 @@ struct PropertyCard: View {
                     }
             }
         }
+
     }
+    
+    private var imagesCarousel: some View {
+        ZStack {
+            TabView(selection: $currentImageIndex) {
+                ForEach(0..<property.images.count, id: \.self) { index in
+                    AsyncImage(url: URL(string: property.images[index])) { phase in
+                        switch phase {
+                        case .empty:
+                            ZStack {
+                                LinearGradient(
+                                    gradient: Gradient(colors: [
+                                        Color.warmCream,
+                                        Color.warmBrown
+                                    ]),
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                                ProgressView()
+                                    .scaleEffect(1.2)
+                                    .tint(.coffeeBean)
+                            }
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        case .success(let image):
+                            image
+                                .renderingMode(.original)
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                        case .failure(_):
+                            LinearGradient(
+                                gradient: Gradient(colors: [
+                                    Color.warmCream,
+                                    Color.warmBrown
+                                ]),
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                            .overlay {
+                                Image(systemName: "photo")
+                                    .font(.system(size: 60))
+                                    .foregroundColor(.coffeeBean.opacity(0.6))
+                            }
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        @unknown default:
+                            EmptyView()
+                        }
+                    }
+                    .tag(index)
+                }
+            }
+            .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
+            
+            // Gradient overlay for text readability
+            LinearGradient(
+                gradient: Gradient(colors: [
+                    Color.clear,
+                    Color.clear,
+                    Color.black.opacity(0.3),
+                    Color.black.opacity(0.7)
+                ]),
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        }
+    }
+    
 }
 
 #Preview {
-    PropertyCard(
-        property: Property(
-            images: [
-                "https://images.unsplash.com/photo-1560184897-ae75f418493e?w=800&q=80",
-                "https://images.unsplash.com/photo-1560185007-cde436f6a4d0?w=800&q=80",
-                "https://images.unsplash.com/photo-1560185009-5bf9f2849dbe?w=800&q=80"
-            ],
-            price: "£2,500/month",
-            bedrooms: 3,
-            bathrooms: 2,
-            address: "123 Canary Wharf",
-            area: "London E14"
-        ),
-        onTap: {
-            print("Details tapped")
-        }
-    )
-    .frame(height: 600)
-    .background(Color.warmCream)
+    VStack {
+        PropertyCard(
+            property: Property(
+                images: [
+                    "https://images.unsplash.com/photo-1560184897-ae75f418493e?w=800&q=80",
+                    "https://images.unsplash.com/photo-1560185007-cde436f6a4d0?w=800&q=80",
+                    "https://images.unsplash.com/photo-1560185009-5bf9f2849dbe?w=800&q=80"
+                ],
+                price: "£2,500/month",
+                bedrooms: 3,
+                bathrooms: 2,
+                address: "123 Canary Wharf",
+                area: "London E14"
+            ),
+            onTap: {
+                print("Details tapped")
+            }
+        )
+        .background(Color.warmCream)
+    }
+    .padding()
 }
 
