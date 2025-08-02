@@ -132,7 +132,8 @@ struct CardStackView<Content: View, Overlay: View>: View {
                         withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
                             dragAmount = CGSize(width: 400, height: 0)
                         }
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
                             onSwipeRight(property)
                             resetDrag()
                         }
@@ -145,7 +146,7 @@ struct CardStackView<Content: View, Overlay: View>: View {
                         withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
                             dragAmount = CGSize(width: -400, height: 0)
                         }
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
                             onSwipeLeft(property)
                             resetDrag()
                         }
