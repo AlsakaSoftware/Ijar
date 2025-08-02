@@ -10,8 +10,10 @@
       "Bash(npm run monitor:*)",
       "Bash(tsx test-scraper.ts:*)",
       "Bash(node:*)",
-      "Bash(mkdir:*)"
+      "Bash(mkdir:*)",
+      "Bash(touch:*)"
     ],
     "deny": []
-  }
+  },
+  "$schema": "https://json.schemastore.org/claude-code-settings.json"
 }

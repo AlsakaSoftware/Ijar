@@ -30,7 +30,7 @@ struct CardStackView<Content: View, Overlay: View>: View {
                 let isTopCard = stackIndex == 0
                 
                 cardContent(property, isTopCard)
-                    .scaleEffect(cardScale(for: stackIndex))
+//                    .scaleEffect(cardScale(for: stackIndex))
                     .offset(cardOffset(for: stackIndex))
                     .rotationEffect(cardRotation(for: stackIndex, propertyId: property.id))
                     .opacity(cardOpacity(for: stackIndex))

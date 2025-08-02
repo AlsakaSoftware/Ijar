@@ -117,7 +117,14 @@ struct CardSwipeView: View {
                             propertyService.removeTopProperty()
                         }
                     }
-                    await propertyService.trackPropertyAction(propertyId: property.id, action: .saved)
+                    let success = await propertyService.trackPropertyAction(propertyId: property.id, action: .saved)
+                    #if DEBUG
+                    if success {
+                        print("✅ CardSwipeView: Successfully saved property \(property.id)")
+                    } else {
+                        print("❌ CardSwipeView: Failed to save property \(property.id)")
+                    }
+                    #endif
                 }
             },
             dragDirection: $dragDirection

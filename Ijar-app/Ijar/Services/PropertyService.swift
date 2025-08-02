@@ -5,6 +5,7 @@ import Supabase
 class PropertyService: ObservableObject {
     private let supabase: SupabaseClient
     @Published var properties: [Property] = []
+    @Published var savedProperties: [Property] = []
     @Published var isLoading = false
     @Published var error: String?
     
@@ -108,13 +109,24 @@ class PropertyService: ObservableObject {
                 action: action.rawValue
             )
             
+#if DEBUG
+            print("🔥 PropertyService: Tracking action - User: \(user.id.uuidString), Property: \(propertyId), Action: \(action.rawValue)")
+#endif
+            
             try await supabase
                 .from("user_property_action")
                 .insert(actionData)
                 .execute()
             
+#if DEBUG
+            print("✅ PropertyService: Successfully tracked \(action.rawValue) action for property \(propertyId)")
+#endif
+            
             return true
         } catch {
+#if DEBUG
+            print("❌ PropertyService: Failed to track action: \(error)")
+#endif
             return false
         }
     }
@@ -123,6 +135,118 @@ class PropertyService: ObservableObject {
         if !properties.isEmpty {
             properties.removeFirst()
         }
+    }
+    
+    func loadSavedProperties() async {
+        isLoading = true
+        error = nil
+        
+        do {
+            let user = try await supabase.auth.user()
+            
+#if DEBUG
+            print("🔥 PropertyService: Loading saved properties for user: \(user.id)")
+#endif
+            
+            // Try using the saved_properties view first
+            do {
+                let savedPropertyRows: [PropertyRow] = try await supabase
+                    .from("saved_properties")
+                    .select()
+                    .execute()
+                    .value
+                
+                savedProperties = savedPropertyRows.map { row in
+                    Property(
+                        id: row.id,
+                        images: row.images,
+                        price: row.price,
+                        bedrooms: row.bedrooms,
+                        bathrooms: row.bathrooms,
+                        address: row.address,
+                        area: row.area ?? ""
+                    )
+                }
+                
+#if DEBUG
+                print("✅ PropertyService: Loaded \(savedProperties.count) saved properties from view")
+#endif
+            } catch {
+#if DEBUG
+                print("⚠️ PropertyService: View failed, falling back to manual query: \(error)")
+#endif
+                // Fallback to manual query if view doesn't work
+                struct SavedAction: Codable {
+                    let property_id: String
+                    let created: String
+                }
+                
+                let savedActions: [SavedAction] = try await supabase
+                    .from("user_property_action")
+                    .select("property_id, created")
+                    .eq("user_id", value: user.id.uuidString)
+                    .eq("action", value: "saved")
+                    .order("created", ascending: false)
+                    .execute()
+                    .value
+                
+                let propertyIds = savedActions.map { $0.property_id }
+                
+#if DEBUG
+                print("🔥 PropertyService: Found \(propertyIds.count) saved property IDs: \(propertyIds)")
+#endif
+                
+                if !propertyIds.isEmpty {
+                    struct PropertyData: Codable {
+                        let id: String
+                        let rightmove_id: Int
+                        let images: [String]
+                        let price: String
+                        let bedrooms: Int
+                        let bathrooms: Int
+                        let address: String
+                        let area: String?
+                    }
+                    
+                    let properties: [PropertyData] = try await supabase
+                        .from("property")
+                        .select()
+                        .in("id", values: propertyIds)
+                        .execute()
+                        .value
+                    
+                    var propertyDict: [String: Property] = [:]
+                    for prop in properties {
+                        propertyDict[prop.id] = Property(
+                            id: prop.id,
+                            images: prop.images,
+                            price: prop.price,
+                            bedrooms: prop.bedrooms,
+                            bathrooms: prop.bathrooms,
+                            address: prop.address,
+                            area: prop.area ?? ""
+                        )
+                    }
+                    
+                    savedProperties = propertyIds.compactMap { propertyDict[$0] }
+                    
+#if DEBUG
+                    print("✅ PropertyService: Loaded \(savedProperties.count) saved properties via manual query")
+#endif
+                } else {
+                    savedProperties = []
+                }
+            }
+            
+        } catch {
+            self.error = "Unable to load saved properties."
+            savedProperties = []
+#if DEBUG
+            print("❌ PropertyService: Error loading saved properties: \(error)")
+#endif
+        }
+        
+        isLoading = false
     }
 }
 
