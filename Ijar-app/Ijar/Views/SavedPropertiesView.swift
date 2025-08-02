@@ -55,9 +55,6 @@ struct SavedPropertiesView: View {
                 animateContent = true
             }
         }
-        .refreshable {
-            await propertyService.loadSavedProperties()
-        }
         .sheet(isPresented: $showingPropertyDetails) {
             if let property = selectedProperty {
                 PropertyDetailView(property: property)
