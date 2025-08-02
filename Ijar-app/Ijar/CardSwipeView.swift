@@ -25,7 +25,7 @@ struct CardSwipeView: View {
                 cardStackSection
                     .frame(maxWidth: .infinity)
                     .layoutPriority(1) // Give this priority in space allocation
-                    .clipped()
+
                 
                 // Bottom controls - fixed size
                 VStack(spacing: 12) {
@@ -34,7 +34,7 @@ struct CardSwipeView: View {
                 }
             }
         }
-        .padding(.bottom, 10)
+        .padding(.bottom, 30)
         .padding(.horizontal, 15)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(
@@ -102,18 +102,22 @@ struct CardSwipeView: View {
             rightOverlay: { EmptyView() },
             onSwipeLeft: { property in
                 Task {
-                    await propertyService.trackPropertyAction(propertyId: property.id, action: .passed)
                     await MainActor.run {
-                        propertyService.removeTopProperty()
+                        withAnimation(.none) {
+                            propertyService.removeTopProperty()
+                        }
                     }
+                    await propertyService.trackPropertyAction(propertyId: property.id, action: .passed)
                 }
             },
             onSwipeRight: { property in
                 Task {
-                    await propertyService.trackPropertyAction(propertyId: property.id, action: .saved)
                     await MainActor.run {
-                        propertyService.removeTopProperty()
+                        withAnimation(.none) {
+                            propertyService.removeTopProperty()
+                        }
                     }
+                    await propertyService.trackPropertyAction(propertyId: property.id, action: .saved)
                 }
             },
             dragDirection: $dragDirection
