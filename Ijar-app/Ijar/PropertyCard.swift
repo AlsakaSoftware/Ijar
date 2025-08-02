@@ -83,7 +83,7 @@ struct PropertyCard: View {
             .padding()
         }
         .frame(maxWidth: 350, maxHeight: .infinity) 
-        .aspectRatio(0.85, contentMode: .fit) // 3:4 aspect ratio
+        .aspectRatio(0.7, contentMode: .fit) // 3:4 aspect ratio
         .background {
             imagesCarousel
         }

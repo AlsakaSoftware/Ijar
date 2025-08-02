@@ -3,8 +3,6 @@ import SwiftUI
 struct CardSwipeView: View {
     @EnvironmentObject var coordinator: HomeFeedCoordinator
     @StateObject private var propertyService = PropertyService()
-    @State private var selectedProperty: Property?
-    @State private var showingPropertyDetails = false
     @State private var dragDirection: SwipeDirection = .none
     @State private var buttonPressed: SwipeDirection = .none
     @State private var ambientAnimation = false
@@ -30,7 +28,7 @@ struct CardSwipeView: View {
                 // Bottom controls - fixed size
                 VStack(spacing: 12) {
                     propertyCounter
-                    actionButtons
+//                    actionButtons
                 }
             }
         }
@@ -46,11 +44,6 @@ struct CardSwipeView: View {
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             Color.clear.frame(height: 0) // Ensure content ends above home indicator
-        }
-        .sheet(isPresented: $showingPropertyDetails) {
-            if let property = selectedProperty {
-                PropertyDetailView(property: property)
-            }
         }
         .task {
             await propertyService.loadPropertiesForUser()
@@ -92,10 +85,7 @@ struct CardSwipeView: View {
             topItem: .constant(0),
             cardContent: { property, isTopCard in
                 PropertyCard(property: property) {
-                    if isTopCard {
-                        selectedProperty = property
-                        showingPropertyDetails = true
-                    }
+                    coordinator.navigate(to: .propertyDetail(property: property))
                 }
             },
             leftOverlay: { EmptyView() },

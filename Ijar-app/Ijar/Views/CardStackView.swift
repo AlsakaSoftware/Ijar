@@ -35,8 +35,8 @@ struct CardStackView<Content: View, Overlay: View>: View {
                     .rotationEffect(cardRotation(for: stackIndex, propertyId: property.id))
                     .opacity(cardOpacity(for: stackIndex))
                     .zIndex(Double(maxVisibleCards - stackIndex))
-                    .allowsHitTesting(isTopCard)
                     .animation(.spring(response: 0.3, dampingFraction: 0.85), value: dragAmount)
+                    .gesture(isTopCard ? swipeGesture : nil)
                     .onAppear {
                         // Generate a random tilt for background cards if not already set
                         if cardRotations[property.id] == nil && stackIndex > 0 {
@@ -46,7 +46,6 @@ struct CardStackView<Content: View, Overlay: View>: View {
             }
             
         }
-        .gesture(swipeGesture)
     }
     
     

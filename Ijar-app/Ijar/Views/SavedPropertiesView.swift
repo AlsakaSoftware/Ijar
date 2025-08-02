@@ -3,49 +3,45 @@ import SwiftUI
 struct SavedPropertiesView: View {
     @EnvironmentObject var coordinator: SavedPropertiesCoordinator
     @StateObject private var propertyService = PropertyService()
-    @State private var selectedProperty: Property?
-    @State private var showingPropertyDetails = false
     @State private var animateContent = false
     
     var body: some View {
-        NavigationStack {
-            ZStack {
-                // Background
-                Color.warmCream
-                    .ignoresSafeArea()
-                
-                VStack(spacing: 0) {
-                    if propertyService.isLoading && propertyService.savedProperties.isEmpty {
-                        loadingView
-                    } else if propertyService.savedProperties.isEmpty {
-                        emptyStateView
-                    } else {
-                        savedPropertiesList
-                    }
+        ZStack {
+            // Background
+            Color.warmCream
+                .ignoresSafeArea()
+            
+            VStack(spacing: 0) {
+                if propertyService.isLoading && propertyService.savedProperties.isEmpty {
+                    loadingView
+                } else if propertyService.savedProperties.isEmpty {
+                    emptyStateView
+                } else {
+                    savedPropertiesList
                 }
             }
-            .navigationTitle("Saved")
-            .navigationBarTitleDisplayMode(.large)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    if !propertyService.savedProperties.isEmpty {
-                        HStack(spacing: 6) {
-                            Image(systemName: "heart.fill")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color.rusticOrange)
-                            
-                            Text("\(propertyService.savedProperties.count)")
-                                .font(.system(size: 14, weight: .bold, design: .rounded))
-                                .foregroundColor(.coffeeBean)
-                        }
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 6)
-                        .background(
-                            Capsule()
-                                .fill(Color.warmCream)
-                                .shadow(color: .rusticOrange.opacity(0.1), radius: 3, y: 1)
-                        )
+        }
+        .navigationTitle("Saved homes")
+        .navigationBarTitleDisplayMode(.large)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                if !propertyService.savedProperties.isEmpty {
+                    HStack(spacing: 6) {
+                        Image(systemName: "heart.fill")
+                            .font(.system(size: 14))
+                            .foregroundStyle(Color.rusticOrange)
+                        
+                        Text("\(propertyService.savedProperties.count)")
+                            .font(.system(size: 14, weight: .bold, design: .rounded))
+                            .foregroundColor(.coffeeBean)
                     }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(
+                        Capsule()
+                            .fill(Color.warmCream)
+                            .shadow(color: .rusticOrange.opacity(0.1), radius: 3, y: 1)
+                    )
                 }
             }
         }
@@ -53,11 +49,6 @@ struct SavedPropertiesView: View {
             await propertyService.loadSavedProperties()
             withAnimation(.easeOut(duration: 0.4)) {
                 animateContent = true
-            }
-        }
-        .sheet(isPresented: $showingPropertyDetails) {
-            if let property = selectedProperty {
-                PropertyDetailView(property: property)
             }
         }
     }
@@ -142,8 +133,7 @@ struct SavedPropertiesView: View {
             LazyVStack(spacing: 16) {
                 ForEach(Array(propertyService.savedProperties.enumerated()), id: \.element.id) { index, property in
                     SavedPropertyCard(property: property) {
-                        selectedProperty = property
-                        showingPropertyDetails = true
+                        coordinator.navigate(to: .propertyDetail(property: property))
                     }
                     .padding(.horizontal, 20)
                     .opacity(animateContent ? 1 : 0)
