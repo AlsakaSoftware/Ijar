@@ -6,6 +6,8 @@ struct CardSwipeView: View {
     @State private var dragDirection: SwipeDirection = .none
     @State private var buttonPressed: SwipeDirection = .none
     @State private var ambientAnimation = false
+    @State private var selectedProperty: Property?
+    @State private var showingPropertyDetails = false
     
     private let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
     private let selectionFeedback = UISelectionFeedbackGenerator()
@@ -44,6 +46,13 @@ struct CardSwipeView: View {
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             Color.clear.frame(height: 0) // Ensure content ends above home indicator
+        }
+        .sheet(isPresented: $showingPropertyDetails) {
+            if let property = selectedProperty {
+                NavigationStack {
+                    PropertyDetailView(property: property)
+                }
+            }
         }
         .task {
             await propertyService.loadPropertiesForUser()
@@ -85,7 +94,8 @@ struct CardSwipeView: View {
             topItem: .constant(0),
             cardContent: { property, isTopCard in
                 PropertyCard(property: property) {
-                    coordinator.navigate(to: .propertyDetail(property: property))
+                    selectedProperty = property
+                    showingPropertyDetails = true
                 }
             },
             leftOverlay: { EmptyView() },

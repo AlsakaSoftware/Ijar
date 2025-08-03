@@ -46,37 +46,37 @@ struct PropertyCard: View {
                     .shadow(color: .black.opacity(0.5), radius: 2, x: 0, y: 1)
                 }
                 
-                // Address and Details button
-                HStack(alignment: .bottom) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(property.address)
-                            .font(.system(size: 17, weight: .regular))
-                            .foregroundColor(.warmCream)
-                            .shadow(color: .black.opacity(0.5), radius: 2, x: 0, y: 1)
-                        
+                // Address
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(property.address)
+                        .font(.system(size: 17, weight: .regular))
+                        .foregroundColor(.warmCream)
+                        .shadow(color: .black.opacity(0.5), radius: 2, x: 0, y: 1)
+                    
+                    HStack {
                         Text(property.area)
                             .font(.system(size: 14, weight: .regular))
                             .foregroundColor(.warmCream.opacity(0.7))
                             .shadow(color: .black.opacity(0.5), radius: 2, x: 0, y: 1)
-                    }
-                    
-                    Spacer()
-                    
-                    Button(action: onTap) {
-                        HStack(spacing: 8) {
-                            Image(systemName: "info.circle.fill")
-                                .font(.system(size: 16))
-                            Text("Details")
-                                .font(.system(size: 16, weight: .medium))
+                        
+                        Spacer()
+                        
+                        Button(action: onTap) {
+                            HStack(spacing: 6) {
+                                Text("View")
+                                    .font(.system(size: 14, weight: .semibold))
+                                Image(systemName: "arrow.right")
+                                    .font(.system(size: 12, weight: .semibold))
+                            }
+                            .foregroundColor(.coffeeBean)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 8)
+                            .background(
+                                Capsule()
+                                    .fill(Color.warmCream.opacity(0.95))
+                                    .shadow(color: .black.opacity(0.2), radius: 4, y: 2)
+                            )
                         }
-                        .foregroundColor(.coffeeBean)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 10)
-                        .background(
-                            Capsule()
-                                .fill(Color.warmCream.opacity(0.95))
-                                .shadow(color: .coffeeBean.opacity(0.3), radius: 6, y: 3)
-                        )
                     }
                 }
             }
