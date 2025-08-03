@@ -4,6 +4,7 @@ import 'dotenv/config';
 import RightmoveScraper from './rightmove-scraper';
 import { SupabasePropertyClient, UserQuery } from './supabase-client';
 import { SearchOptions } from './scraper-types';
+import config from './config';
 
 class PropertyMonitor {
   private scraper: RightmoveScraper;
@@ -64,13 +65,21 @@ class PropertyMonitor {
           const results = await this.scraper.searchProperties(searchOptions);
           console.log(`   📊 Found ${results.properties.length} properties`);
           
-          // Enhance properties with HD images
-          console.log(`   🖼️  Fetching HD images for properties...`);
-          const propertiesWithHD = await this.scraper.getPropertiesWithHDImages(results.properties, quiet);
-          console.log(`   ✅ Enhanced ${propertiesWithHD.length} properties with HD images`);
+          let finalProperties = results.properties;
           
-          // Process enhanced properties for this specific query
-          const processResult = await this.supabase.processPropertiesForQuery(query, propertiesWithHD);
+          // Enhance properties with HD images if enabled
+          if (config.enableHDImages) {
+            const propertiesToEnhance = results.properties.slice(0, config.maxHDPropertiesPerQuery);
+            console.log(`   🖼️  Fetching HD images for top ${propertiesToEnhance.length} properties...`);
+            const propertiesWithHD = await this.scraper.getPropertiesWithHDImages(propertiesToEnhance, false);
+            console.log(`   ✅ Enhanced ${propertiesWithHD.length} properties with HD images`);
+            finalProperties = propertiesWithHD;
+          } else {
+            console.log(`   📷 Using thumbnail images (HD disabled in config)`);
+          }
+          
+          // Process properties for this specific query
+          const processResult = await this.supabase.processPropertiesForQuery(query, finalProperties);
           
           if (processResult.newCount > 0) {
             console.log(`   🎉 Added ${processResult.newCount} new properties for query: ${query.name}`);
