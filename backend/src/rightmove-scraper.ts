@@ -190,13 +190,19 @@ export class RightmoveScraper {
         throw new Error(`HTTP ${response.statusCode}: ${response.data}`);
       }
 
+      // Try to extract from __NEXT_DATA__ first
       const nextData = this.extractNextData(response.data);
-      
       if (nextData?.props?.pageProps) {
         return nextData.props.pageProps;
       }
       
-      throw new Error('Could not extract property details from response');
+      // If __NEXT_DATA__ fails, return the raw HTML for image extraction
+      if (!quiet) console.log('No __NEXT_DATA__ found, using HTML extraction method');
+      return {
+        html: response.data,
+        propertyId: propertyId
+      };
+      
     } catch (error) {
       console.error(`Failed to get property details for ${propertyId}:`, error);
       throw error;
@@ -332,6 +338,164 @@ export class RightmoveScraper {
       await new Promise(resolve => setTimeout(resolve, 500));
     }
     
+    return enrichedProperties;
+  }
+
+  // Extract high-definition images from property details
+  async getHighQualityImages(propertyId: string | number, quiet = false): Promise<string[]> {
+    try {
+      const details = await this.getPropertyDetails(propertyId, quiet);
+      return this.extractHDImagesFromDetails(details);
+    } catch (error) {
+      if (!quiet) console.warn(`Failed to get HD images for property ${propertyId}:`, error);
+      return [];
+    }
+  }
+
+  // Extract HD images from property details response
+  private extractHDImagesFromDetails(details: any): string[] {
+    const hdImages: string[] = [];
+    const seenUrls = new Set<string>();
+    
+    try {
+      // Look for images in various locations in the response
+      const imageSources = [
+        details.propertyImages,
+        details.images,
+        details.propertyData?.images,
+        details.propertyDetails?.images
+      ];
+
+      for (const imageSource of imageSources) {
+        if (imageSource && Array.isArray(imageSource)) {
+          imageSource.forEach((img: any) => {
+            if (img && typeof img === 'object') {
+              // Try different image URL properties
+              const imageUrl = img.srcUrl || img.url || img.imageUrl || img.src;
+              
+              if (imageUrl && typeof imageUrl === 'string') {
+                // Convert to highest quality version
+                let hdUrl = imageUrl;
+                
+                // Remove resolution constraints to get original quality
+                hdUrl = hdUrl.replace(/_max_\d+x\d+/, '');
+                
+                // Remove crop constraints for original aspect ratio
+                hdUrl = hdUrl.replace(/\/dir\/crop\/[^/]+\//, '/dir/');
+                
+                if (!seenUrls.has(hdUrl)) {
+                  seenUrls.add(hdUrl);
+                  hdImages.push(hdUrl);
+                }
+              }
+            }
+          });
+        }
+      }
+
+      // If no images found in structured data, extract from HTML
+      if (hdImages.length === 0 && details.html) {
+        console.log('Extracting images from HTML...');
+        
+        // Extract all Rightmove image URLs from HTML
+        const imageMatches = details.html.match(/https:\/\/media\.rightmove\.co\.uk[^"'\s]+\.jpe?g/gi);
+        
+        if (imageMatches) {
+          // Process each URL to get the original quality version
+          imageMatches.forEach((url: string) => {
+            // Skip brand logos and non-property images
+            if (url.includes('brand_logo') || url.includes('/brand/')) {
+              return;
+            }
+            
+            // Skip thumbnails and only get original quality images
+            if (!url.includes('_max_')) {
+              // This is already an original quality image
+              if (!seenUrls.has(url) && url.includes('IMG_')) {
+                seenUrls.add(url);
+                hdImages.push(url);
+              }
+            } else {
+              // Convert thumbnail to original quality
+              let hdUrl = url.replace(/_max_\d+x\d+/, '');
+              
+              // Remove crop constraints for original aspect ratio
+              hdUrl = hdUrl.replace(/\/dir\/crop\/[^/]+\//, '/dir/');
+              
+              if (!seenUrls.has(hdUrl) && hdUrl.includes('IMG_')) {
+                seenUrls.add(hdUrl);
+                hdImages.push(hdUrl);
+              }
+            }
+          });
+        }
+      }
+
+    } catch (error) {
+      console.warn('Error extracting HD images:', error);
+    }
+
+    // Filter out duplicate URLs and keep only unique images
+    const uniqueImages = Array.from(new Set(hdImages));
+    
+    console.log(`Extracted ${uniqueImages.length} unique HD images`);
+    return uniqueImages.slice(0, 20); // Limit to 20 images max
+  }
+
+  // Get property with HD images
+  async getPropertyWithHDImages(property: RightmoveProperty, quiet = false): Promise<RightmoveProperty> {
+    try {
+      if (!quiet) console.log(`  🖼️  Fetching HD images for property ${property.id}`);
+      
+      const hdImages = await this.getHighQualityImages(property.id, quiet);
+      
+      if (hdImages.length > 0) {
+        if (!quiet) console.log(`  ✅ Replaced with ${hdImages.length} HD images`);
+        
+        // Create HD image objects to replace thumbnails
+        const hdImageObjects = hdImages.map((url, index) => ({
+          srcUrl: url,
+          url: url,
+          caption: `Image ${index + 1}`
+        }));
+
+        // Replace the original images array with HD images
+        return {
+          ...property,
+          images: hdImageObjects, // Replace thumbnails with HD images
+          numberOfImages: hdImages.length // Update count
+        };
+      } else {
+        if (!quiet) console.log(`  ⚠️  No HD images found, keeping thumbnails`);
+        return property;
+      }
+    } catch (error) {
+      if (!quiet) console.warn(`  ❌ Failed to get HD images for property ${property.id}:`, error);
+      return property; // Return original property if HD fetch fails
+    }
+  }
+
+  // Get multiple properties with HD images (with rate limiting)
+  async getPropertiesWithHDImages(properties: RightmoveProperty[], quiet = false): Promise<RightmoveProperty[]> {
+    const enrichedProperties: RightmoveProperty[] = [];
+    
+    if (!quiet) console.log(`\n🖼️  Fetching HD images for ${properties.length} properties...`);
+    
+    for (let i = 0; i < properties.length; i++) {
+      const property = properties[i];
+      if (!quiet) console.log(`\n📸 Processing property ${i + 1}/${properties.length}: ${property.displayAddress}`);
+      
+      const enriched = await this.getPropertyWithHDImages(property, quiet);
+      enrichedProperties.push(enriched);
+      
+      // Add delay to avoid rate limiting (important for detail page requests)
+      if (i < properties.length - 1) {
+        if (!quiet) console.log(`  ⏱️  Waiting 2 seconds to avoid rate limiting...`);
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
+    }
+    
+    if (!quiet) console.log(`\n✅ Completed HD image fetching for all properties`);
     return enrichedProperties;
   }
 

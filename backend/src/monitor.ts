@@ -64,8 +64,13 @@ class PropertyMonitor {
           const results = await this.scraper.searchProperties(searchOptions);
           console.log(`   📊 Found ${results.properties.length} properties`);
           
-          // Process properties for this specific query
-          const processResult = await this.supabase.processPropertiesForQuery(query, results.properties);
+          // Enhance properties with HD images
+          console.log(`   🖼️  Fetching HD images for properties...`);
+          const propertiesWithHD = await this.scraper.getPropertiesWithHDImages(results.properties, quiet);
+          console.log(`   ✅ Enhanced ${propertiesWithHD.length} properties with HD images`);
+          
+          // Process enhanced properties for this specific query
+          const processResult = await this.supabase.processPropertiesForQuery(query, propertiesWithHD);
           
           if (processResult.newCount > 0) {
             console.log(`   🎉 Added ${processResult.newCount} new properties for query: ${query.name}`);
