@@ -109,6 +109,51 @@ class SearchQueryService: ObservableObject {
         }
     }
     
+    // Special method for duplicating queries that adds them at the bottom
+    func createQueryAtBottom(_ query: SearchQuery) async -> Bool {
+        isLoading = true
+        error = nil
+        
+        do {
+            // Get current user
+            let user = try await supabase.auth.user()
+            
+            let queryRow = QueryRow(
+                id: query.id.uuidString,
+                user_id: user.id.uuidString,
+                name: query.name,
+                location_id: query.locationId,
+                location_name: query.locationName,
+                min_price: query.minPrice,
+                max_price: query.maxPrice,
+                min_bedrooms: query.minBedrooms,
+                max_bedrooms: query.maxBedrooms,
+                min_bathrooms: query.minBathrooms,
+                max_bathrooms: query.maxBathrooms,
+                radius: query.radius,
+                furnish_type: query.furnishType,
+                active: query.active,
+                created: ISO8601DateFormatter().string(from: query.created),
+                updated: ISO8601DateFormatter().string(from: query.updated)
+            )
+            
+            try await supabase
+                .from("query")
+                .insert(queryRow)
+                .execute()
+            
+            // Add to bottom of local list instead of reloading
+            queries.append(query)
+            isLoading = false
+            return true
+        } catch {
+            self.error = error.localizedDescription
+            print("Error creating query: \(error)")
+            isLoading = false
+            return false
+        }
+    }
+    
     private func triggerGitHubWorkflow() async {
         // For production, you'd want to call your backend API that has the GitHub token
         // For now, we'll just log that we would trigger the workflow

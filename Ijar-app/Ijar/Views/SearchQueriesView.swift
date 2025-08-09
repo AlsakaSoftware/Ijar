@@ -3,6 +3,7 @@ import SwiftUI
 struct SearchQueriesView: View {
     @StateObject private var searchService = SearchQueryService()
     @State private var showingCreateQuery = false
+    @State private var editingQuery: SearchQuery? = nil
     
     var body: some View {
         NavigationView {
@@ -37,6 +38,16 @@ struct SearchQueriesView: View {
                         await searchService.createQuery(query)
                     }
                 }
+            }
+            .sheet(item: $editingQuery) { query in
+                EditSearchQueryView(
+                    query: query,
+                    onSave: { updatedQuery in
+                        Task {
+                            await searchService.updateQuery(updatedQuery)
+                        }
+                    }
+                )
             }
             .task {
                 await searchService.loadUserQueries()
@@ -87,7 +98,7 @@ struct SearchQueriesView: View {
     private var queryListView: some View {
         List {
             ForEach(searchService.queries) { query in
-                SearchQueryRow(
+                SearchQueryCard(
                     query: query,
                     onToggleActive: {
                         Task {
@@ -112,6 +123,27 @@ struct SearchQueriesView: View {
                             await searchService.updateQuery(updatedQuery)
                         }
                     },
+                    onEdit: { queryToEdit in
+                        editingQuery = queryToEdit
+                    },
+                    onDuplicate: { queryToDuplicate in
+                        let duplicatedQuery = SearchQuery(
+                            name: "\(queryToDuplicate.name) Copy",
+                            locationId: queryToDuplicate.locationId,
+                            locationName: queryToDuplicate.locationName,
+                            minPrice: queryToDuplicate.minPrice,
+                            maxPrice: queryToDuplicate.maxPrice,
+                            minBedrooms: queryToDuplicate.minBedrooms,
+                            maxBedrooms: queryToDuplicate.maxBedrooms,
+                            minBathrooms: queryToDuplicate.minBathrooms,
+                            maxBathrooms: queryToDuplicate.maxBathrooms,
+                            radius: queryToDuplicate.radius,
+                            furnishType: queryToDuplicate.furnishType
+                        )
+                        Task {
+                            await searchService.createQueryAtBottom(duplicatedQuery)
+                        }
+                    },
                     onDelete: { queryToDelete in
                         Task {
                             await searchService.deleteQuery(queryToDelete)
@@ -120,6 +152,7 @@ struct SearchQueriesView: View {
                 )
                 .listRowBackground(Color.clear)
                 .listRowSeparator(.hidden)
+                .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
             }
         }
         .listStyle(PlainListStyle())
@@ -127,143 +160,179 @@ struct SearchQueriesView: View {
     }
 }
 
-struct SearchQueryRow: View {
+struct SearchQueryCard: View {
     let query: SearchQuery
     let onToggleActive: () -> Void
+    let onEdit: (SearchQuery) -> Void
+    let onDuplicate: (SearchQuery) -> Void
     let onDelete: (SearchQuery) -> Void
     
+    @State private var showingOptions = false
+    
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 16) {
+            // Header with name, location and status
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 6) {
                     Text(query.name)
-                        .font(.system(size: 18, weight: .semibold))
+                        .font(.system(size: 19, weight: .bold))
                         .foregroundColor(.coffeeBean)
+                        .lineLimit(2)
                     
-                    Text(query.locationName)
-                        .font(.system(size: 14))
-                        .foregroundColor(.warmBrown.opacity(0.7))
+                    HStack(spacing: 6) {
+                        Image(systemName: "location.fill")
+                            .font(.system(size: 12))
+                            .foregroundColor(.warmBrown.opacity(0.6))
+                        Text(query.locationName)
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(.warmBrown.opacity(0.8))
+                    }
                 }
                 
                 Spacer()
                 
+                // Status toggle
                 Button(action: onToggleActive) {
-                    HStack(spacing: 4) {
+                    HStack(spacing: 6) {
                         Circle()
-                            .fill(query.active ? Color.rusticOrange : Color.gray.opacity(0.3))
-                            .frame(width: 12, height: 12)
-                        Text(query.active ? "Active" : "Inactive")
-                            .font(.system(size: 12, weight: .medium))
-                            .foregroundColor(query.active ? .rusticOrange : .gray)
+                            .fill(query.active ? Color.green : Color.gray.opacity(0.4))
+                            .frame(width: 10, height: 10)
+                        Text(query.active ? "Active" : "Paused")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundColor(query.active ? .green : .gray)
                     }
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(
+                        Capsule()
+                            .fill(query.active ? Color.green.opacity(0.1) : Color.gray.opacity(0.1))
+                    )
                 }
                 .buttonStyle(PlainButtonStyle())
             }
             
-            // Search criteria summary
-            VStack(alignment: .leading, spacing: 6) {
-                if let minPrice = query.minPrice, let maxPrice = query.maxPrice {
-                    SearchCriteriaChip(
-                        icon: "pounds.circle",
-                        text: "£\(minPrice) - £\(maxPrice)"
-                    )
-                }
-                
+            // Attractive criteria pills
+            ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
+                    if let minPrice = query.minPrice, let maxPrice = query.maxPrice {
+                        CriteriaPill(
+                            icon: "pounds.circle",
+                            text: "£\(formatPrice(minPrice)) - £\(formatPrice(maxPrice))"
+                        )
+                    }
+                    
                     if let minBed = query.minBedrooms, let maxBed = query.maxBedrooms {
-                        if minBed == maxBed {
-                            SearchCriteriaChip(
-                                icon: "bed.double",
-                                text: "\(minBed) bed"
-                            )
-                        } else {
-                            SearchCriteriaChip(
-                                icon: "bed.double",
-                                text: "\(minBed)-\(maxBed) bed"
-                            )
-                        }
+                        let bedText = minBed == maxBed ? "\(minBed) bed" : "\(minBed)-\(maxBed) beds"
+                        CriteriaPill(
+                            icon: "bed.double",
+                            text: bedText
+                        )
                     }
                     
                     if let minBath = query.minBathrooms, let maxBath = query.maxBathrooms {
-                        if minBath == maxBath {
-                            SearchCriteriaChip(
-                                icon: "shower",
-                                text: "\(minBath) bath"
-                            )
-                        } else {
-                            SearchCriteriaChip(
-                                icon: "shower",
-                                text: "\(minBath)-\(maxBath) bath"
-                            )
-                        }
+                        let bathText = minBath == maxBath ? "\(minBath) bath" : "\(minBath)-\(maxBath) baths"
+                        CriteriaPill(
+                            icon: "shower",
+                            text: bathText
+                        )
                     }
                     
-                    Spacer()
+                    if let radius = query.radius {
+                        CriteriaPill(
+                            icon: "location.circle",
+                            text: "\(String(format: "%.1f", radius)) mi"
+                        )
+                    }
+                    
+                    if let furnish = query.furnishType {
+                        CriteriaPill(
+                            icon: "sofa",
+                            text: furnish.capitalized
+                        )
+                    }
                 }
+                .padding(.horizontal, 2)
             }
             
-            // Actions
+            // Footer with options menu
             HStack {
                 Text("Created \(query.created.formatted(date: .abbreviated, time: .omitted))")
-                    .font(.system(size: 12))
+                    .font(.system(size: 11, weight: .medium))
                     .foregroundColor(.warmBrown.opacity(0.5))
                 
                 Spacer()
                 
-                Button(action: {
-                    onDelete(query)
-                }) {
-                    HStack(spacing: 4) {
-                        Image(systemName: "trash")
-                            .font(.system(size: 14))
-                        Text("Delete")
-                            .font(.system(size: 12, weight: .medium))
+                // Options menu button
+                Menu {
+                    Button(action: { onEdit(query) }) {
+                        Label("Edit Search", systemImage: "pencil")
                     }
-                    .foregroundColor(.warmRed)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
+                    
+                    Button(action: { onDuplicate(query) }) {
+                        Label("Duplicate", systemImage: "doc.on.doc")
+                    }
+                    
+                    Divider()
+                    
+                    Button(role: .destructive, action: { onDelete(query) }) {
+                        Label("Delete", systemImage: "trash")
+                    }
+                } label: {
+                    Text("Options")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.warmBrown)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(Color.warmBrown.opacity(0.4), lineWidth: 1.2)
+                                .background(Color.warmCream.opacity(0.3))
+                        )
                 }
                 .buttonStyle(PlainButtonStyle())
             }
         }
-        .padding(16)
+        .padding(18)
         .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(Color.warmCream)
-                .shadow(color: .coffeeBean.opacity(0.05), radius: 4, y: 2)
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color.white)
+                .shadow(color: .coffeeBean.opacity(0.08), radius: 8, y: 4)
         )
-        .padding(.horizontal)
-        .padding(.vertical, 4)
-        .contentShape(Rectangle())
-        .onTapGesture {
-            // Prevent accidental taps - do nothing for general taps
+    }
+    
+    private func formatPrice(_ price: Int) -> String {
+        if price >= 1000 {
+            return String(format: "%.1fk", Double(price) / 1000.0)
         }
+        return "\(price)"
     }
 }
 
-struct SearchCriteriaChip: View {
+struct CriteriaPill: View {
     let icon: String
     let text: String
     
     var body: some View {
         HStack(spacing: 4) {
             Image(systemName: icon)
-                .font(.system(size: 10))
-            Text(text)
                 .font(.system(size: 10, weight: .medium))
+                .foregroundColor(.rusticOrange)
+            Text(text)
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundColor(.coffeeBean)
         }
-        .foregroundColor(.rusticOrange)
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
         .background(
             Capsule()
-                .fill(Color.rusticOrange.opacity(0.1))
+                .fill(Color.warmCream)
+                .overlay(
+                    Capsule()
+                        .stroke(Color.rusticOrange.opacity(0.3), lineWidth: 0.5)
+                )
         )
     }
 }
 
-#Preview {
-    SearchQueriesView()
-}
+
+

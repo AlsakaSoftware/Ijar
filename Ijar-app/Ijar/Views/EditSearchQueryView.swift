@@ -1,7 +1,8 @@
 import SwiftUI
 
-struct CreateSearchQueryView: View {
+struct EditSearchQueryView: View {
     @Environment(\.dismiss) private var dismiss
+    let query: SearchQuery
     let onSave: (SearchQuery) -> Void
     
     @State private var name = ""
@@ -35,7 +36,7 @@ struct CreateSearchQueryView: View {
         NavigationView {
             Form {
                 Section("Basic Information") {
-                    TextField("e.g., Canary Wharf 3-bed", text: $name)
+                    TextField("Search Name", text: $name)
                     
                     Picker("Location", selection: $locationName) {
                         ForEach(locationOptions, id: \.0) { location in
@@ -137,7 +138,7 @@ struct CreateSearchQueryView: View {
                     }
                 }
             }
-            .navigationTitle("Create Search")
+            .navigationTitle("Edit Search")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
@@ -155,11 +156,7 @@ struct CreateSearchQueryView: View {
             }
         }
         .onAppear {
-            // Set default location
-            if locationName.isEmpty {
-                locationName = locationOptions[0].0
-                locationId = locationOptions[0].1
-            }
+            populateFields()
         }
     }
     
@@ -169,8 +166,29 @@ struct CreateSearchQueryView: View {
         !locationId.isEmpty
     }
     
+    private func populateFields() {
+        name = query.name
+        locationName = query.locationName
+        locationId = query.locationId
+        minPrice = query.minPrice
+        maxPrice = query.maxPrice
+        minBedrooms = query.minBedrooms
+        maxBedrooms = query.maxBedrooms
+        minBathrooms = query.minBathrooms
+        maxBathrooms = query.maxBathrooms
+        radius = query.radius
+        furnishType = query.furnishType
+        
+        // Update text fields
+        minPriceText = query.minPrice?.description ?? ""
+        maxPriceText = query.maxPrice?.description ?? ""
+        radiusText = query.radius?.description ?? ""
+        selectedFurnishType = query.furnishType?.capitalized ?? "Any"
+    }
+    
     private func saveQuery() {
-        let query = SearchQuery(
+        let updatedQuery = SearchQuery(
+            id: query.id,
             name: name.trimmingCharacters(in: .whitespacesAndNewlines),
             locationId: locationId,
             locationName: locationName,
@@ -181,12 +199,14 @@ struct CreateSearchQueryView: View {
             minBathrooms: minBathrooms,
             maxBathrooms: maxBathrooms,
             radius: radius,
-            furnishType: furnishType
+            furnishType: furnishType,
+            active: query.active,
+            created: query.created,
+            updated: Date()
         )
         
-        onSave(query)
+        onSave(updatedQuery)
         dismiss()
     }
 }
-
 

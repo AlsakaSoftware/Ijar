@@ -48,22 +48,6 @@ struct ProfileView: View {
                         // Navigate to saved properties
                     }
                 )
-                
-                ProfileMenuRow(
-                    icon: "gearshape.fill",
-                    title: "Preferences",
-                    action: {
-                        coordinator.navigate(to: .preferences)
-                    }
-                )
-                
-                ProfileMenuRow(
-                    icon: "person.fill",
-                    title: "Edit Profile",
-                    action: {
-                        coordinator.navigate(to: .editProfile)
-                    }
-                )
             }
             .background(Color.warmCream)
             .cornerRadius(16)
@@ -246,8 +230,9 @@ struct ProfileMenuRow: View {
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 16)
+            .background(Color.clear)
+            .contentShape(Rectangle())
         }
-        .buttonStyle(PlainButtonStyle())
     }
 }
 

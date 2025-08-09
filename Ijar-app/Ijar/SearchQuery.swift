@@ -52,26 +52,3 @@ struct SearchQuery: Identifiable, Codable {
     }
 }
 
-// Mock data for testing
-extension SearchQuery {
-    static let mockQueries = [
-        SearchQuery(
-            name: "Canary Wharf 3-bed",
-            locationId: "REGION^87490",
-            locationName: "Canary Wharf",
-            minPrice: 2500,
-            maxPrice: 4000,
-            minBedrooms: 3,
-            maxBedrooms: 3
-        ),
-        SearchQuery(
-            name: "Mile End Budget",
-            locationId: "REGION^61166",
-            locationName: "Mile End",
-            minPrice: 1800,
-            maxPrice: 2500,
-            minBedrooms: 2,
-            maxBedrooms: 4
-        )
-    ]
-}
