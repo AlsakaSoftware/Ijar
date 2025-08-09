@@ -65,13 +65,14 @@ class PropertyMonitor {
           const results = await this.scraper.searchProperties(searchOptions);
           console.log(`   📊 Found ${results.properties.length} properties`);
           
-          let finalProperties = results.properties;
+          // Limit to max properties per query
+          let finalProperties = results.properties.slice(0, config.maxHDPropertiesPerQuery);
+          console.log(`   📋 Processing ${finalProperties.length} properties (max: ${config.maxHDPropertiesPerQuery})`);
           
-          // Enhance properties with HD images if enabled
+          // Enhance ALL fetched properties with HD images if enabled
           if (config.enableHDImages) {
-            const propertiesToEnhance = results.properties.slice(0, config.maxHDPropertiesPerQuery);
-            console.log(`   🖼️  Fetching HD images for top ${propertiesToEnhance.length} properties...`);
-            const propertiesWithHD = await this.scraper.getPropertiesWithHDImages(propertiesToEnhance, false);
+            console.log(`   🖼️  Fetching HD images for all ${finalProperties.length} properties...`);
+            const propertiesWithHD = await this.scraper.getPropertiesWithHDImages(finalProperties, false);
             console.log(`   ✅ Enhanced ${propertiesWithHD.length} properties with HD images`);
             finalProperties = propertiesWithHD;
           } else {

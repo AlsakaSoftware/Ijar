@@ -22,8 +22,6 @@ export class RightmoveScraper {
       'Connection': 'keep-alive',
       'Upgrade-Insecure-Requests': '1'
     };
-    
-    // No location map needed anymore - locations are in searches.json
   }
 
   private async fetchPage(url: string): Promise<ApiResponse> {
@@ -189,12 +187,6 @@ export class RightmoveScraper {
       if (response.statusCode !== 200) {
         throw new Error(`HTTP ${response.statusCode}: ${response.data}`);
       }
-
-      // Try to extract from __NEXT_DATA__ first
-      const nextData = this.extractNextData(response.data);
-      if (nextData?.props?.pageProps) {
-        return nextData.props.pageProps;
-      }
       
       // If __NEXT_DATA__ fails, return the raw HTML for image extraction
       if (!quiet) console.log('No __NEXT_DATA__ found, using HTML extraction method');
@@ -356,44 +348,25 @@ export class RightmoveScraper {
   private extractHDImagesFromDetails(details: any): string[] {
     const hdImages: string[] = [];
     const seenUrls = new Set<string>();
+    const seenImageIds = new Set<string>(); // Track unique image IDs
     
+    // Helper function to extract image ID from URL
+    const getImageId = (url: string): string => {
+      // Extract the unique image identifier (e.g., "55101_1332966_IMG_01_0000")
+      const match = url.match(/(\d+_\d+_IMG_\d+_\d+)/);
+      return match ? match[1] : url;
+    };
+
+    // Helper function to normalize URL for deduplication
+    const normalizeUrl = (url: string): string => {
+      return url
+        .replace(/_max_\d+x\d+/, '') // Remove resolution constraints
+        .replace(/\/dir\/crop\/[^/]+\//, '/dir/') // Remove crop constraints
+        .replace(/\?[^#]*/, ''); // Remove query parameters
+    };
+
     try {
-      // Look for images in various locations in the response
-      const imageSources = [
-        details.propertyImages,
-        details.images,
-        details.propertyData?.images,
-        details.propertyDetails?.images
-      ];
-
-      for (const imageSource of imageSources) {
-        if (imageSource && Array.isArray(imageSource)) {
-          imageSource.forEach((img: any) => {
-            if (img && typeof img === 'object') {
-              // Try different image URL properties
-              const imageUrl = img.srcUrl || img.url || img.imageUrl || img.src;
-              
-              if (imageUrl && typeof imageUrl === 'string') {
-                // Convert to highest quality version
-                let hdUrl = imageUrl;
-                
-                // Remove resolution constraints to get original quality
-                hdUrl = hdUrl.replace(/_max_\d+x\d+/, '');
-                
-                // Remove crop constraints for original aspect ratio
-                hdUrl = hdUrl.replace(/\/dir\/crop\/[^/]+\//, '/dir/');
-                
-                if (!seenUrls.has(hdUrl)) {
-                  seenUrls.add(hdUrl);
-                  hdImages.push(hdUrl);
-                }
-              }
-            }
-          });
-        }
-      }
-
-      // If no images found in structured data, extract from HTML
+      // Extract images from HTML
       if (hdImages.length === 0 && details.html) {
         console.log('Extracting images from HTML...');
         
@@ -408,23 +381,16 @@ export class RightmoveScraper {
               return;
             }
             
-            // Skip thumbnails and only get original quality images
-            if (!url.includes('_max_')) {
-              // This is already an original quality image
-              if (!seenUrls.has(url) && url.includes('IMG_')) {
-                seenUrls.add(url);
-                hdImages.push(url);
-              }
-            } else {
-              // Convert thumbnail to original quality
-              let hdUrl = url.replace(/_max_\d+x\d+/, '');
+            // Only process property images (contain IMG_ identifier)
+            if (url.includes('IMG_')) {
+              const normalizedUrl = normalizeUrl(url);
+              const imageId = getImageId(normalizedUrl);
               
-              // Remove crop constraints for original aspect ratio
-              hdUrl = hdUrl.replace(/\/dir\/crop\/[^/]+\//, '/dir/');
-              
-              if (!seenUrls.has(hdUrl) && hdUrl.includes('IMG_')) {
-                seenUrls.add(hdUrl);
-                hdImages.push(hdUrl);
+              // Only add if we haven't seen this image ID before
+              if (!seenImageIds.has(imageId) && !seenUrls.has(normalizedUrl)) {
+                seenImageIds.add(imageId);
+                seenUrls.add(normalizedUrl);
+                hdImages.push(normalizedUrl);
               }
             }
           });
@@ -434,12 +400,9 @@ export class RightmoveScraper {
     } catch (error) {
       console.warn('Error extracting HD images:', error);
     }
-
-    // Filter out duplicate URLs and keep only unique images
-    const uniqueImages = Array.from(new Set(hdImages));
     
-    console.log(`Extracted ${uniqueImages.length} unique HD images`);
-    return uniqueImages.slice(0, 20); // Limit to 20 images max
+    console.log(`Extracted ${hdImages.length} unique HD images`);
+    return hdImages.slice(0, 20); // Limit to 20 images max
   }
 
   // Get property with HD images
