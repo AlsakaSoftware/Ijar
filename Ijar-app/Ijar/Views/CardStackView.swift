@@ -9,7 +9,7 @@ struct CardStackView<Content: View, Overlay: View>: View {
     let items: [Property]
     @Binding var topItem: Int
     let maxVisibleCards: Int = 3
-    let cardContent: (Property, Bool) -> Content
+    let cardContent: (Property, Bool, CGSize) -> Content
     let leftOverlay: () -> Overlay
     let rightOverlay: () -> Overlay
     let onSwipeLeft: (Property) -> Void
@@ -20,6 +20,7 @@ struct CardStackView<Content: View, Overlay: View>: View {
     @State private var lastHapticDirection: SwipeDirection = .none
     @State private var cardRotations: [String: Double] = [:]
     @State private var isAnimatingSwipe = false
+    @State private var isDragging = false
     private let impactFeedback = UIImpactFeedbackGenerator(style: .light)
     private let selectionFeedback = UISelectionFeedbackGenerator()
     
@@ -29,13 +30,13 @@ struct CardStackView<Content: View, Overlay: View>: View {
             ForEach(Array(items.prefix(maxVisibleCards).enumerated()), id: \.element.id) { stackIndex, property in
                 let isTopCard = stackIndex == 0
                 
-                cardContent(property, isTopCard)
-//                    .scaleEffect(cardScale(for: stackIndex))
+                cardContent(property, isTopCard, isTopCard ? dragAmount : .zero)
+                    .scaleEffect(cardScale(for: stackIndex))
                     .offset(cardOffset(for: stackIndex))
                     .rotationEffect(cardRotation(for: stackIndex, propertyId: property.id))
                     .opacity(cardOpacity(for: stackIndex))
                     .zIndex(Double(maxVisibleCards - stackIndex))
-                    .animation(.spring(response: 0.3, dampingFraction: 0.85), value: dragAmount)
+                    .animation(isDragging ? nil : .spring(response: 0.4, dampingFraction: 0.75), value: dragAmount)
                     .gesture(isTopCard ? swipeGesture : nil)
                     .onAppear {
                         // Generate a random tilt for background cards if not already set
@@ -71,9 +72,11 @@ struct CardStackView<Content: View, Overlay: View>: View {
     
     private func cardRotation(for stackIndex: Int, propertyId: String) -> Angle {
         if stackIndex == 0 {
-            // Top card rotation based on drag
-            let rotation = Double(dragAmount.width) / 25
-            return .degrees(min(max(rotation, -12), 12))
+            // Top card rotation based on drag - now considers vertical movement too
+            let horizontalRotation = Double(dragAmount.width) / 25
+            let verticalInfluence = Double(dragAmount.height) / 100 // Subtle influence from vertical drag
+            let totalRotation = horizontalRotation - verticalInfluence
+            return .degrees(min(max(totalRotation, -15), 15))
         } else {
             // Background cards have their pre-assigned random tilt
             let randomTilt = cardRotations[propertyId] ?? 0
@@ -96,8 +99,10 @@ struct CardStackView<Content: View, Overlay: View>: View {
     private var swipeGesture: some Gesture {
         DragGesture(minimumDistance: 0)
             .onChanged { value in
+                isDragging = true
                 withAnimation(.interactiveSpring(response: 0.2, dampingFraction: 0.95, blendDuration: 0)) {
-                    dragAmount = CGSize(width: value.translation.width, height: 0)
+                    // Allow free dragging in both X and Y axes
+                    dragAmount = value.translation
                     
                     let newDirection: SwipeDirection
                     if value.translation.width > 40 {
@@ -120,6 +125,7 @@ struct CardStackView<Content: View, Overlay: View>: View {
                 }
             }
             .onEnded { value in
+                isDragging = false
                 let threshold: CGFloat = 90
                 let velocity = value.predictedEndLocation.x - value.location.x
                 
@@ -129,7 +135,7 @@ struct CardStackView<Content: View, Overlay: View>: View {
                     if topItem < items.count {
                         let property = items[topItem]
                         withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
-                            dragAmount = CGSize(width: 400, height: 0)
+                            dragAmount = CGSize(width: 400, height: value.translation.height / 2)
                         }
 
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
@@ -143,7 +149,7 @@ struct CardStackView<Content: View, Overlay: View>: View {
                     if topItem < items.count {
                         let property = items[topItem]
                         withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
-                            dragAmount = CGSize(width: -400, height: 0)
+                            dragAmount = CGSize(width: -400, height: value.translation.height / 2)
                         }
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
                             onSwipeLeft(property)
@@ -164,5 +170,7 @@ struct CardStackView<Content: View, Overlay: View>: View {
         dragAmount = .zero
         dragDirection = .none
         lastHapticDirection = .none
+        isDragging = false
     }
+    
 }

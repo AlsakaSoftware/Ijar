@@ -3,6 +3,7 @@ import SwiftUI
 struct PropertyCard: View {
     let property: Property
     let onTap: () -> Void
+    var dragAmount: CGSize = .zero
     @State private var currentImageIndex = 0
     
     var body: some View {
@@ -90,25 +91,30 @@ struct PropertyCard: View {
         .clipShape(RoundedRectangle(cornerRadius: 20))
         .shadow(color: .coffeeBean.opacity(0.08), radius: 16, y: 8)
         .overlay {
-            // Tap zones for image navigation
-            HStack(spacing: 0) {
-                // Left tap zone
-                Color.clear
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        if currentImageIndex > 0 {
-                            currentImageIndex -= 1
+            ZStack {
+                // Tap zones for image navigation
+                HStack(spacing: 0) {
+                    // Left tap zone
+                    Color.clear
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            if currentImageIndex > 0 {
+                                currentImageIndex -= 1
+                            }
                         }
-                    }
+                    
+                    // Right tap zone
+                    Color.clear
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            if currentImageIndex < property.images.count - 1 {
+                                currentImageIndex += 1
+                            }
+                        }
+                }
                 
-                // Right tap zone
-                Color.clear
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        if currentImageIndex < property.images.count - 1 {
-                            currentImageIndex += 1
-                        }
-                    }
+                // Swipe indicator overlay
+                swipeIndicatorOverlay
             }
         }
 
@@ -176,6 +182,69 @@ struct PropertyCard: View {
                 endPoint: .bottom
             )
         }
+    }
+    
+    // Swipe indicator overlay
+    @ViewBuilder
+    private var swipeIndicatorOverlay: some View {
+        ZStack {
+            // Left swipe indicator (Pass) - shows on RIGHT corner
+            if dragAmount.width < -30 {
+                HStack {
+                    Spacer()
+                    
+                    VStack {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 36, weight: .medium))
+                            .foregroundColor(.warmCream)
+                            .background(
+                                Circle()
+                                    .fill(Color.warmBrown.opacity(0.85))
+                                    .overlay(
+                                        Circle()
+                                            .stroke(Color.warmCream.opacity(0.3), lineWidth: 1)
+                                    )
+                                    .shadow(color: .black.opacity(0.4), radius: 8, y: 4)
+                                    .frame(width: 70, height: 70)
+                            )
+                        
+                        Spacer()
+                    }
+                    .padding(.top, 40)
+                    .padding(.trailing, 30)
+                }
+                .opacity(min(abs(dragAmount.width) / 80.0, 1.0))
+            }
+            
+            // Right swipe indicator (Save) - shows on LEFT corner
+            if dragAmount.width > 30 {
+                HStack {
+                    VStack {
+                        Image(systemName: "heart.fill")
+                            .font(.system(size: 36, weight: .medium))
+                            .foregroundColor(.warmCream)
+                            .background(
+                                Circle()
+                                    .fill(Color.rusticOrange.opacity(0.85))
+                                    .overlay(
+                                        Circle()
+                                            .stroke(Color.warmCream.opacity(0.3), lineWidth: 1)
+                                    )
+                                    .shadow(color: .black.opacity(0.4), radius: 8, y: 4)
+                                    .frame(width: 70, height: 70)
+                            )
+                        
+                        Spacer()
+                    }
+                    .padding(.top, 40)
+                    .padding(.leading, 30)
+                    
+                    Spacer()
+                }
+                .opacity(min(dragAmount.width / 80.0, 1.0))
+            }
+        }
+        .allowsHitTesting(false)
     }
     
 }

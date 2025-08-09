@@ -92,8 +92,8 @@ struct CardSwipeView: View {
         CardStackView(
             items: propertyService.properties,
             topItem: .constant(0),
-            cardContent: { property, isTopCard in
-                PropertyCard(property: property) {
+            cardContent: { property, isTopCard, dragAmount in
+                PropertyCard(property: property, dragAmount: dragAmount) {
                     selectedProperty = property
                     showingPropertyDetails = true
                 }
