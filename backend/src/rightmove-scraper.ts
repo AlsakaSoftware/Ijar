@@ -347,52 +347,81 @@ export class RightmoveScraper {
   // Extract HD images from property details response
   private extractHDImagesFromDetails(details: any): string[] {
     const hdImages: string[] = [];
-    const seenUrls = new Set<string>();
-    const seenImageIds = new Set<string>(); // Track unique image IDs
+    const seenImageIds = new Set<string>(); // Track unique image IDs only
     
     // Helper function to extract image ID from URL
     const getImageId = (url: string): string => {
-      // Extract the unique image identifier (e.g., "55101_1332966_IMG_01_0000")
-      const match = url.match(/(\d+_\d+_IMG_\d+_\d+)/);
-      return match ? match[1] : url;
+      // Extract the unique image identifier (e.g., "IMG_01" from "55101_1332966_IMG_01_0000")
+      const match = url.match(/IMG_(\d+)/);
+      return match ? match[1] : '';
     };
 
-    // Helper function to normalize URL for deduplication
-    const normalizeUrl = (url: string): string => {
-      return url
+    // Helper function to get the highest quality version of an image URL
+    const getHighQualityUrl = (url: string): string => {
+      // Remove any size constraints, crop parameters, and query strings
+      let cleanUrl = url
         .replace(/_max_\d+x\d+/, '') // Remove resolution constraints
         .replace(/\/dir\/crop\/[^/]+\//, '/dir/') // Remove crop constraints
         .replace(/\?[^#]*/, ''); // Remove query parameters
+      
+      // Prefer URLs without /dir/ prefix (they're typically the same image but shorter path)
+      cleanUrl = cleanUrl.replace(/\/dir\//, '/');
+      
+      return cleanUrl;
     };
 
     try {
       // Extract images from HTML
-      if (hdImages.length === 0 && details.html) {
+      if (details.html) {
         console.log('Extracting images from HTML...');
         
         // Extract all Rightmove image URLs from HTML
         const imageMatches = details.html.match(/https:\/\/media\.rightmove\.co\.uk[^"'\s]+\.jpe?g/gi);
         
         if (imageMatches) {
-          // Process each URL to get the original quality version
+          // Create a map to store the best version of each image
+          const imageMap = new Map<string, string>();
+          
+          // Process each URL
           imageMatches.forEach((url: string) => {
             // Skip brand logos and non-property images
-            if (url.includes('brand_logo') || url.includes('/brand/')) {
+            if (url.includes('brand_logo') || url.includes('/brand/') || url.includes('_BP_')) {
               return;
             }
             
             // Only process property images (contain IMG_ identifier)
             if (url.includes('IMG_')) {
-              const normalizedUrl = normalizeUrl(url);
-              const imageId = getImageId(normalizedUrl);
+              const imageId = getImageId(url);
               
-              // Only add if we haven't seen this image ID before
-              if (!seenImageIds.has(imageId) && !seenUrls.has(normalizedUrl)) {
-                seenImageIds.add(imageId);
-                seenUrls.add(normalizedUrl);
-                hdImages.push(normalizedUrl);
+              if (imageId) {
+                const highQualityUrl = getHighQualityUrl(url);
+                
+                // Store only if we haven't seen this image ID or if this is a better quality version
+                // Prefer URLs without /dir/ (shorter paths are typically better)
+                if (!imageMap.has(imageId)) {
+                  imageMap.set(imageId, highQualityUrl);
+                } else {
+                  const existingUrl = imageMap.get(imageId)!;
+                  // Prefer the URL without /dir/ path, or shorter URL if both have same path type
+                  if (!highQualityUrl.includes('/dir/') && existingUrl.includes('/dir/')) {
+                    imageMap.set(imageId, highQualityUrl);
+                  } else if (highQualityUrl.length < existingUrl.length && 
+                           highQualityUrl.includes('/dir/') === existingUrl.includes('/dir/')) {
+                    imageMap.set(imageId, highQualityUrl);
+                  }
+                }
               }
             }
+          });
+          
+          // Convert map to array, maintaining order
+          const sortedEntries = Array.from(imageMap.entries()).sort((a, b) => {
+            // Sort by image number (IMG_01, IMG_02, etc.)
+            return parseInt(a[0]) - parseInt(b[0]);
+          });
+          
+          sortedEntries.forEach(([_, url]) => {
+            hdImages.push(url);
           });
         }
       }
