@@ -49,66 +49,6 @@ class PropertyMonitor {
     return grouped;
   }
 
-  // Process all queries for a single user
-  private async processUserQueries(userId: string, queries: UserQuery[]): Promise<number> {
-    console.log(`\n👤 Processing ${queries.length} queries for user: ${userId}`);
-    let userNewProperties = 0;
-    
-    // Process all queries for this user
-    for (const query of queries) {
-      console.log(`  🔍 Processing query: ${query.name}`);
-      
-      try {
-        const processResult = await this.processQuery(query);
-        userNewProperties += processResult.newCount;
-        
-        if (processResult.newCount > 0) {
-          console.log(`    🎉 Added ${processResult.newCount} new properties for query: ${query.name}`);
-        } else {
-          console.log(`    📭 No new properties for query: ${query.name}`);
-        }
-        
-        if (processResult.errors.length > 0) {
-          console.warn(`    ⚠️ Some errors occurred:`, processResult.errors.slice(0, 3));
-        }
-        
-      } catch (error) {
-        console.error(`    ❌ Error processing query ${query.name}:`, error);
-      }
-    }
-    
-    // Send notification if user has new properties
-    if (userNewProperties > 0 && this.notificationService) {
-      console.log(`  🔔 Sending notification to user ${userId}: ${userNewProperties} new properties across ${queries.length} queries`);
-      
-      try {
-        // Include query name for single query notifications
-        const queryName = queries.length === 1 ? queries[0].name : undefined;
-        
-        const notificationResult = await this.notificationService.sendPropertyNotification(
-          userId,
-          userNewProperties,
-          queries.length,
-          queryName
-        );
-        
-        if (notificationResult.success) {
-          console.log(`  ✅ Notification sent successfully to user ${userId}`);
-        } else {
-          console.warn(`  ⚠️ Notification failed for user ${userId}:`, notificationResult.errors);
-        }
-      } catch (error) {
-        console.error(`  ❌ Error sending notification to user ${userId}:`, error);
-      }
-    } else if (userNewProperties > 0) {
-      console.log(`  ℹ️ Would send notification for ${userNewProperties} new properties, but push service not available`);
-    } else {
-      console.log(`  📭 No new properties for user ${userId}, skipping notification`);
-    }
-    
-    return userNewProperties;
-  }
-
   async run(): Promise<void> {
     const timestamp = new Date().toLocaleString();
     console.log(`[${timestamp}] 🔍 Processing all user queries from database`);
@@ -127,39 +67,64 @@ class PropertyMonitor {
       const queriesByUser = this.groupQueriesByUser(userQueries);
       console.log(`👥 Processing queries for ${queriesByUser.size} users`);
       
-      // Convert to array for batching
-      const userEntries = Array.from(queriesByUser.entries());
-      
-      // Configure parallel processing
-      const BATCH_SIZE = 3;
-      console.log(`⚡ Processing users in parallel batches of ${BATCH_SIZE}`);
-      
       let totalNewProperties = 0;
       
-      // Process users in batches
-      for (let i = 0; i < userEntries.length; i += BATCH_SIZE) {
-        const batch = userEntries.slice(i, i + BATCH_SIZE);
-        const batchNumber = Math.floor(i / BATCH_SIZE) + 1;
-        const totalBatches = Math.ceil(userEntries.length / BATCH_SIZE);
+      // Process each user's queries
+      for (const [userId, queries] of queriesByUser) {
+        console.log(`\n👤 Processing ${queries.length} queries for user: ${userId}`);
+        let userNewProperties = 0;
         
-        console.log(`\n🔄 Processing batch ${batchNumber}/${totalBatches} (${batch.length} users)`);
-        
-        // Process this batch in parallel
-        const batchResults = await Promise.all(
-          batch.map(([userId, queries]) => this.processUserQueries(userId, queries))
-        );
-        
-        // Sum up new properties from this batch
-        const batchNewProperties = batchResults.reduce((sum, result) => sum + result, 0);
-        totalNewProperties += batchNewProperties;
-        
-        console.log(`✅ Batch ${batchNumber} completed: ${batchNewProperties} new properties found`);
-        
-        // Small delay between batches to be respectful to Rightmove
-        if (i + BATCH_SIZE < userEntries.length) {
-          console.log('⏱️ Brief pause between batches...');
-          await new Promise(resolve => setTimeout(resolve, 2000));
+        // Process all queries for this user
+        for (const query of queries) {
+          console.log(`  🔍 Processing query: ${query.name}`);
+          
+          try {
+            const processResult = await this.processQuery(query);
+            userNewProperties += processResult.newCount;
+            
+            if (processResult.newCount > 0) {
+              console.log(`    🎉 Added ${processResult.newCount} new properties for query: ${query.name}`);
+            } else {
+              console.log(`    📭 No new properties for query: ${query.name}`);
+            }
+            
+            if (processResult.errors.length > 0) {
+              console.warn(`    ⚠️ Some errors occurred:`, processResult.errors.slice(0, 3));
+            }
+            
+          } catch (error) {
+            console.error(`    ❌ Error processing query ${query.name}:`, error);
+          }
         }
+        
+        // Send notification if user has new properties
+        if (userNewProperties > 0 && this.notificationService) {
+          console.log(`  🔔 Sending notification to user ${userId}: ${userNewProperties} new properties across ${queries.length} queries`);
+          
+          try {
+            // Include query name for single query notifications
+            const queryName = queries.length === 1 ? queries[0].name : undefined;
+            
+            const notificationResult = await this.notificationService.sendPropertyNotification(
+              userId,
+              userNewProperties,
+              queries.length,
+              queryName
+            );
+            
+            if (notificationResult.success) {
+              console.log(`  ✅ Notification sent successfully to user ${userId}`);
+            } else {
+              console.warn(`  ⚠️ Notification failed for user ${userId}:`, notificationResult.errors);
+            }
+          } catch (error) {
+            console.error(`  ❌ Error sending notification to user ${userId}:`, error);
+          }
+        } else {
+          console.log(`  📭 No new properties for user ${userId}, skipping notification`);
+        }
+        
+        totalNewProperties += userNewProperties;
       }
       
       console.log(`\n✅ Completed processing all queries. Total new properties: ${totalNewProperties}`);
