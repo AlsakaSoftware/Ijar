@@ -23,7 +23,7 @@ struct RootContentView: View {
     var body: some View {
         Group {
             if authService.isAuthenticated {
-                TabView(selection: .constant(coordinator.selectedTab)) {
+                TabView {
                     HomeFeedRootView()
                         .tabItem {
                             Image(systemName: "house.fill")
