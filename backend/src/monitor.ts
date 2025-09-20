@@ -102,10 +102,14 @@ class PropertyMonitor {
           console.log(`  🔔 Sending notification to user ${userId}: ${userNewProperties} new properties across ${queries.length} queries`);
           
           try {
+            // Include query name for single query notifications
+            const queryName = queries.length === 1 ? queries[0].name : undefined;
+            
             const notificationResult = await this.notificationService.sendPropertyNotification(
               userId,
               userNewProperties,
-              queries.length
+              queries.length,
+              queryName
             );
             
             if (notificationResult.success) {

@@ -213,11 +213,20 @@ export class PushNotificationService {
     }
   }
 
-  async sendPropertyNotification(userId: string, newPropertyCount: number, queryCount: number): Promise<{ success: boolean; errors: string[] }> {
+  async sendPropertyNotification(userId: string, newPropertyCount: number, queryCount: number, queryName?: string): Promise<{ success: boolean; errors: string[] }> {
     const title = 'New Properties Found!';
-    const body = queryCount > 1 
-      ? `Found ${newPropertyCount} new properties across ${queryCount} searches`
-      : `Found ${newPropertyCount} new ${newPropertyCount === 1 ? 'property' : 'properties'}`;
+    let body: string;
+    
+    if (queryCount > 1) {
+      body = `Found ${newPropertyCount} new properties across ${queryCount} searches`;
+    } else {
+      // Single query - include location/name
+      if (queryName) {
+        body = `Found ${newPropertyCount} new ${newPropertyCount === 1 ? 'property' : 'properties'} in ${queryName}`;
+      } else {
+        body = `Found ${newPropertyCount} new ${newPropertyCount === 1 ? 'property' : 'properties'}`;
+      }
+    }
 
     return this.sendNotificationToUser(userId, {
       title,
@@ -226,7 +235,8 @@ export class PushNotificationService {
       data: {
         type: 'new_properties',
         count: newPropertyCount,
-        queries: queryCount
+        queries: queryCount,
+        queryName: queryName
       }
     });
   }
