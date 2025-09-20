@@ -16,25 +16,36 @@ export interface DeviceToken {
 }
 
 export class PushNotificationService {
-  private apnProvider: Provider;
   private supabase: SupabaseClient;
+  private productionProvider: Provider;
+  private sandboxProvider: Provider;
 
   constructor(supabase: SupabaseClient) {
     this.supabase = supabase;
     
-    // Initialize APNs provider
+    // Create providers for both environments
+    this.productionProvider = this.createProvider(true);  // production
+    this.sandboxProvider = this.createProvider(false);    // sandbox
+    
+    console.log('🌍 Dual-environment APNs providers initialized (production + sandbox)');
+  }
+
+  private createProvider(isProduction: boolean): Provider {
     const options: any = {
-      production: process.env.NODE_ENV === 'production'
+      production: isProduction
     };
 
-    if (process.env.APN_AUTH_KEY) {
+    // Check for P8 auth key first
+    if (process.env.APN_AUTH_KEY && process.env.APN_KEY_ID && process.env.APN_TEAM_ID) {
+      console.log(`🔑 Creating ${isProduction ? 'production' : 'sandbox'} provider with P8 key`);
+      
       // Write the key to a temporary file to avoid parsing issues
       const fs = require('fs');
       const path = require('path');
       const os = require('os');
       
       const tempDir = os.tmpdir();
-      const keyPath = path.join(tempDir, 'apn-auth-key.p8');
+      const keyPath = path.join(tempDir, `apn-auth-key-${isProduction ? 'prod' : 'sandbox'}.p8`);
       
       // Clean up the key - handle both escaped \n and quoted format
       let cleanKey = process.env.APN_AUTH_KEY;
@@ -47,21 +58,33 @@ export class PushNotificationService {
       // Convert \n to actual newlines
       cleanKey = cleanKey.replace(/\\n/g, '\n').trim();
       
-      console.log('Writing P8 key to temp file:', keyPath);
+      // Validate key format
+      if (!cleanKey.includes('-----BEGIN PRIVATE KEY-----') || !cleanKey.includes('-----END PRIVATE KEY-----')) {
+        throw new Error('Invalid P8 key format - must contain BEGIN/END PRIVATE KEY markers');
+      }
+      
       fs.writeFileSync(keyPath, cleanKey);
       
       options.token = {
         key: keyPath,  // Use file path instead of string
-        keyId: process.env.APN_KEY_ID!,
-        teamId: process.env.APN_TEAM_ID!
+        keyId: process.env.APN_KEY_ID,
+        teamId: process.env.APN_TEAM_ID
       };
-    } else if (process.env.APN_CERT_PATH) {
+    } else if (process.env.APN_CERT_PATH && process.env.APN_KEY_PATH) {
+      console.log('📜 Using certificate files for APNs');
       options.cert = process.env.APN_CERT_PATH;
       options.key = process.env.APN_KEY_PATH;
       options.passphrase = process.env.APN_PASSPHRASE;
+    } else {
+      const missing = [];
+      if (!process.env.APN_AUTH_KEY) missing.push('APN_AUTH_KEY');
+      if (!process.env.APN_KEY_ID) missing.push('APN_KEY_ID');
+      if (!process.env.APN_TEAM_ID) missing.push('APN_TEAM_ID');
+      
+      throw new Error(`APNs configuration incomplete. Missing: ${missing.join(', ')}. Either provide P8 key credentials or certificate files.`);
     }
 
-    this.apnProvider = new Provider(options);
+    return new Provider(options);
   }
 
   async getDeviceTokensForUser(userId: string): Promise<DeviceToken[]> {
@@ -92,51 +115,101 @@ export class PushNotificationService {
       return { success: true, errors: [] };
     }
 
-    const errors: string[] = [];
     const tokens = deviceTokens.map(dt => dt.device_token);
+    
+    // Try both environments for maximum compatibility
+    console.log(`📤 Attempting smart dual-environment delivery to ${tokens.length} device(s)`);
+    
+    return await this.sendWithSmartEnvironmentDetection(userId, payload, tokens);
+  }
 
-    try {
-      // Create notification
-      const notification = new Notification();
-      notification.topic = process.env.APN_BUNDLE_ID || 'com.yourapp.ijar'; // Update with your bundle ID
-      notification.alert = {
-        title: payload.title,
-        body: payload.body
-      };
-      notification.badge = payload.badge || 0;
-      notification.sound = 'default';
-      notification.contentAvailable = true;
-      
-      // Add custom data
-      if (payload.data) {
-        notification.payload = payload.data;
-      }
+  private async sendWithSmartEnvironmentDetection(userId: string, payload: NotificationPayload, tokens: string[]): Promise<{ success: boolean; errors: string[] }> {
+    const allErrors: string[] = [];
+    let totalSent = 0;
+    
+    // Create notification
+    const notification = new Notification();
+    notification.topic = process.env.APN_BUNDLE_ID || 'com.yourapp.ijar';
+    notification.alert = {
+      title: payload.title,
+      body: payload.body
+    };
+    notification.badge = payload.badge || 0;
+    notification.sound = 'default';
+    notification.contentAvailable = true;
+    
+    if (payload.data) {
+      notification.payload = payload.data;
+    }
 
-      // Send notification
-      const result = await this.apnProvider.send(notification, tokens);
-      
-      // Handle failed tokens
-      if (result.failed && result.failed.length > 0) {
-        for (const failure of result.failed) {
-          console.error(`Failed to send to ${failure.device}:`, failure);
-          console.error('  Status:', failure.status);
-          console.error('  Response:', failure.response);
-          console.error('  Error:', failure.error);
-          errors.push(`Device ${failure.device}: ${failure.error || failure.response?.reason || failure.status || 'Unknown error'}`);
+    // Try production first (for real users)
+    console.log(`🏭 Trying production environment first...`);
+    const prodResult = await this.sendToEnvironment(this.productionProvider, notification, tokens, 'production');
+    totalSent += prodResult.sent.length;
+    
+    // Check for BadDeviceToken failures - these might be sandbox tokens
+    const failedTokens: string[] = [];
+    const permanentFailures: string[] = [];
+    
+    if (prodResult.failed && prodResult.failed.length > 0) {
+      for (const failure of prodResult.failed) {
+        if (failure.response?.reason === 'BadDeviceToken') {
+          failedTokens.push(failure.device);
+          console.log(`📱 Token ${failure.device.substring(0, 20)}... failed in production - will try sandbox`);
+        } else {
+          // Other errors (invalid token, etc.)
+          permanentFailures.push(`${failure.device}: ${failure.response?.reason || failure.status}`);
+          console.error(`❌ Permanent failure for ${failure.device}: ${failure.response?.reason || failure.status}`);
           
-          // Remove invalid tokens from database
-          if (failure.status === '410' || failure.status === '400' || failure.response?.reason === 'BadDeviceToken') {
+          // Remove permanently invalid tokens
+          if (failure.status === '410' || failure.response?.reason === 'Unregistered') {
             await this.removeInvalidToken(failure.device);
           }
         }
       }
+    }
+    
+    // Try sandbox for tokens that failed in production
+    if (failedTokens.length > 0) {
+      console.log(`🧪 Trying sandbox environment for ${failedTokens.length} failed token(s)...`);
+      const sandboxResult = await this.sendToEnvironment(this.sandboxProvider, notification, failedTokens, 'sandbox');
+      totalSent += sandboxResult.sent.length;
+      
+      // Handle remaining failures
+      if (sandboxResult.failed && sandboxResult.failed.length > 0) {
+        for (const failure of sandboxResult.failed) {
+          permanentFailures.push(`${failure.device}: ${failure.response?.reason || failure.status} (both environments)`);
+          console.error(`❌ Failed in both environments ${failure.device}: ${failure.response?.reason || failure.status}`);
+          
+          // Remove tokens that fail in both environments
+          if (failure.status === '410' || failure.response?.reason === 'Unregistered' || failure.response?.reason === 'BadDeviceToken') {
+            await this.removeInvalidToken(failure.device);
+          }
+        }
+      }
+    }
+    
+    allErrors.push(...permanentFailures);
+    
+    console.log(`📊 Smart delivery summary: ${totalSent}/${tokens.length} delivered successfully`);
+    if (prodResult.sent.length > 0) console.log(`  🏭 Production: ${prodResult.sent.length} sent`);
+    if (failedTokens.length > 0) {
+      const sandboxSent = totalSent - prodResult.sent.length;
+      console.log(`  🧪 Sandbox: ${sandboxSent} sent (${failedTokens.length - sandboxSent} failed)`);
+    }
+    
+    return { 
+      success: totalSent > 0 && allErrors.length === 0, 
+      errors: allErrors 
+    };
+  }
 
-      console.log(`Notification sent successfully to ${result.sent.length}/${tokens.length} devices for user ${userId}`);
-      return { success: errors.length === 0, errors };
-
+  private async sendToEnvironment(provider: Provider, notification: Notification, tokens: string[], env: string): Promise<any> {
+    try {
+      return await provider.send(notification, tokens);
     } catch (error) {
-      console.error('Error sending notification:', error);
-      return { success: false, errors: [error instanceof Error ? error.message : 'Unknown error'] };
+      console.error(`Error sending to ${env} environment:`, error);
+      return { sent: [], failed: tokens.map(token => ({ device: token, error: error instanceof Error ? error.message : 'Unknown error' })) };
     }
   }
 
@@ -176,8 +249,11 @@ export class PushNotificationService {
   }
 
   async cleanup(): Promise<void> {
-    if (this.apnProvider) {
-      this.apnProvider.shutdown();
+    if (this.productionProvider) {
+      this.productionProvider.shutdown();
+    }
+    if (this.sandboxProvider) {
+      this.sandboxProvider.shutdown();
     }
   }
 }

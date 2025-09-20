@@ -104,5 +104,4 @@ jobs:
         APN_KEY_ID: ${{ secrets.APN_KEY_ID }}
         APN_TEAM_ID: ${{ secrets.APN_TEAM_ID }}
         APN_BUNDLE_ID: ${{ secrets.APN_BUNDLE_ID }}
-        NODE_ENV: production
       run: npm run monitor
