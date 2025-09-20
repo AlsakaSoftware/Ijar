@@ -33,6 +33,68 @@ jobs:
       working-directory: ./backend
       run: npm ci
     
+    - name: Validate environment secrets
+      working-directory: ./backend
+      env:
+        SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+        SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        APN_AUTH_KEY: ${{ secrets.APN_AUTH_KEY }}
+        APN_KEY_ID: ${{ secrets.APN_KEY_ID }}
+        APN_TEAM_ID: ${{ secrets.APN_TEAM_ID }}
+        APN_BUNDLE_ID: ${{ secrets.APN_BUNDLE_ID }}
+      run: |
+        echo "🔍 Validating environment variables..."
+        
+        # Check required Supabase secrets
+        if [ -z "$SUPABASE_URL" ]; then
+          echo "❌ SUPABASE_URL is missing"
+          exit 1
+        else
+          echo "✅ SUPABASE_URL is set"
+        fi
+        
+        if [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
+          echo "❌ SUPABASE_SERVICE_ROLE_KEY is missing"
+          exit 1
+        else
+          echo "✅ SUPABASE_SERVICE_ROLE_KEY is set"
+        fi
+        
+        # Check APNs secrets for push notifications
+        echo ""
+        echo "📱 Checking push notification secrets..."
+        
+        if [ -z "$APN_AUTH_KEY" ]; then
+          echo "⚠️ APN_AUTH_KEY is missing - push notifications will be disabled"
+        else
+          echo "✅ APN_AUTH_KEY is set"
+        fi
+        
+        if [ -z "$APN_KEY_ID" ]; then
+          echo "⚠️ APN_KEY_ID is missing - push notifications will be disabled"
+        else
+          echo "✅ APN_KEY_ID is set ($APN_KEY_ID)"
+        fi
+        
+        if [ -z "$APN_TEAM_ID" ]; then
+          echo "⚠️ APN_TEAM_ID is missing - push notifications will be disabled"
+        else
+          echo "✅ APN_TEAM_ID is set ($APN_TEAM_ID)"
+        fi
+        
+        if [ -z "$APN_BUNDLE_ID" ]; then
+          echo "⚠️ APN_BUNDLE_ID is missing - push notifications will be disabled"
+        else
+          echo "✅ APN_BUNDLE_ID is set ($APN_BUNDLE_ID)"
+        fi
+        
+        echo ""
+        if [ -n "$APN_AUTH_KEY" ] && [ -n "$APN_KEY_ID" ] && [ -n "$APN_TEAM_ID" ] && [ -n "$APN_BUNDLE_ID" ]; then
+          echo "🎉 All push notification secrets are configured!"
+        else
+          echo "⚠️ Some push notification secrets are missing - notifications will be disabled"
+        fi
+    
     - name: Run property monitor
       working-directory: ./backend
       env:
