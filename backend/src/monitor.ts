@@ -5,14 +5,48 @@ import RightmoveScraper from './rightmove-scraper';
 import { SupabasePropertyClient, UserQuery } from './supabase-client';
 import { SearchOptions } from './scraper-types';
 import config from './config';
+import { PushNotificationService } from './push-notification-service';
+import { createClient } from '@supabase/supabase-js';
 
 class PropertyMonitor {
   private scraper: RightmoveScraper;
   private supabase: SupabasePropertyClient;
+  private notificationService: PushNotificationService;
 
   constructor() {
     this.scraper = new RightmoveScraper();
     this.supabase = new SupabasePropertyClient();
+    
+    // Initialize notification service with Supabase client
+    const supabaseClient = createClient(
+      process.env.SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+    
+    // Try to initialize push notification service
+    try {
+      this.notificationService = new PushNotificationService(supabaseClient);
+      console.log('✅ Push notification service initialized');
+    } catch (error) {
+      console.warn('⚠️ Push notifications disabled - failed to initialize:', error instanceof Error ? error.message : error);
+      // Continue without push notifications
+    }
+  }
+
+  // Helper function to group queries by user_id
+  private groupQueriesByUser(queries: UserQuery[]): Map<string, UserQuery[]> {
+    const grouped = new Map<string, UserQuery[]>();
+    
+    for (const query of queries) {
+      if (!query.user_id) continue; // Skip queries without user_id
+      
+      if (!grouped.has(query.user_id)) {
+        grouped.set(query.user_id, []);
+      }
+      grouped.get(query.user_id)!.push(query);
+    }
+    
+    return grouped;
   }
 
   async run(): Promise<void> {
@@ -29,79 +63,120 @@ class PropertyMonitor {
         return;
       }
       
+      // Group queries by user_id
+      const queriesByUser = this.groupQueriesByUser(userQueries);
+      console.log(`👥 Processing queries for ${queriesByUser.size} users`);
+      
       let totalNewProperties = 0;
       
-      // Process each query
-      for (const query of userQueries) {
-        console.log(`\n🔍 Processing query: ${query.name}`);
+      // Process each user's queries
+      for (const [userId, queries] of queriesByUser) {
+        console.log(`\n👤 Processing ${queries.length} queries for user: ${userId}`);
+        let userNewProperties = 0;
         
-        try {
-          // Build search options, only including non-null parameters
-          const searchOptions: SearchOptions = {
-            searchType: 'RENT', // Default to rent for now
-            locationIdentifier: query.location_id,
-            getAllPages: false,
-            quiet: false // Enable logging to see what's happening
-          };
-
-          // Only add parameters that have values
-          if (query.min_price) searchOptions.minPrice = query.min_price;
-          if (query.max_price) searchOptions.maxPrice = query.max_price;
-          if (query.min_bedrooms) searchOptions.minBedrooms = query.min_bedrooms;
-          if (query.max_bedrooms) searchOptions.maxBedrooms = query.max_bedrooms;
-          if (query.min_bathrooms) searchOptions.minBathrooms = query.min_bathrooms;
-          if (query.max_bathrooms) searchOptions.maxBathrooms = query.max_bathrooms;
-          if (query.furnish_type) searchOptions.furnishTypes = query.furnish_type as any;
-          if (query.radius) searchOptions.radius = query.radius;
-
-          console.log(`   🔧 Search params:`, {
-            location: query.location_id,
-            price: query.min_price ? `£${query.min_price}-${query.max_price || 'max'}` : 'any',
-            beds: query.min_bedrooms ? `${query.min_bedrooms}-${query.max_bedrooms || 'max'}` : 'any',
-            baths: query.min_bathrooms ? `${query.min_bathrooms}-${query.max_bathrooms || 'max'}` : 'any'
-          });
+        // Process all queries for this user
+        for (const query of queries) {
+          console.log(`  🔍 Processing query: ${query.name}`);
           
-          // Get properties for this query
-          const results = await this.scraper.searchProperties(searchOptions);
-          console.log(`   📊 Found ${results.properties.length} properties`);
-          
-          // Limit to max properties per query
-          let finalProperties = results.properties.slice(0, config.maxHDPropertiesPerQuery);
-          console.log(`   📋 Processing ${finalProperties.length} properties (max: ${config.maxHDPropertiesPerQuery})`);
-          
-          // Enhance ALL fetched properties with HD images if enabled
-          if (config.enableHDImages) {
-            console.log(`   🖼️  Fetching HD images for all ${finalProperties.length} properties...`);
-            const propertiesWithHD = await this.scraper.getPropertiesWithHDImages(finalProperties, false);
-            console.log(`   ✅ Enhanced ${propertiesWithHD.length} properties with HD images`);
-            finalProperties = propertiesWithHD;
-          } else {
-            console.log(`   📷 Using thumbnail images (HD disabled in config)`);
+          try {
+            const processResult = await this.processQuery(query);
+            userNewProperties += processResult.newCount;
+            
+            if (processResult.newCount > 0) {
+              console.log(`    🎉 Added ${processResult.newCount} new properties for query: ${query.name}`);
+            } else {
+              console.log(`    📭 No new properties for query: ${query.name}`);
+            }
+            
+            if (processResult.errors.length > 0) {
+              console.warn(`    ⚠️ Some errors occurred:`, processResult.errors.slice(0, 3));
+            }
+            
+          } catch (error) {
+            console.error(`    ❌ Error processing query ${query.name}:`, error);
           }
-          
-          // Process properties for this specific query
-          const processResult = await this.supabase.processPropertiesForQuery(query, finalProperties);
-          
-          if (processResult.newCount > 0) {
-            console.log(`   🎉 Added ${processResult.newCount} new properties for query: ${query.name}`);
-            totalNewProperties += processResult.newCount;
-          } else {
-            console.log(`   📭 No new properties for query: ${query.name}`);
-          }
-          
-          if (processResult.errors.length > 0) {
-            console.warn(`   ⚠️ Some errors occurred:`, processResult.errors.slice(0, 3));
-          }
-          
-        } catch (error) {
-          console.error(`   ❌ Error processing query ${query.name}:`, error);
         }
+        
+        // Send notification if user has new properties
+        if (userNewProperties > 0 && this.notificationService) {
+          console.log(`  🔔 Sending notification to user ${userId}: ${userNewProperties} new properties across ${queries.length} queries`);
+          
+          try {
+            const notificationResult = await this.notificationService.sendPropertyNotification(
+              userId,
+              userNewProperties,
+              queries.length
+            );
+            
+            if (notificationResult.success) {
+              console.log(`  ✅ Notification sent successfully to user ${userId}`);
+            } else {
+              console.warn(`  ⚠️ Notification failed for user ${userId}:`, notificationResult.errors);
+            }
+          } catch (error) {
+            console.error(`  ❌ Error sending notification to user ${userId}:`, error);
+          }
+        } else {
+          console.log(`  📭 No new properties for user ${userId}, skipping notification`);
+        }
+        
+        totalNewProperties += userNewProperties;
       }
       
       console.log(`\n✅ Completed processing all queries. Total new properties: ${totalNewProperties}`);
       
     } catch (error) {
       console.error('❌ Error processing user queries:', error);
+    }
+  }
+
+  private async processQuery(query: UserQuery): Promise<{ newCount: number; errors: string[] }> {
+    try {
+      // Build search options, only including non-null parameters
+      const searchOptions: SearchOptions = {
+        searchType: 'RENT', // Default to rent for now
+        locationIdentifier: query.location_id,
+        getAllPages: false,
+        quiet: true // Keep quiet for grouped processing
+      };
+
+      // Only add parameters that have values
+      if (query.min_price) searchOptions.minPrice = query.min_price;
+      if (query.max_price) searchOptions.maxPrice = query.max_price;
+      if (query.min_bedrooms) searchOptions.minBedrooms = query.min_bedrooms;
+      if (query.max_bedrooms) searchOptions.maxBedrooms = query.max_bedrooms;
+      if (query.min_bathrooms) searchOptions.minBathrooms = query.min_bathrooms;
+      if (query.max_bathrooms) searchOptions.maxBathrooms = query.max_bathrooms;
+      if (query.furnish_type) searchOptions.furnishTypes = query.furnish_type as any;
+      if (query.radius) searchOptions.radius = query.radius;
+      
+      // Get properties for this query
+      const results = await this.scraper.searchProperties(searchOptions);
+      console.log(`    📊 Found ${results.properties.length} properties`);
+      
+      // Limit to max properties per query
+      let finalProperties = results.properties.slice(0, config.maxHDPropertiesPerQuery);
+      
+      // Enhance properties with HD images if enabled
+      if (config.enableHDImages) {
+        const propertiesWithHD = await this.scraper.getPropertiesWithHDImages(finalProperties, true);
+        finalProperties = propertiesWithHD;
+      }
+      
+      // Process properties for this specific query
+      const processResult = await this.supabase.processPropertiesForQuery(query, finalProperties);
+      
+      return {
+        newCount: processResult.newCount,
+        errors: processResult.errors
+      };
+      
+    } catch (error) {
+      console.error(`    ❌ Error processing query ${query.name}:`, error);
+      return {
+        newCount: 0,
+        errors: [error instanceof Error ? error.message : 'Unknown error']
+      };
     }
   }
 }

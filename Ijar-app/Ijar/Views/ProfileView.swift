@@ -3,6 +3,7 @@ import SwiftUI
 struct ProfileView: View {
     @EnvironmentObject var coordinator: ProfileCoordinator
     @EnvironmentObject var authService: AuthenticationService
+    @EnvironmentObject var notificationService: NotificationService
     @State private var isTriggering = false
     @State private var triggerMessage: String?
     
@@ -46,6 +47,24 @@ struct ProfileView: View {
                     title: "Saved Properties",
                     action: {
                         // Navigate to saved properties
+                    }
+                )
+                
+                ProfileMenuRow(
+                    icon: "bell.fill",
+                    title: "Push Notifications",
+                    subtitle: notificationStatusText,
+                    action: {
+                        Task {
+                            if notificationService.notificationPermissionStatus == .denied {
+                                // Open app settings
+                                if let settingsUrl = URL(string: UIApplication.openSettingsURLString) {
+                                    await UIApplication.shared.open(settingsUrl)
+                                }
+                            } else {
+                                let _ = await notificationService.requestNotificationPermission()
+                            }
+                        }
                     }
                 )
             }
@@ -203,12 +222,37 @@ struct ProfileView: View {
         
         isTriggering = false
     }
+    
+    private var notificationStatusText: String {
+        switch notificationService.notificationPermissionStatus {
+        case .authorized:
+            return "Enabled"
+        case .denied:
+            return "Disabled - Tap to enable in Settings"
+        case .notDetermined:
+            return "Tap to enable"
+        case .provisional:
+            return "Provisionally enabled"
+        case .ephemeral:
+            return "Temporarily enabled"
+        @unknown default:
+            return "Unknown status"
+        }
+    }
 }
 
 struct ProfileMenuRow: View {
     let icon: String
     let title: String
+    let subtitle: String?
     let action: () -> Void
+    
+    init(icon: String, title: String, subtitle: String? = nil, action: @escaping () -> Void) {
+        self.icon = icon
+        self.title = title
+        self.subtitle = subtitle
+        self.action = action
+    }
     
     var body: some View {
         Button(action: action) {
@@ -218,9 +262,17 @@ struct ProfileMenuRow: View {
                     .foregroundColor(.rusticOrange)
                     .frame(width: 24)
                 
-                Text(title)
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundColor(.coffeeBean)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundColor(.coffeeBean)
+                    
+                    if let subtitle = subtitle {
+                        Text(subtitle)
+                            .font(.system(size: 14))
+                            .foregroundColor(.warmBrown.opacity(0.7))
+                    }
+                }
                 
                 Spacer()
                 
@@ -237,7 +289,9 @@ struct ProfileMenuRow: View {
 }
 
 #Preview {
-    ProfileView()
+    let notificationService = NotificationService()
+    return ProfileView()
         .environmentObject(ProfileCoordinator())
-        .environmentObject(AuthenticationService())
+        .environmentObject(AuthenticationService(notificationService: notificationService))
+        .environmentObject(notificationService)
 }

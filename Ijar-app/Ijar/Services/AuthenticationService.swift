@@ -10,8 +10,10 @@ class AuthenticationService: ObservableObject {
     @Published var error: String?
     
     private let supabase: SupabaseClient
+    private let notificationService: NotificationService
     
-    init() {
+    init(notificationService: NotificationService) {
+        self.notificationService = notificationService
         // Initialize Supabase client using ConfigManager
         let config = ConfigManager.shared
         
@@ -63,6 +65,12 @@ class AuthenticationService: ObservableObject {
             self.user = session.user
             self.isAuthenticated = true
             
+            // Save user ID to UserDefaults for device token registration
+            UserDefaults.standard.set(session.user.id.uuidString, forKey: "currentUserId")
+            
+            // Register for push notifications and save device token
+            await registerForNotifications()
+            
         } catch {
             self.error = error.localizedDescription
             self.isAuthenticated = false
@@ -75,14 +83,49 @@ class AuthenticationService: ObservableObject {
         isLoading = true
         
         do {
+            // Remove device token from server
+            if let userId = user?.id.uuidString {
+                await notificationService.removeDeviceToken(for: userId)
+            }
+            
             try await supabase.auth.signOut()
             self.user = nil
             self.isAuthenticated = false
+            
+            // Clear saved user ID
+            UserDefaults.standard.removeObject(forKey: "currentUserId")
         } catch {
             self.error = error.localizedDescription
         }
         
         isLoading = false
+    }
+    
+    private func registerForNotifications() async {
+        guard let user = user else { 
+            print("❌ No user found for notification registration")
+            return 
+        }
+        
+        print("📱 Starting notification registration for user: \(user.id.uuidString)")
+        
+        // Request notification permission
+        let granted = await notificationService.requestNotificationPermission()
+        print("🔔 Notification permission granted: \(granted)")
+        
+        if granted {
+            // Check if we have a saved device token
+            if let tokenData = UserDefaults.standard.data(forKey: "deviceToken") {
+                let tokenString = tokenData.map { String(format: "%02.2hhx", $0) }.joined()
+                print("✅ Found saved device token: \(tokenString)")
+                await notificationService.saveDeviceToken(tokenData, for: user.id.uuidString)
+            } else {
+                print("⚠️ No device token found in UserDefaults")
+                // Try to register for remote notifications again
+                print("📲 Requesting remote notification registration...")
+                await UIApplication.shared.registerForRemoteNotifications()
+            }
+        }
     }
 }
 
