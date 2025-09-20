@@ -87,6 +87,7 @@ struct PropertyCard: View {
         .aspectRatio(0.7, contentMode: .fit) // 3:4 aspect ratio
         .background {
             imagesCarousel
+                .background(Color.warmCream)
         }
         .clipShape(RoundedRectangle(cornerRadius: 20))
         .shadow(color: .coffeeBean.opacity(0.08), radius: 16, y: 8)
