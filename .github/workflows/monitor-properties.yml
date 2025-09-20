@@ -33,6 +33,16 @@ jobs:
       working-directory: ./backend
       run: npm ci
     
+    - name: Debug secrets availability
+      run: |
+        echo "🔍 Checking which secrets are available..."
+        echo "SUPABASE_URL exists: ${{ secrets.SUPABASE_URL != '' }}"
+        echo "SUPABASE_SERVICE_ROLE_KEY exists: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY != '' }}"
+        echo "APN_AUTH_KEY exists: ${{ secrets.APN_AUTH_KEY != '' }}"
+        echo "APN_KEY_ID exists: ${{ secrets.APN_KEY_ID != '' }}"
+        echo "APN_TEAM_ID exists: ${{ secrets.APN_TEAM_ID != '' }}"
+        echo "APN_BUNDLE_ID exists: ${{ secrets.APN_BUNDLE_ID != '' }}"
+
     - name: Validate environment secrets
       working-directory: ./backend
       env:
