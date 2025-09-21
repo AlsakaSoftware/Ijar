@@ -17,20 +17,12 @@ class PropertyMonitor {
     this.scraper = new RightmoveScraper();
     this.supabase = new SupabasePropertyClient();
     
-    // Initialize notification service with Supabase client
     const supabaseClient = createClient(
       process.env.SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
     
-    // Try to initialize push notification service
-    try {
-      this.notificationService = new PushNotificationService(supabaseClient);
-      console.log('✅ Push notification service initialized');
-    } catch (error) {
-      console.warn('⚠️ Push notifications disabled - failed to initialize:', error instanceof Error ? error.message : error);
-      // Continue without push notifications
-    }
+    this.notificationService = new PushNotificationService(supabaseClient);
   }
 
   // Helper function to group queries by user_id
@@ -97,7 +89,6 @@ class PropertyMonitor {
           }
         }
         
-        // Send notification if user has new properties
         if (userNewProperties > 0 && this.notificationService) {
           console.log(`  🔔 Sending notification to user ${userId}: ${userNewProperties} new properties across ${queries.length} queries`);
           
@@ -183,13 +174,35 @@ class PropertyMonitor {
       };
     }
   }
+
+  // Cleanup method to properly close connections
+  async cleanup(): Promise<void> {
+    if (this.notificationService) {
+      await this.notificationService.cleanup();
+    }
+  }
 }
 
 // Main execution
 async function main() {
   console.log('Processing all user queries from Supabase database...');
   const monitor = new PropertyMonitor();
-  await monitor.run();
+
+  try {
+    await monitor.run();
+  } finally {
+    // Always cleanup
+    if (monitor.cleanup) {
+      await monitor.cleanup();
+      console.log('🧹 Cleanup completed');
+    }
+
+    // Force exit after a short delay to ensure all logs are flushed
+    setTimeout(() => {
+      console.log('✅ Monitor workflow completed successfully');
+      process.exit(0);
+    }, 1000);
+  }
 }
 
 // Run if this file is executed directly

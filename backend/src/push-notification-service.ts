@@ -259,11 +259,48 @@ export class PushNotificationService {
   }
 
   async cleanup(): Promise<void> {
+    console.log('🔌 Shutting down APNs providers...');
+
+    // Force destroy all endpoints and their sockets for production provider
     if (this.productionProvider) {
-      this.productionProvider.shutdown();
+      try {
+        const client = (this.productionProvider as any).client;
+        if (client?.endpointManager?._endpoints) {
+          console.log(`📱 Force closing ${client.endpointManager._endpoints.length} production endpoint(s)...`);
+          client.endpointManager._endpoints.forEach((endpoint: any) => {
+            if (endpoint.destroy) {
+              endpoint.destroy(); // This destroys the socket and clears intervals
+            }
+          });
+        }
+        this.productionProvider.shutdown();
+        console.log('📱 Production provider shutdown complete');
+      } catch (error) {
+        console.error('Error shutting down production provider:', error);
+      }
     }
+
+    // Force destroy all endpoints and their sockets for sandbox provider
     if (this.sandboxProvider) {
-      this.sandboxProvider.shutdown();
+      try {
+        const client = (this.sandboxProvider as any).client;
+        if (client?.endpointManager?._endpoints) {
+          console.log(`🧪 Force closing ${client.endpointManager._endpoints.length} sandbox endpoint(s)...`);
+          client.endpointManager._endpoints.forEach((endpoint: any) => {
+            if (endpoint.destroy) {
+              endpoint.destroy(); // This destroys the socket and clears intervals
+            }
+          });
+        }
+        this.sandboxProvider.shutdown();
+        console.log('🧪 Sandbox provider shutdown complete');
+      } catch (error) {
+        console.error('Error shutting down sandbox provider:', error);
+      }
     }
+
+    // Small delay to ensure all resources are released
+    await new Promise(resolve => setTimeout(resolve, 100));
+    console.log('✅ APNs providers shutdown and connections destroyed');
   }
 }
