@@ -137,6 +137,10 @@ export class RightmoveScraper {
       try {
         const response = await this.fetchPage(url);
         
+        if (response.statusCode === 404) {
+          throw new Error(`Page not found (404) - Invalid search parameters or location identifier`);
+        }
+
         if (response.statusCode !== 200) {
           throw new Error(`HTTP ${response.statusCode}: ${response.data}`);
         }
