@@ -132,7 +132,7 @@ class PropertyMonitor {
         searchType: 'RENT', // Default to rent for now
         locationIdentifier: query.location_id,
         getAllPages: false,
-        quiet: true // Keep quiet for grouped processing
+        quiet: false // Show URL being scraped
       };
 
       // Only add parameters that have values
