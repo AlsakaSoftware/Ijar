@@ -12,32 +12,31 @@ struct CardSwipeView: View {
     
     
     var body: some View {
-        VStack(spacing: 20) {
-//            // Top section with greeting
+        VStack(spacing: 10) {
 //            TimeBasedGreeting()
             
             if propertyService.properties.isEmpty {
                 emptyStateView
             } else {
-                // Main card area - expand to fill available space
+                propertyCounter
+                    .padding(20)
+
                 cardStackSection
                     .frame(maxWidth: .infinity)
-                    .layoutPriority(1) // Give this priority in space allocation
-
+                    .layoutPriority(1)
                 
-                // Bottom controls - fixed size
-                VStack(spacing: 12) {
-                    propertyCounter
-//                    actionButtons
+                VStack(spacing: 15) {
+                    actionButtons
+                    
                 }
             }
         }
-        .padding(.bottom, 30)
+        .padding(.bottom, 32)
         .padding(.horizontal, 15)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(
             Color.warmCream
-                .ignoresSafeArea() // Only background extends to edges
+                .ignoresSafeArea()
         )
         .safeAreaInset(edge: .top, spacing: 0) {
             Color.clear.frame(height: 0) // Ensure content starts below notch

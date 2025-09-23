@@ -84,7 +84,7 @@ struct PropertyCard: View {
             .padding()
         }
         .frame(maxWidth: 350, maxHeight: .infinity) 
-        .aspectRatio(0.7, contentMode: .fit) // 3:4 aspect ratio
+        .aspectRatio(0.65, contentMode: .fit)
         .background {
             imagesCarousel
                 .background(Color.warmCream)
@@ -211,8 +211,8 @@ struct PropertyCard: View {
                         
                         Spacer()
                     }
-                    .padding(.top, 40)
-                    .padding(.trailing, 30)
+//                    .padding(.top, 40)
+//                    .padding(.trailing, 30)
                 }
                 .opacity(min(abs(dragAmount.width) / 80.0, 1.0))
             }
