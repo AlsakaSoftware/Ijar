@@ -67,15 +67,18 @@ export interface RightmoveProperty {
   letType?: string;
   letAvailableDate?: string;
   hasBrandPlus?: boolean;
-  brand?: {
-    brandTradingName: string;
+  customer?: {
+    branchId: number;
+    brandPlusLogoURI: string;
     contactTelephone: string;
     branchDisplayName: string;
-  };
-  agent?: {
-    phone: string;
-    name: string;
     branchName: string;
+    brandTradingName: string;
+    branchLandingPageUrl: string;
+    mediaServerUrl: string;
+    hasBrandPlus: boolean;
+    brandPlusLogoUrl?: string;
+    primaryBrandColour?: string;
   };
   nearbyStations?: RightmoveStation[];
   transportDescription?: string;

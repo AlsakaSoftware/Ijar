@@ -25,6 +25,59 @@ class PropertyMonitor {
     this.notificationService = new PushNotificationService(supabaseClient);
   }
 
+  // Log data quality metrics for properties
+  private logDataQuality(properties: any[], queryName: string): void {
+    if (properties.length === 0) return;
+
+    let missingAgentPhone = 0;
+    let missingAgentName = 0;
+    let missingBranchName = 0;
+    let missingRightmoveUrl = 0;
+
+    properties.forEach((property, index) => {
+      const hasPhone = property.customer?.contactTelephone;
+      const hasAgentName = property.customer?.brandTradingName;
+      const hasBranchName = property.customer?.branchDisplayName;
+      const hasPropertyUrl = property.propertyUrl;
+
+      if (!hasPhone) {
+        missingAgentPhone++;
+        console.log(`    ⚠️  Property ${index + 1} (${property.displayAddress}) missing agent phone`);
+      }
+      if (!hasAgentName) {
+        missingAgentName++;
+        console.log(`    ⚠️  Property ${index + 1} (${property.displayAddress}) missing agent name`);
+      }
+      if (!hasBranchName) {
+        missingBranchName++;
+        console.log(`    ⚠️  Property ${index + 1} (${property.displayAddress}) missing branch name`);
+      }
+      if (!hasPropertyUrl) {
+        missingRightmoveUrl++;
+        console.log(`    ⚠️  Property ${index + 1} (${property.displayAddress}) missing Rightmove URL`);
+      }
+    });
+
+    // Summary log
+    const total = properties.length;
+    console.log(`    📈 Data Quality for "${queryName}":`);
+    console.log(`      📞 Agent Phone: ${total - missingAgentPhone}/${total} (${Math.round((total - missingAgentPhone) / total * 100)}%)`);
+    console.log(`      👤 Agent Name: ${total - missingAgentName}/${total} (${Math.round((total - missingAgentName) / total * 100)}%)`);
+    console.log(`      🏢 Branch Name: ${total - missingBranchName}/${total} (${Math.round((total - missingBranchName) / total * 100)}%)`);
+    console.log(`      🔗 Rightmove URL: ${total - missingRightmoveUrl}/${total} (${Math.round((total - missingRightmoveUrl) / total * 100)}%)`);
+
+    // Alert if data quality is poor
+    const phoneSuccessRate = (total - missingAgentPhone) / total;
+    const nameSuccessRate = (total - missingAgentName) / total;
+
+    if (phoneSuccessRate < 0.8) {
+      console.log(`    🚨 LOW PHONE DATA QUALITY: Only ${Math.round(phoneSuccessRate * 100)}% of properties have agent phone numbers`);
+    }
+    if (nameSuccessRate < 0.8) {
+      console.log(`    🚨 LOW NAME DATA QUALITY: Only ${Math.round(nameSuccessRate * 100)}% of properties have agent names`);
+    }
+  }
+
   // Helper function to group queries by user_id
   private groupQueriesByUser(queries: UserQuery[]): Map<string, UserQuery[]> {
     const grouped = new Map<string, UserQuery[]>();
@@ -148,6 +201,9 @@ class PropertyMonitor {
       // Get properties for this query
       const results = await this.scraper.searchProperties(searchOptions);
       console.log(`    📊 Found ${results.properties.length} properties`);
+
+      // Log data quality metrics
+      this.logDataQuality(results.properties, query.name);
       
       // Limit to max properties per query
       let finalProperties = results.properties.slice(0, config.maxHDPropertiesPerQuery);
