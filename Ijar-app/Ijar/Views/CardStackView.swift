@@ -14,6 +14,7 @@ struct CardStackView<Content: View, Overlay: View>: View {
     let rightOverlay: () -> Overlay
     let onSwipeLeft: (Property) -> Void
     let onSwipeRight: (Property) -> Void
+    var onSwipeUp: ((Property) -> Void)? = nil
     @Binding var dragDirection: SwipeDirection
     
     @State private var dragAmount = CGSize.zero
@@ -126,10 +127,27 @@ struct CardStackView<Content: View, Overlay: View>: View {
             }
             .onEnded { value in
                 isDragging = false
-                let threshold: CGFloat = 90
-                let velocity = value.predictedEndLocation.x - value.location.x
-                
-                if value.translation.width > threshold || velocity > 150 {
+                let horizontalThreshold: CGFloat = 90
+                let verticalThreshold: CGFloat = 80
+                let horizontalVelocity = value.predictedEndLocation.x - value.location.x
+                let verticalVelocity = value.predictedEndLocation.y - value.location.y
+
+                // Check for swipe up first (prioritize vertical gesture)
+                if value.translation.height < -verticalThreshold || verticalVelocity < -120 {
+                    // Swipe up - view details
+                    if let onSwipeUp = onSwipeUp, topItem < items.count {
+                        let property = items[topItem]
+                        selectionFeedback.selectionChanged()
+                        onSwipeUp(property)
+                        resetDrag()
+                    } else {
+                        // If no onSwipeUp handler, snap back
+                        impactFeedback.impactOccurred()
+                        withAnimation(.spring(response: 0.25, dampingFraction: 0.9)) {
+                            resetDrag()
+                        }
+                    }
+                } else if value.translation.width > horizontalThreshold || horizontalVelocity > 150 {
                     // Swipe right - save
                     selectionFeedback.selectionChanged() // Success haptic
                     if topItem < items.count {
@@ -143,7 +161,7 @@ struct CardStackView<Content: View, Overlay: View>: View {
                             resetDrag()
                         }
                     }
-                } else if value.translation.width < -threshold || velocity < -150 {
+                } else if value.translation.width < -horizontalThreshold || horizontalVelocity < -150 {
                     // Swipe left - dismiss
                     selectionFeedback.selectionChanged() // Success haptic
                     if topItem < items.count {

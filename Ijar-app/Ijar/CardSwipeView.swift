@@ -116,6 +116,9 @@ struct CardSwipeView: View {
                     #endif
                 }
             },
+            onSwipeUp: { property in
+                coordinator.navigate(to: .propertyDetail(property: property))
+            },
             dragDirection: $dragDirection
         )
     }
