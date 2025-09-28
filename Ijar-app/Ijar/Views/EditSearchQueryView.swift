@@ -6,8 +6,7 @@ struct EditSearchQueryView: View {
     let onSave: (SearchQuery) -> Void
     
     @State private var name = ""
-    @State private var locationName = ""
-    @State private var locationId = ""
+    @State private var postcode = ""
     @State private var minPrice: Int? = nil
     @State private var maxPrice: Int? = nil
     @State private var minBedrooms: Int? = nil
@@ -16,38 +15,26 @@ struct EditSearchQueryView: View {
     @State private var maxBathrooms: Int? = nil
     @State private var radius: Double? = nil
     @State private var furnishType: String? = nil
-    
+
     // Form state
     @State private var minPriceText = ""
     @State private var maxPriceText = ""
-    @State private var radiusText = ""
+    @State private var selectedRadiusOption: Double? = 5.0
     @State private var selectedFurnishType = "Any"
-    
+
     private let furnishOptions = ["Any", "Furnished", "Unfurnished"]
-    private let locationOptions = [
-        ("Canary Wharf", "REGION^87490"),
-        ("Mile End", "REGION^61166"),
-        ("London Bridge", "REGION^61150"),
-        ("Canning Town", "REGION^61024"),
-        ("Stratford", "REGION^61315")
-    ]
+    private let radiusOptions: [Double?] = [nil, 0.25, 0.5, 1.0, 3.0, 5.0, 10.0, 15.0, 20.0, 30.0, 40.0]
     
     var body: some View {
         NavigationView {
             Form {
                 Section("Basic Information") {
                     TextField("Search Name", text: $name)
-                    
-                    Picker("Location", selection: $locationName) {
-                        ForEach(locationOptions, id: \.0) { location in
-                            Text(location.0).tag(location.0)
-                        }
-                    }
-                    .onChange(of: locationName) { _, newValue in
-                        if let selected = locationOptions.first(where: { $0.0 == newValue }) {
-                            locationId = selected.1
-                        }
-                    }
+
+                    TextField("Postcode (e.g., E14 6FT)", text: $postcode)
+                        .textContentType(.postalCode)
+                        .autocapitalization(.allCharacters)
+                        .disableAutocorrection(true)
                 }
                 
                 Section("Price Range (£/month)") {
@@ -116,18 +103,15 @@ struct EditSearchQueryView: View {
                 }
                 
                 Section("Additional Options") {
-                    HStack {
-                        Text("Search Radius")
-                        Spacer()
-                        TextField("Miles", text: $radiusText)
-                            .keyboardType(.decimalPad)
-                            .frame(width: 80)
-                            .multilineTextAlignment(.trailing)
-                            .onChange(of: radiusText) { _, newValue in
-                                radius = Double(newValue)
-                            }
+                    Picker("Search Radius", selection: $selectedRadiusOption) {
+                        ForEach(radiusOptions, id: \.self) { option in
+                            Text(radiusDisplayText(for: option)).tag(option)
+                        }
                     }
-                    
+                    .onChange(of: selectedRadiusOption) { _, newValue in
+                        radius = newValue
+                    }
+
                     Picker("Furnish Type", selection: $selectedFurnishType) {
                         ForEach(furnishOptions, id: \.self) { option in
                             Text(option).tag(option)
@@ -162,14 +146,29 @@ struct EditSearchQueryView: View {
     
     private var isValidForm: Bool {
         !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
-        !locationName.isEmpty &&
-        !locationId.isEmpty
+        !postcode.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
-    
+
+    private func radiusDisplayText(for radius: Double?) -> String {
+        switch radius {
+        case nil: return "This area only"
+        case 0.25: return "Within 1/4 mile"
+        case 0.5: return "Within 1/2 mile"
+        case 1.0: return "Within 1 mile"
+        case 3.0: return "Within 3 miles"
+        case 5.0: return "Within 5 miles"
+        case 10.0: return "Within 10 miles"
+        case 15.0: return "Within 15 miles"
+        case 20.0: return "Within 20 miles"
+        case 30.0: return "Within 30 miles"
+        case 40.0: return "Within 40 miles"
+        default: return "Within 5 miles"
+        }
+    }
+
     private func populateFields() {
         name = query.name
-        locationName = query.locationName
-        locationId = query.locationId
+        postcode = query.postcode
         minPrice = query.minPrice
         maxPrice = query.maxPrice
         minBedrooms = query.minBedrooms
@@ -178,27 +177,28 @@ struct EditSearchQueryView: View {
         maxBathrooms = query.maxBathrooms
         radius = query.radius
         furnishType = query.furnishType
-        
-        // Update text fields
+
+        // Update text fields and pickers
         minPriceText = query.minPrice?.description ?? ""
         maxPriceText = query.maxPrice?.description ?? ""
-        radiusText = query.radius?.description ?? ""
         selectedFurnishType = query.furnishType?.capitalized ?? "Any"
+
+        // Set radius option based on the stored radius value
+        selectedRadiusOption = query.radius
     }
-    
+
     private func saveQuery() {
         let updatedQuery = SearchQuery(
             id: query.id,
             name: name.trimmingCharacters(in: .whitespacesAndNewlines),
-            locationId: locationId,
-            locationName: locationName,
+            postcode: postcode.trimmingCharacters(in: .whitespacesAndNewlines).uppercased(),
             minPrice: minPrice,
             maxPrice: maxPrice,
             minBedrooms: minBedrooms,
             maxBedrooms: maxBedrooms,
             minBathrooms: minBathrooms,
             maxBathrooms: maxBathrooms,
-            radius: radius,
+            radius: selectedRadiusOption,
             furnishType: furnishType,
             active: query.active,
             created: query.created,

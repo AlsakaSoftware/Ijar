@@ -11,8 +11,7 @@ CREATE TABLE IF NOT EXISTS query (
     
     -- Query details
     name TEXT NOT NULL,
-    location_id TEXT NOT NULL,
-    location_name TEXT NOT NULL,
+    postcode TEXT NOT NULL,
     min_price INTEGER,
     max_price INTEGER,
     min_bedrooms INTEGER,

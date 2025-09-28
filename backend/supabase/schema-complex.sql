@@ -11,8 +11,7 @@ CREATE TABLE IF NOT EXISTS query (
     
     -- Query configuration
     name TEXT NOT NULL, -- "Canary Wharf 3-bed", "Cheap Mile End"
-    location_id TEXT NOT NULL, -- Rightmove location identifier
-    location_name TEXT NOT NULL, -- "Canary Wharf", "Mile End"
+    postcode TEXT NOT NULL, -- UK postcode like "E14 6FT"
     
     -- Price filters
     min_price INTEGER,
@@ -144,10 +143,10 @@ CREATE POLICY "Users manage own saved properties" ON saved_property
 
 -- User's queries with summary stats
 CREATE OR REPLACE VIEW user_query_summary AS
-SELECT 
+SELECT
     q.id,
     q.name,
-    q.location_name,
+    q.postcode,
     q.min_price,
     q.max_price,
     q.min_bedrooms,
@@ -161,7 +160,7 @@ SELECT
 FROM query q
 LEFT JOIN query_property qp ON q.id = qp.query_id
 WHERE q.user_id = auth.uid()
-GROUP BY q.id, q.name, q.location_name, q.min_price, q.max_price, q.min_bedrooms, q.max_bedrooms, q.active, q.created
+GROUP BY q.id, q.name, q.postcode, q.min_price, q.max_price, q.min_bedrooms, q.max_bedrooms, q.active, q.created
 ORDER BY q.created DESC;
 
 -- Properties for a specific query with saved status

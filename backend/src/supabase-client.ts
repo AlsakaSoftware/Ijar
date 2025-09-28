@@ -19,8 +19,7 @@ export interface UserQuery {
   id?: string;
   user_id?: string;
   name: string;
-  location_id: string;
-  location_name: string;
+  postcode: string;
   min_price?: number;
   max_price?: number;
   min_bedrooms?: number;

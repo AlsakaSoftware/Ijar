@@ -3,8 +3,7 @@ import Foundation
 struct SearchQuery: Identifiable, Codable {
     let id: UUID
     let name: String
-    let locationId: String
-    let locationName: String
+    let postcode: String
     let minPrice: Int?
     let maxPrice: Int?
     let minBedrooms: Int?
@@ -16,12 +15,11 @@ struct SearchQuery: Identifiable, Codable {
     let active: Bool
     let created: Date
     let updated: Date
-    
+
     init(
         id: UUID = UUID(),
         name: String,
-        locationId: String,
-        locationName: String,
+        postcode: String,
         minPrice: Int? = nil,
         maxPrice: Int? = nil,
         minBedrooms: Int? = nil,
@@ -36,8 +34,7 @@ struct SearchQuery: Identifiable, Codable {
     ) {
         self.id = id
         self.name = name
-        self.locationId = locationId
-        self.locationName = locationName
+        self.postcode = postcode
         self.minPrice = minPrice
         self.maxPrice = maxPrice
         self.minBedrooms = minBedrooms

@@ -106,8 +106,7 @@ struct SearchQueriesView: View {
                             updatedQuery = SearchQuery(
                                 id: updatedQuery.id,
                                 name: updatedQuery.name,
-                                locationId: updatedQuery.locationId,
-                                locationName: updatedQuery.locationName,
+                                postcode: updatedQuery.postcode,
                                 minPrice: updatedQuery.minPrice,
                                 maxPrice: updatedQuery.maxPrice,
                                 minBedrooms: updatedQuery.minBedrooms,
@@ -128,9 +127,8 @@ struct SearchQueriesView: View {
                     },
                     onDuplicate: { queryToDuplicate in
                         let duplicatedQuery = SearchQuery(
-                            name: "\(queryToDuplicate.name) Copy",
-                            locationId: queryToDuplicate.locationId,
-                            locationName: queryToDuplicate.locationName,
+                            name: "Copy of \(queryToDuplicate.name)",
+                            postcode: queryToDuplicate.postcode,
                             minPrice: queryToDuplicate.minPrice,
                             maxPrice: queryToDuplicate.maxPrice,
                             minBedrooms: queryToDuplicate.minBedrooms,
@@ -183,7 +181,7 @@ struct SearchQueryCard: View {
                         Image(systemName: "location.fill")
                             .font(.system(size: 12))
                             .foregroundColor(.warmBrown.opacity(0.6))
-                        Text(query.locationName)
+                        Text(query.postcode)
                             .font(.system(size: 14, weight: .medium))
                             .foregroundColor(.warmBrown.opacity(0.8))
                     }

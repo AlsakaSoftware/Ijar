@@ -130,7 +130,7 @@ class PropertyMonitor {
       // Build search options, only including non-null parameters
       const searchOptions: SearchOptions = {
         searchType: 'RENT', // Default to rent for now
-        locationIdentifier: query.location_id,
+        postcode: query.postcode, // Using postcode directly
         getAllPages: false,
         quiet: false // Show URL being scraped
       };

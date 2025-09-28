@@ -35,8 +35,7 @@ class SearchQueryService: ObservableObject {
                 SearchQuery(
                     id: UUID(uuidString: row.id) ?? UUID(),
                     name: row.name,
-                    locationId: row.location_id,
-                    locationName: row.location_name,
+                    postcode: row.postcode,
                     minPrice: row.min_price,
                     maxPrice: row.max_price,
                     minBedrooms: row.min_bedrooms,
@@ -73,8 +72,7 @@ class SearchQueryService: ObservableObject {
                 id: query.id.uuidString,
                 user_id: user.id.uuidString,
                 name: query.name,
-                location_id: query.locationId,
-                location_name: query.locationName,
+                postcode: query.postcode,
                 min_price: query.minPrice,
                 max_price: query.maxPrice,
                 min_bedrooms: query.minBedrooms,
@@ -122,8 +120,7 @@ class SearchQueryService: ObservableObject {
                 id: query.id.uuidString,
                 user_id: user.id.uuidString,
                 name: query.name,
-                location_id: query.locationId,
-                location_name: query.locationName,
+                postcode: query.postcode,
                 min_price: query.minPrice,
                 max_price: query.maxPrice,
                 min_bedrooms: query.minBedrooms,
@@ -193,8 +190,8 @@ class SearchQueryService: ObservableObject {
                 id: query.id.uuidString,
                 user_id: user.id.uuidString,
                 name: query.name,
-                location_id: query.locationId,
-                location_name: query.locationName,
+                postcode: query.postcode
+                ,
                 min_price: query.minPrice,
                 max_price: query.maxPrice,
                 min_bedrooms: query.minBedrooms,
@@ -253,8 +250,7 @@ private struct QueryRow: Codable {
     let id: String
     let user_id: String
     let name: String
-    let location_id: String
-    let location_name: String
+    let postcode: String
     let min_price: Int?
     let max_price: Int?
     let min_bedrooms: Int?

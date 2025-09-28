@@ -1,7 +1,6 @@
 export interface SearchOptions {
   searchType?: 'SALE' | 'RENT';
-  locationIdentifier?: string;
-  location?: string;
+  postcode: string;
   minPrice?: number;
   maxPrice?: number;
   minBedrooms?: number;

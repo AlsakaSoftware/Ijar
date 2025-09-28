@@ -1,12 +1,13 @@
 import * as https from 'https';
 import * as zlib from 'zlib';
-import { 
-  SearchOptions, 
-  RightmoveProperty, 
+import * as fs from 'fs';
+import {
+  SearchOptions,
+  RightmoveProperty,
   RightmoveStation,
-  SearchResults, 
-  ApiResponse, 
-  NextData 
+  SearchResults,
+  ApiResponse,
+  NextData
 } from './scraper-types';
 
 export class RightmoveScraper {
@@ -39,9 +40,9 @@ export class RightmoveScraper {
           // Handle compression
           try {
             if (res.headers['content-encoding'] === 'gzip') {
-              data = zlib.gunzipSync(data);
+              data = Buffer.from(zlib.gunzipSync(data));
             } else if (res.headers['content-encoding'] === 'br') {
-              data = zlib.brotliDecompressSync(data);
+              data = Buffer.from(zlib.brotliDecompressSync(data));
             }
           } catch (error) {
             console.error('Decompression error:', error);
@@ -83,8 +84,7 @@ export class RightmoveScraper {
   private buildSearchUrl(options: SearchOptions, index: number): string {
     const {
       searchType = 'SALE',
-      locationIdentifier,
-      location,
+      postcode,
       minPrice,
       maxPrice,
       minBedrooms,
@@ -96,35 +96,47 @@ export class RightmoveScraper {
       propertyTypes
     } = options;
 
-    const baseUrl = searchType === 'RENT' ? 
-      'https://www.rightmove.co.uk/property-to-rent/find.html' : 
-      'https://www.rightmove.co.uk/property-for-sale/find.html';
+    // Format postcode for URL (e.g., "E14 6FT" -> "E14-6FT")
+    const formattedPostcode = postcode.replace(/\s+/g, '-');
 
-    // Use provided location identifier or default to London
-    const actualLocationId = locationIdentifier || 'REGION%5E87490';
+    // Build direct postcode URL
+    const baseUrl = searchType === 'RENT' ?
+      `https://www.rightmove.co.uk/property-to-rent/${formattedPostcode}.html` :
+      `https://www.rightmove.co.uk/property-for-sale/${formattedPostcode}.html`;
 
-    let url = `${baseUrl}?searchType=${searchType}&locationIdentifier=${actualLocationId}&index=${index}`;
-    
+    let url = baseUrl;
+
+    // Add index parameter if not first page
+    if (index > 0) {
+      url += `?index=${index}`;
+    }
+
+    const params = new URLSearchParams();
+
     // Add search parameters
-    if (minPrice) url += `&minPrice=${minPrice}`;
-    if (maxPrice) url += `&maxPrice=${maxPrice}`;
-    if (minBedrooms) url += `&minBedrooms=${minBedrooms}`;
-    if (maxBedrooms) url += `&maxBedrooms=${maxBedrooms}`;
-    if (minBathrooms) url += `&minBathrooms=${minBathrooms}`;
-    if (maxBathrooms) url += `&maxBathrooms=${maxBathrooms}`;
-    if (furnishTypes) url += `&furnishTypes=${furnishTypes}`;
-    
-    // Add optional parameters
-    if (radius !== undefined) url += `&radius=${radius}`;
-    if (propertyTypes) url += `&propertyTypes=${propertyTypes}`;
-    
+    if (minPrice) params.append('minPrice', minPrice.toString());
+    if (maxPrice) params.append('maxPrice', maxPrice.toString());
+    if (minBedrooms) params.append('minBedrooms', minBedrooms.toString());
+    if (maxBedrooms) params.append('maxBedrooms', maxBedrooms.toString());
+    if (minBathrooms) params.append('minBathrooms', minBathrooms.toString());
+    if (maxBathrooms) params.append('maxBathrooms', maxBathrooms.toString());
+    if (furnishTypes) params.append('furnishTypes', furnishTypes);
+    if (radius !== undefined) params.append('radius', radius.toString());
+    if (propertyTypes) params.append('propertyTypes', propertyTypes);
+
     // Always include let agreed
-    url += '&includeLetAgreed=true';
+    params.append('includeLetAgreed', 'true');
+
+    // Append parameters to URL
+    const paramString = params.toString();
+    if (paramString) {
+      url += (index > 0 ? '&' : '?') + paramString;
+    }
 
     return url;
   }
 
-  async searchProperties(options: SearchOptions = {}): Promise<SearchResults> {
+  async searchProperties(options: SearchOptions): Promise<SearchResults> {
     const { getAllPages = false, quiet = false } = options;
     let allProperties: RightmoveProperty[] = [];
     let index = 0;
@@ -510,7 +522,7 @@ async function example() {
     
     const options: SearchOptions = {
       searchType: 'RENT',
-      location: 'canary wharf',
+      postcode: 'E14 6FT',
       maxPrice: 3500,
       minBedrooms: 2,
       getAllPages: false

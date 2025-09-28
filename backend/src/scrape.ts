@@ -11,7 +11,7 @@ async function scrapeAndPrepareProperties() {
   try {
     const options: SearchOptions = {
       searchType: 'RENT',
-      location: 'canary wharf',
+      postcode: 'E14 6FT',
       maxPrice: 3500,
       minBedrooms: 2,
       getAllPages: false // Just first page for testing

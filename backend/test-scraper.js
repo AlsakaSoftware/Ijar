@@ -12,9 +12,9 @@ async function testScraper() {
     // Test basic search
     const searchOptions = {
       searchType: 'RENT',
-      locationIdentifier: 'STATION%5E1724', // Canary Wharf
+      postcode: 'E14 6FT', // Canary Wharf area
       maxPrice: 3500,
-      minBedrooms: 3,
+      minBedrooms: 2,
       getAllPages: false,
       quiet: false
     };
