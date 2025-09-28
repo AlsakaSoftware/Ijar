@@ -190,8 +190,7 @@ class SearchQueryService: ObservableObject {
                 id: query.id.uuidString,
                 user_id: user.id.uuidString,
                 name: query.name,
-                postcode: query.postcode
-                ,
+                postcode: query.postcode,
                 min_price: query.minPrice,
                 max_price: query.maxPrice,
                 min_bedrooms: query.minBedrooms,
