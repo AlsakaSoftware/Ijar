@@ -11,7 +11,7 @@ async function scrapeAndPrepareProperties() {
   try {
     const options: SearchOptions = {
       searchType: 'RENT',
-      postcode: 'E14 6FT',
+      postcode: 'E14 6FT', // Back to Canary Wharf where we know there are properties
       maxPrice: 3500,
       minBedrooms: 2,
       getAllPages: false // Just first page for testing
@@ -43,18 +43,6 @@ async function scrapeAndPrepareProperties() {
       console.log('Agent Phone (direct):', property.customer?.contactTelephone || 'Not available');
       console.log('Branch Name:', property.customer?.branchDisplayName || 'Not available');
 
-      // Log full property structure to see what agent data we have
-      console.log('\nFull property object keys:', Object.keys(property));
-      console.log('Customer info:', JSON.stringify((property as any).customer || (property as any).agent || (property as any).contactInfo, null, 2));
-
-      // Test agent phone extraction
-      console.log('Extracting agent phone...');
-      try {
-        const agentPhone = await scraper.extractAgentPhone(property.id);
-        console.log('Agent Phone:', agentPhone || 'Not found');
-      } catch (error) {
-        console.log('Agent Phone Error:', error instanceof Error ? error.message : 'Unknown error');
-      }
     }
 
     // Format properties for the calling API

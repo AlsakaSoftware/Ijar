@@ -11,6 +11,10 @@ export interface DatabaseProperty {
   bathrooms: number;
   address: string;
   area?: string;
+  rightmove_url?: string;
+  agent_phone?: string;
+  agent_name?: string;
+  branch_name?: string;
   created?: string;
   updated?: string;
 }
@@ -68,7 +72,11 @@ export class SupabasePropertyClient {
       bedrooms: property.bedrooms || 0,
       bathrooms: property.bathrooms || 0,
       address: property.displayAddress,
-      area
+      area,
+      rightmove_url: property.propertyUrl ? `https://www.rightmove.co.uk${property.propertyUrl}` : undefined,
+      agent_phone: property.customer?.contactTelephone || undefined,
+      agent_name: property.customer?.brandTradingName || undefined,
+      branch_name: property.customer?.branchDisplayName || undefined
     };
   }
 

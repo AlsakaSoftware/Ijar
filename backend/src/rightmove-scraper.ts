@@ -4,7 +4,6 @@ import * as fs from 'fs';
 import {
   SearchOptions,
   RightmoveProperty,
-  RightmoveStation,
   SearchResults,
   ApiResponse,
   NextData
@@ -217,63 +216,6 @@ export class RightmoveScraper {
     }
   }
 
-  // Extract transport/station information from property details
-  private extractTransportInfo(pageProps: any): { stations: RightmoveStation[], description?: string } {
-    const stations: RightmoveStation[] = [];
-    let transportDescription: string | undefined;
-
-    try {
-      // Look for stations in various locations in the response
-      if (pageProps.stations && Array.isArray(pageProps.stations)) {
-        pageProps.stations.forEach((station: any) => {
-          if (station.name && station.distance !== undefined) {
-            stations.push({
-              name: station.name,
-              types: station.types || [],
-              distance: station.distance,
-              unit: station.unit || 'miles'
-            });
-          }
-        });
-      }
-
-      // Also check for transport info in property description
-      const description = pageProps.propertyDetails?.description || 
-                         pageProps.propertyData?.description ||
-                         pageProps.description;
-      
-      if (description && typeof description === 'string') {
-        // Extract transport mentions from description
-        const transportKeywords = ['station', 'tube', 'underground', 'DLR', 'railway', 'transport'];
-        if (transportKeywords.some(keyword => description.toLowerCase().includes(keyword))) {
-          transportDescription = description;
-        }
-      }
-
-      // Look in features/amenities for transport info
-      const features = pageProps.propertyDetails?.features || 
-                      pageProps.propertyData?.features ||
-                      pageProps.features;
-      
-      if (features && Array.isArray(features)) {
-        const transportFeatures = features.filter((feature: string) => 
-          typeof feature === 'string' && 
-          ['station', 'tube', 'underground', 'DLR', 'transport'].some(keyword => 
-            feature.toLowerCase().includes(keyword)
-          )
-        );
-        
-        if (transportFeatures.length > 0 && !transportDescription) {
-          transportDescription = transportFeatures.join('; ');
-        }
-      }
-
-    } catch (error) {
-      console.warn('Error extracting transport info:', error);
-    }
-
-    return { stations, description: transportDescription };
-  }
 
 
   // Helper method to validate search options
@@ -317,19 +259,16 @@ export class RightmoveScraper {
     }
   }
 
-  // Get property with enriched transport/station information
+  // Get property with enriched information
   async getEnrichedProperty(property: RightmoveProperty, quiet = false): Promise<RightmoveProperty> {
     try {
       const details = await this.getPropertyDetails(property.id, quiet);
-      const transportInfo = this.extractTransportInfo(details);
-      
+
       return {
-        ...property,
-        nearbyStations: transportInfo.stations,
-        transportDescription: transportInfo.description
+        ...property
       };
     } catch (error) {
-      if (!quiet) console.warn(`Failed to enrich property ${property.id} with transport info:`, error);
+      if (!quiet) console.warn(`Failed to enrich property ${property.id}:`, error);
       return property; // Return original property if enrichment fails
     }
   }

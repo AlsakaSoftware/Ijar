@@ -25,13 +25,6 @@ export interface RightmovePrice {
   displayPriceQualifier?: string;
 }
 
-export interface RightmoveStation {
-  name: string;
-  types: string[]; // e.g., ["LONDON_UNDERGROUND", "LIGHT_RAILWAY"]
-  distance: number;
-  unit: string; // "miles"
-}
-
 export interface RightmoveProperty {
   id: number;
   bedrooms: number;
@@ -80,8 +73,6 @@ export interface RightmoveProperty {
     brandPlusLogoUrl?: string;
     primaryBrandColour?: string;
   };
-  nearbyStations?: RightmoveStation[];
-  transportDescription?: string;
 }
 
 export interface SearchResults {
