@@ -8,8 +8,12 @@ struct Property: Identifiable {
     let bathrooms: Int
     let address: String
     let area: String
-    
-    init(id: String = UUID().uuidString, images: [String], price: String, bedrooms: Int, bathrooms: Int, address: String, area: String) {
+    let rightmoveUrl: String?
+    let agentPhone: String?
+    let agentName: String?
+    let branchName: String?
+
+    init(id: String = UUID().uuidString, images: [String], price: String, bedrooms: Int, bathrooms: Int, address: String, area: String, rightmoveUrl: String? = nil, agentPhone: String? = nil, agentName: String? = nil, branchName: String? = nil) {
         self.id = id
         self.images = images
         self.price = price
@@ -17,6 +21,10 @@ struct Property: Identifiable {
         self.bathrooms = bathrooms
         self.address = address
         self.area = area
+        self.rightmoveUrl = rightmoveUrl
+        self.agentPhone = agentPhone
+        self.agentName = agentName
+        self.branchName = branchName
     }
     
     static let mockProperties: [Property] = [

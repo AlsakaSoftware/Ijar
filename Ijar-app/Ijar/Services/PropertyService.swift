@@ -53,7 +53,11 @@ class PropertyService: ObservableObject {
                     bedrooms: row.bedrooms,
                     bathrooms: row.bathrooms,
                     address: row.address,
-                    area: row.area ?? ""
+                    area: row.area ?? "",
+                    rightmoveUrl: row.rightmove_url,
+                    agentPhone: row.agent_phone,
+                    agentName: row.agent_name,
+                    branchName: row.branch_name
                 )
             }
             
@@ -264,6 +268,10 @@ private struct PropertyRow: Codable {
     let bathrooms: Int
     let address: String
     let area: String?
+    let rightmove_url: String?
+    let agent_phone: String?
+    let agent_name: String?
+    let branch_name: String?
     let found_at: String
     let found_by_query: String
 }

@@ -7,31 +7,34 @@ struct PropertyDetailView: View {
     
     var body: some View {
         ScrollView {
-                VStack(spacing: 0) {
-                    // Hero image section
-                    heroImageSection
+            VStack(spacing: 0) {
+                // Hero image section
+                heroImageSection
+                
+                // Property details content
+                VStack(spacing: 24) {
+                    // Price and basic info
+                    propertyHeaderSection
                     
-                    // Property details content
-                    VStack(spacing: 24) {
-                        // Price and basic info
-                        propertyHeaderSection
-                        
-                        // Features section
-                        propertyFeaturesSection
-                        
-                        // Location section
-                        locationSection
-                        
-                        // Additional details could go here
-                        Spacer(minLength: 100)
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 24)
+                    // Features section
+                    propertyFeaturesSection
+                    
+                    // Location section
+                    locationSection
+                    
+                    // Agent contact section
+                    agentContactSection
+                    
+                    // Additional details could go here
+                    Spacer(minLength: 100)
                 }
+                .padding(.horizontal, 20)
+                .padding(.top, 24)
             }
-            .ignoresSafeArea(edges: .top)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbarBackground(.hidden, for: .navigationBar)
+        }
+        .ignoresSafeArea(edges: .top)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(.hidden, for: .navigationBar)
         .fullScreenCover(isPresented: $showingFullScreenImages) {
             FullScreenImageGallery(
                 images: property.images,
@@ -255,6 +258,108 @@ struct PropertyDetailView: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+    
+    @ViewBuilder
+    private var agentContactSection: some View {
+        let hasAgentInfo = (property.agentName != nil && !property.agentName!.isEmpty) ||
+        (property.agentPhone != nil && !property.agentPhone!.isEmpty) ||
+        (property.rightmoveUrl != nil && !property.rightmoveUrl!.isEmpty)
+        
+        if hasAgentInfo {
+            VStack(alignment: .leading, spacing: 16) {
+                Text("Contact Agent")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundColor(.coffeeBean)
+                
+                VStack(spacing: 12) {
+                    // Agent information
+                    if let agentName = property.agentName, !agentName.isEmpty {
+                        HStack(spacing: 12) {
+                            Image(systemName: "person.fill")
+                                .font(.system(size: 16))
+                                .foregroundColor(.rusticOrange)
+                            
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(agentName)
+                                    .font(.system(size: 16, weight: .medium))
+                                    .foregroundColor(.coffeeBean)
+                                
+                                if let branchName = property.branchName, !branchName.isEmpty {
+                                    Text(branchName)
+                                        .font(.system(size: 14, weight: .regular))
+                                        .foregroundColor(.warmBrown.opacity(0.7))
+                                }
+                            }
+                            
+                            Spacer()
+                        }
+                        .padding(16)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(Color.warmCream)
+                                .shadow(color: .coffeeBean.opacity(0.05), radius: 4, y: 2)
+                        )
+                    }
+                    
+                    // Action buttons
+                    VStack(spacing: 12) {
+                        // Call agent button
+                        if let agentPhone = property.agentPhone, !agentPhone.isEmpty {
+                            Button(action: {
+                                if let phoneURL = URL(string: "tel:\(agentPhone)") {
+                                    UIApplication.shared.open(phoneURL)
+                                }
+                            }) {
+                                HStack(spacing: 12) {
+                                    Image(systemName: "phone.fill")
+                                        .font(.system(size: 16))
+                                        .foregroundColor(.white)
+                                    
+                                    Text("Call \(agentPhone)")
+                                        .font(.system(size: 16, weight: .medium))
+                                        .foregroundColor(.white)
+                                    
+                                    Spacer()
+                                }
+                                .padding(16)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .fill(Color.rusticOrange)
+                                )
+                            }
+                        }
+                        
+                        // View on Rightmove button
+                        if let rightmoveUrl = property.rightmoveUrl, !rightmoveUrl.isEmpty {
+                            Button(action: {
+                                if let url = URL(string: rightmoveUrl) {
+                                    UIApplication.shared.open(url)
+                                }
+                            }) {
+                                HStack(spacing: 12) {
+                                    Image(systemName: "safari.fill")
+                                        .font(.system(size: 16))
+                                        .foregroundColor(.white)
+                                    
+                                    Text("View on Rightmove")
+                                        .font(.system(size: 16, weight: .medium))
+                                        .foregroundColor(.white)
+                                    
+                                    Spacer()
+                                }
+                                .padding(16)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .fill(Color.coffeeBean)
+                                )
+                            }
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
     }
 }
 
