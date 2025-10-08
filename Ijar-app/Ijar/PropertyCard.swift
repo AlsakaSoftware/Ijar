@@ -10,15 +10,7 @@ struct PropertyCard: View {
     var body: some View {
         VStack(spacing: 0) {
             // Image indicators at top
-            HStack(spacing: 4) {
-                ForEach(0..<property.images.count, id: \.self) { index in
-                    Capsule()
-                        .fill(index == currentImageIndex ? Color.white : Color.white.opacity(0.5))
-                        .frame(width: index == currentImageIndex ? 24 : 16, height: 3)
-                        .shadow(color: .black.opacity(0.15), radius: 1, y: 0.5)
-                        .animation(.easeInOut(duration: 0.2), value: currentImageIndex)
-                }
-            }
+            imageIndicators
             .padding(.top, 16)
             .padding(.horizontal, 20)
             
@@ -188,6 +180,103 @@ struct PropertyCard: View {
         }
     }
     
+    // MARK: - Image Indicators
+
+    private var imageIndicators: some View {
+        GeometryReader { geometry in
+            let maxWidth = geometry.size.width - 40 // Account for padding
+            let imageCount = property.images.count
+
+            // Dynamic sizing based on available space
+            let (indicatorWidth, indicatorHeight, spacing) = calculateIndicatorDimensions(
+                imageCount: imageCount,
+                maxWidth: maxWidth
+            )
+
+            HStack(spacing: spacing) {
+                ForEach(0..<imageCount, id: \.self) { index in
+                    let isSelected = index == currentImageIndex
+                    let isCompressed = indicatorWidth <= 8 // Becomes dot-like when compressed
+
+                    // Shape morphs from capsule to circle based on compression
+                    if isCompressed {
+                        Circle()
+                            .fill(isSelected ? Color.white : Color.white.opacity(0.5))
+                            .frame(
+                                width: isSelected ? indicatorWidth * 1.3 : indicatorWidth,
+                                height: isSelected ? indicatorHeight * 1.3 : indicatorHeight
+                            )
+                            .shadow(color: .black.opacity(0.15), radius: 1, y: 0.5)
+                            .animation(.easeInOut(duration: 0.2), value: currentImageIndex)
+                    } else {
+                        Capsule()
+                            .fill(isSelected ? Color.white : Color.white.opacity(0.5))
+                            .frame(
+                                width: isSelected ? indicatorWidth * 1.5 : indicatorWidth,
+                                height: indicatorHeight
+                            )
+                            .shadow(color: .black.opacity(0.15), radius: 1, y: 0.5)
+                            .animation(.easeInOut(duration: 0.2), value: currentImageIndex)
+                    }
+                }
+            }
+            .frame(maxWidth: maxWidth)
+            .frame(width: geometry.size.width, height: 10, alignment: .center)
+        }
+        .frame(height: 10)
+    }
+
+    private func calculateIndicatorDimensions(
+        imageCount: Int,
+        maxWidth: CGFloat
+    ) -> (width: CGFloat, height: CGFloat, spacing: CGFloat) {
+        // Start with ideal sizes
+        let idealWidth: CGFloat = 24
+        let idealHeight: CGFloat = 3
+        let idealSpacing: CGFloat = 4
+
+        // Calculate total width needed with ideal sizes
+        let idealTotalWidth = CGFloat(imageCount) * idealWidth + CGFloat(imageCount - 1) * idealSpacing
+
+        // If it fits, use ideal sizes
+        if idealTotalWidth <= maxWidth {
+            return (width: idealWidth, height: idealHeight, spacing: idealSpacing)
+        }
+
+        // Otherwise, compress proportionally
+        let compressionRatio = maxWidth / idealTotalWidth
+
+        // Calculate compressed sizes
+        var width = idealWidth * compressionRatio
+        var spacing = idealSpacing * compressionRatio
+        var height = idealHeight
+
+        // Minimum sizes to maintain visibility
+        let minWidth: CGFloat = 3
+        let minSpacing: CGFloat = 1.5
+        let minHeight: CGFloat = 3
+
+        // If we're getting too small, adjust
+        if width < minWidth {
+            width = minWidth
+            // Recalculate spacing to fit
+            let remainingSpace = maxWidth - (CGFloat(imageCount) * width)
+            spacing = max(minSpacing, remainingSpace / CGFloat(imageCount - 1))
+        }
+
+        // When width gets small enough, transition to square dots
+        if width <= 8 {
+            height = width // Make it square for dot appearance
+        }
+
+        // Ensure minimums
+        width = max(minWidth, width)
+        height = max(minHeight, height)
+        spacing = max(minSpacing, spacing)
+
+        return (width: width, height: height, spacing: spacing)
+    }
+
     // MARK: - Overlay Components
 
     private var swipeUpBorderEffect: some View {
@@ -301,7 +390,7 @@ struct PropertyCard: View {
 
 }
 
-#Preview {
+#Preview("Few Images") {
     VStack {
         PropertyCard(
             property: Property(
@@ -314,6 +403,26 @@ struct PropertyCard: View {
                 bedrooms: 3,
                 bathrooms: 2,
                 address: "123 Canary Wharf",
+                area: "London E14"
+            ),
+            onTap: {
+                print("Details tapped")
+            }
+        )
+        .background(Color.warmCream)
+    }
+    .padding()
+}
+
+#Preview("Many Images") {
+    VStack {
+        PropertyCard(
+            property: Property(
+                images: Array(repeating: "https://images.unsplash.com/photo-1560184897-ae75f418493e?w=800&q=80", count: 20),
+                price: "£3,500/month",
+                bedrooms: 4,
+                bathrooms: 3,
+                address: "456 Isle of Dogs",
                 area: "London E14"
             ),
             onTap: {
