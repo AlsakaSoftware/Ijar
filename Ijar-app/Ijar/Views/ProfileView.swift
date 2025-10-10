@@ -4,38 +4,15 @@ struct ProfileView: View {
     @EnvironmentObject var coordinator: ProfileCoordinator
     @EnvironmentObject var authService: AuthenticationService
     @EnvironmentObject var notificationService: NotificationService
-    
+
     var body: some View {
         VStack(spacing: 30) {
-            // User info section
-            VStack(spacing: 16) {
-                Circle()
-                    .fill(Color.rusticOrange.opacity(0.2))
-                    .frame(width: 80, height: 80)
-                    .overlay(
-                        Image(systemName: "person.fill")
-                            .font(.system(size: 40))
-                            .foregroundColor(.rusticOrange)
-                    )
-                
-                VStack(spacing: 4) {
-                    Text(authService.user?.email ?? "User")
-                        .font(.system(size: 20, weight: .semibold))
-                        .foregroundColor(.coffeeBean)
-                    
-                    Text("Ijar Member")
-                        .font(.system(size: 14))
-                        .foregroundColor(.warmBrown.opacity(0.7))
-                }
-            }
-            .padding(.top, 20)
-            
-            // Menu options
+            // Main action - Manage Searches
             VStack(spacing: 0) {
                 ProfileMenuRow(
                     icon: "magnifyingglass.circle.fill",
                     title: "Property Searches",
-                    subtitle: "Manage your search areas",
+                    subtitle: "Add or manage your search areas",
                     action: {
                         coordinator.navigate(to: .searchQueries)
                     }
@@ -44,7 +21,8 @@ struct ProfileView: View {
             .background(Color.warmCream)
             .cornerRadius(16)
             .padding(.horizontal)
-            
+            .padding(.top, 20)
+
             Spacer()
 
             // Sign out button
@@ -67,7 +45,7 @@ struct ProfileView: View {
                 )
             }
             .padding(.bottom, 30)
-            
+
             if authService.isLoading {
                 ProgressView()
                     .tint(.rusticOrange)

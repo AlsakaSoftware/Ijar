@@ -1,4 +1,5 @@
 import SwiftUI
+import UserNotifications
 
 struct RootView: View {
     @StateObject private var coordinator = AppCoordinator()
@@ -47,6 +48,12 @@ struct RootContentView: View {
                 }
                 .accentColor(.rusticOrange)
                 .environmentObject(authService)
+                .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
+                    // Clear notification badge when app enters foreground
+                    Task {
+                        try? await UNUserNotificationCenter.current().setBadgeCount(0)
+                    }
+                }
             } else {
                 SignInView()
                     .environmentObject(authService)

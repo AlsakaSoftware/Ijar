@@ -9,6 +9,7 @@ struct IjarApp: App {
         WindowGroup {
             RootView()
                 .environmentObject(notificationService)
+                .preferredColorScheme(.light) // Always use light mode
                 .onAppear {
                     // Pass the notification service to app delegate when view appears
                     appDelegate.notificationService = notificationService
