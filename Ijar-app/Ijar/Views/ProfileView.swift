@@ -4,8 +4,6 @@ struct ProfileView: View {
     @EnvironmentObject var coordinator: ProfileCoordinator
     @EnvironmentObject var authService: AuthenticationService
     @EnvironmentObject var notificationService: NotificationService
-    @State private var isTriggering = false
-    @State private var triggerMessage: String?
     
     var body: some View {
         VStack(spacing: 30) {
@@ -36,35 +34,10 @@ struct ProfileView: View {
             VStack(spacing: 0) {
                 ProfileMenuRow(
                     icon: "magnifyingglass.circle.fill",
-                    title: "My Searches",
+                    title: "Property Searches",
+                    subtitle: "Manage your search areas",
                     action: {
                         coordinator.navigate(to: .searchQueries)
-                    }
-                )
-                
-                ProfileMenuRow(
-                    icon: "heart.fill",
-                    title: "Saved Properties",
-                    action: {
-                        // Navigate to saved properties
-                    }
-                )
-                
-                ProfileMenuRow(
-                    icon: "bell.fill",
-                    title: "Push Notifications",
-                    subtitle: notificationStatusText,
-                    action: {
-                        Task {
-                            if notificationService.notificationPermissionStatus == .denied {
-                                // Open app settings
-                                if let settingsUrl = URL(string: UIApplication.openSettingsURLString) {
-                                    await UIApplication.shared.open(settingsUrl)
-                                }
-                            } else {
-                                let _ = await notificationService.requestNotificationPermission()
-                            }
-                        }
                     }
                 )
             }
@@ -73,35 +46,7 @@ struct ProfileView: View {
             .padding(.horizontal)
             
             Spacer()
-            
-            // TEMPORARY: Manual workflow trigger button
-            Button(action: {
-                Task {
-                    await triggerWorkflowManually()
-                }
-            }) {
-                HStack {
-                    if isTriggering {
-                        ProgressView()
-                            .scaleEffect(0.8)
-                            .tint(.blue)
-                    } else {
-                        Image(systemName: "arrow.triangle.2.circlepath")
-                    }
-                    Text("Run Property Search (Test)")
-                }
-                .font(.system(size: 16, weight: .medium))
-                .foregroundColor(.blue)
-                .padding(.horizontal, 24)
-                .padding(.vertical, 12)
-                .background(
-                    Capsule()
-                        .stroke(Color.blue, lineWidth: 1)
-                )
-            }
-            .padding(.bottom, 10)
-            .disabled(isTriggering)
-            
+
             // Sign out button
             Button(action: {
                 Task {
@@ -132,112 +77,6 @@ struct ProfileView: View {
         .background(Color.warmCream.opacity(0.3))
         .navigationTitle("Profile")
         .navigationBarTitleDisplayMode(.large)
-        .alert("Workflow Trigger", isPresented: .constant(triggerMessage != nil), presenting: triggerMessage) { _ in
-            Button("OK") {
-                triggerMessage = nil
-            }
-        } message: { message in
-            Text(message)
-        }
-    }
-    
-    // TEMPORARY: Function to manually trigger GitHub workflow
-    private func triggerWorkflowManually() async {
-        isTriggering = true
-        
-        // First, let's list workflows to debug
-        let listUrl = URL(string: "https://api.github.com/repos/AlsakaSoftware/ijar/actions/workflows")!
-        var listRequest = URLRequest(url: listUrl)
-        listRequest.setValue("application/vnd.github.v3+json", forHTTPHeaderField: "Accept")
-        
-        guard let githubToken = ConfigManager.shared.githubToken else {
-            triggerMessage = "⚠️ GitHub token not configured"
-            isTriggering = false
-            return
-        }
-        listRequest.setValue("token \(githubToken)", forHTTPHeaderField: "Authorization")
-        
-        var workflowUrl = "https://api.github.com/repos/AlsakaSoftware/ijar/actions/workflows/monitor-properties.yml/dispatches"
-        
-        do {
-            let (data, response) = try await URLSession.shared.data(for: listRequest)
-            if let httpResponse = response as? HTTPURLResponse,
-               httpResponse.statusCode == 200,
-               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-               let workflows = json["workflows"] as? [[String: Any]] {
-                
-                // Look for our monitor-properties workflow
-                for workflow in workflows {
-                    if let path = workflow["path"] as? String,
-                       path.contains("monitor-properties"),
-                       let id = workflow["id"] as? Int {
-                        workflowUrl = "https://api.github.com/repos/AlsakaSoftware/ijar/actions/workflows/\(id)/dispatches"
-                        print("🔍 Found workflow, using ID: \(id)")
-                        break
-                    }
-                }
-            }
-        } catch {
-            print("⚠️ Could not list workflows, using default path")
-        }
-        
-        let url = URL(string: workflowUrl)!
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/vnd.github.v3+json", forHTTPHeaderField: "Accept")
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
-        request.setValue("token \(githubToken)", forHTTPHeaderField: "Authorization")
-        
-        // For workflow_dispatch, we need to specify the ref (branch)
-        let payload = [
-            "ref": "main"
-        ] as [String : Any]
-        
-        do {
-            request.httpBody = try JSONSerialization.data(withJSONObject: payload)
-            let (responseData, response) = try await URLSession.shared.data(for: request)
-            
-            if let httpResponse = response as? HTTPURLResponse {
-                if httpResponse.statusCode == 204 {
-                    print("🚀 Workflow triggered successfully")
-                    triggerMessage = "✅ Successfully triggered workflow!"
-                } else {
-                    print("⚠️ Workflow trigger failed with status: \(httpResponse.statusCode)")
-                    var message = "⚠️ Workflow trigger returned status: \(httpResponse.statusCode)"
-                    
-                    // Try to get error details
-                    if let errorJson = try? JSONSerialization.jsonObject(with: responseData) as? [String: Any],
-                       let errorMessage = errorJson["message"] as? String {
-                        message += "\n\(errorMessage)"
-                    }
-                    
-                    triggerMessage = message
-                }
-            }
-        } catch {
-            print("❌ Failed to trigger workflow: \(error)")
-            triggerMessage = "❌ Failed to trigger workflow: \(error.localizedDescription)"
-        }
-        
-        isTriggering = false
-    }
-    
-    private var notificationStatusText: String {
-        switch notificationService.notificationPermissionStatus {
-        case .authorized:
-            return "Enabled"
-        case .denied:
-            return "Disabled - Tap to enable in Settings"
-        case .notDetermined:
-            return "Tap to enable"
-        case .provisional:
-            return "Provisionally enabled"
-        case .ephemeral:
-            return "Temporarily enabled"
-        @unknown default:
-            return "Unknown status"
-        }
     }
 }
 
