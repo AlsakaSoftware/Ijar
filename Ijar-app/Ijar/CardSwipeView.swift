@@ -3,10 +3,12 @@ import SwiftUI
 struct CardSwipeView: View {
     @EnvironmentObject var coordinator: HomeFeedCoordinator
     @StateObject private var propertyService = PropertyService()
+    @StateObject private var searchService = SearchQueryService()
     @State private var dragDirection: SwipeDirection = .none
     @State private var buttonPressed: SwipeDirection = .none
     @State private var ambientAnimation = false
-    
+    @State private var showingCreateQuery = false
+
     private let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
     private let selectionFeedback = UISelectionFeedbackGenerator()
     
@@ -51,29 +53,59 @@ struct CardSwipeView: View {
         .refreshable {
             await propertyService.loadPropertiesForUser()
         }
+        .sheet(isPresented: $showingCreateQuery) {
+            CreateSearchQueryView { query in
+                Task {
+                    await searchService.createQuery(query)
+                    // Reload properties after creating a new search query
+                    await propertyService.loadPropertiesForUser()
+                }
+            }
+        }
     }
     
     // MARK: - View Components
     private var emptyStateView: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: 0) {
             Spacer()
-            
-            Image(systemName: "sparkles")
-                .font(.system(size: 60, weight: .light))
-                .foregroundStyle(Color.sunsetGradient)
-            
-            Text("All caught up")
-                .font(.system(size: 28, weight: .medium, design: .rounded))
-                .foregroundColor(.coffeeBean)
-            
-            Text("We'll notify you as soon as new homes are ready to explore")
-                .font(.system(size: 16, weight: .regular))
-                .foregroundColor(.warmBrown.opacity(0.8))
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 20)
-            
+
+            VStack(spacing: 16) {
+                Image(systemName: "sparkles")
+                    .font(.system(size: 60, weight: .light))
+                    .foregroundStyle(Color.sunsetGradient)
+                    .padding(.bottom, 4)
+
+                Text("All caught up")
+                    .font(.system(size: 28, weight: .medium, design: .rounded))
+                    .foregroundColor(.coffeeBean)
+
+                Text("We'll notify you as soon as new homes are ready to explore")
+                    .font(.system(size: 16, weight: .regular))
+                    .foregroundColor(.warmBrown.opacity(0.8))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 32)
+
+                Button(action: {
+                    showingCreateQuery = true
+                }) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "plus.circle.fill")
+                        Text("Add Search Area")
+                    }
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(.warmCream)
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 14)
+                    .background(
+                        Capsule()
+                            .fill(Color.rusticOrange)
+                            .shadow(color: .rusticOrange.opacity(0.3), radius: 8, y: 4)
+                    )
+                }
+                .padding(.top, 12)
+            }
+
             Spacer()
-            Spacer() // Extra spacer to keep it centered but slightly above middle
         }
         .frame(maxWidth: .infinity)
     }

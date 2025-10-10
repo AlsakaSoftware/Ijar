@@ -12,6 +12,7 @@ struct SavedPropertiesView: View {
                 .ignoresSafeArea()
             
             VStack(spacing: 0) {
+                emptyStateView
                 if propertyService.isLoading && propertyService.savedProperties.isEmpty {
                     loadingView
                 } else if propertyService.savedProperties.isEmpty {
