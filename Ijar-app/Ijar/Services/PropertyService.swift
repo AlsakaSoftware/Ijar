@@ -72,9 +72,8 @@ class PropertyService: ObservableObject {
             print("❌ PropertyService: Error loading properties: \(error)")
             print("❌ PropertyService: Error details: \(error.localizedDescription)")
 #endif
-            
-            // Fallback to mock data if there's an error
-            loadMockProperties()
+
+            properties = []
         }
         
         isLoading = false
@@ -82,26 +81,7 @@ class PropertyService: ObservableObject {
         print("🔥 PropertyService: loadPropertiesForUser completed")
 #endif
     }
-    
-    private func loadMockProperties() {
-        properties = [
-            Property(
-                images: [
-                    "https://images.unsplash.com/photo-1560184897-ae75f418493e?w=800&q=80",
-                    "https://images.unsplash.com/photo-1560185007-cde436f6a4d0?w=800&q=80"
-                ],
-                price: "£2,500/month",
-                bedrooms: 2,
-                bathrooms: 1,
-                address: "123 Sample Street",
-                area: "London E14"
-            )
-        ]
-#if DEBUG
-        print("📝 Using mock data")
-#endif
-    }
-    
+
     @discardableResult
     func trackPropertyAction(propertyId: String, action: PropertyAction) async -> Bool {
         do {
