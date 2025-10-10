@@ -2,9 +2,8 @@ name: Monitor Properties
 
 on:
   schedule:
-    # Run at 8am, 12pm, and 5pm GMT every day
+    # Run at 8am and 5pm GMT every day
     - cron: '0 8 * * *'
-    - cron: '0 12 * * *'
     - cron: '0 17 * * *'
   
   # Allow manual trigger

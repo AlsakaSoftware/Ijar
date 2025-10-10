@@ -214,17 +214,44 @@ export class PushNotificationService {
   }
 
   async sendPropertyNotification(userId: string, newPropertyCount: number, queryCount: number, queryName?: string): Promise<{ success: boolean; errors: string[] }> {
-    const title = 'New Properties Found!';
+    // Dynamic titles based on context
+    let title: string;
     let body: string;
-    
-    if (queryCount > 1) {
-      body = `Found ${newPropertyCount} new properties across ${queryCount} searches`;
+
+    // Choose emoji and title based on property count
+    if (newPropertyCount === 1) {
+      title = '🔥 New Listing Alert';
+    } else if (newPropertyCount <= 5) {
+      title = '🏠 New Properties Found';
     } else {
-      // Single query - include location/name
+      title = '📍 Property Update';
+    }
+
+    const propertyText = newPropertyCount === 1 ? 'property' : 'properties';
+
+    // Craft body message based on context
+    // Single property - create urgency
+    if (newPropertyCount === 1 && queryCount === 1) {
       if (queryName) {
-        body = `Found ${newPropertyCount} new ${newPropertyCount === 1 ? 'property' : 'properties'} in ${queryName}`;
+        body = `New listing just added in ${queryName} - view it now`;
       } else {
-        body = `Found ${newPropertyCount} new ${newPropertyCount === 1 ? 'property' : 'properties'}`;
+        body = `New listing just added - check it out before it's gone`;
+      }
+    }
+    // Multiple searches
+    else if (queryCount > 1) {
+      body = `${newPropertyCount} new ${propertyText} match your ${queryCount} searches`;
+    }
+    // Single search with multiple properties
+    else {
+      if (queryName) {
+        if (newPropertyCount <= 3) {
+          body = `${newPropertyCount} new ${propertyText} in ${queryName} - don't miss out`;
+        } else {
+          body = `${newPropertyCount} new ${propertyText} found in ${queryName}`;
+        }
+      } else {
+        body = `${newPropertyCount} new ${propertyText} ready to review`;
       }
     }
 
