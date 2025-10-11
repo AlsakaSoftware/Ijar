@@ -3,6 +3,7 @@ import SwiftUI
 struct SavedLocationsView: View {
     @StateObject private var locationsManager = SavedLocationsManager()
     @State private var showingAddLocation = false
+    @State private var locationToEdit: SavedLocation?
 
     var body: some View {
         List {
@@ -27,7 +28,11 @@ struct SavedLocationsView: View {
                 .listRowBackground(Color.clear)
             } else {
                 ForEach(locationsManager.locations) { location in
-                    LocationRow(location: location)
+                    LocationRow(location: location, onEdit: {
+                        locationToEdit = location
+                    }, onDelete: {
+                        locationsManager.deleteLocation(location)
+                    })
                 }
                 .onDelete(perform: locationsManager.deleteLocations)
             }
@@ -45,11 +50,16 @@ struct SavedLocationsView: View {
         .sheet(isPresented: $showingAddLocation) {
             AddLocationView(locationsManager: locationsManager)
         }
+        .sheet(item: $locationToEdit) { location in
+            EditLocationView(locationsManager: locationsManager, location: location)
+        }
     }
 }
 
 struct LocationRow: View {
     let location: SavedLocation
+    let onEdit: () -> Void
+    let onDelete: () -> Void
 
     var body: some View {
         HStack(spacing: 12) {
@@ -73,6 +83,32 @@ struct LocationRow: View {
             }
 
             Spacer()
+
+            HStack(spacing: 8) {
+                Button(action: onEdit) {
+                    Image(systemName: "pencil")
+                        .font(.system(size: 16))
+                        .foregroundColor(.rusticOrange)
+                        .frame(width: 32, height: 32)
+                        .background(
+                            Circle()
+                                .fill(Color.rusticOrange.opacity(0.1))
+                        )
+                }
+                .buttonStyle(.plain)
+
+                Button(action: onDelete) {
+                    Image(systemName: "trash")
+                        .font(.system(size: 16))
+                        .foregroundColor(.red)
+                        .frame(width: 32, height: 32)
+                        .background(
+                            Circle()
+                                .fill(Color.red.opacity(0.1))
+                        )
+                }
+                .buttonStyle(.plain)
+            }
         }
         .padding(.vertical, 8)
     }
@@ -173,6 +209,99 @@ struct AddLocationView: View {
                 )
 
                 locationsManager.addLocation(location)
+                dismiss()
+            } catch {
+                self.error = "Could not find coordinates for this location. Please check and try again."
+            }
+
+            isGeocoding = false
+        }
+    }
+}
+
+struct EditLocationView: View {
+    @Environment(\.dismiss) var dismiss
+    @ObservedObject var locationsManager: SavedLocationsManager
+    let location: SavedLocation
+    private let geocodingService = GeocodingService()
+
+    @State private var name = ""
+    @State private var postcode = ""
+    @State private var isGeocoding = false
+    @State private var error: String?
+
+    var body: some View {
+        NavigationView {
+            Form {
+                Section {
+                    TextField("Name (e.g., Work, Gym)", text: $name)
+                        .autocapitalization(.words)
+
+                    TextField("Postcode", text: $postcode)
+                        .autocapitalization(.allCharacters)
+                        .textInputAutocapitalization(.characters)
+                } header: {
+                    Text("Location Details")
+                }
+
+                if let error = error {
+                    Section {
+                        Text(error)
+                            .foregroundColor(.red)
+                            .font(.system(size: 14))
+                    }
+                }
+
+                Section {
+                    Text("Journey times from properties to this location will be calculated using TfL's Journey Planner.")
+                        .font(.system(size: 13))
+                        .foregroundColor(.warmBrown.opacity(0.7))
+                }
+            }
+            .navigationTitle("Edit Location")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                }
+
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    if isGeocoding {
+                        ProgressView()
+                    } else {
+                        Button("Save") {
+                            updateLocation()
+                        }
+                        .disabled(name.isEmpty || postcode.isEmpty)
+                    }
+                }
+            }
+            .onAppear {
+                name = location.name
+                postcode = location.postcode
+            }
+        }
+    }
+
+    private func updateLocation() {
+        isGeocoding = true
+        error = nil
+
+        // Geocode the postcode/address to get coordinates using CoreLocation
+        Task {
+            do {
+                let coordinates = try await geocodingService.geocode(postcode)
+                let updatedLocation = SavedLocation(
+                    id: location.id,
+                    name: name,
+                    postcode: postcode.uppercased(),
+                    latitude: coordinates.latitude,
+                    longitude: coordinates.longitude
+                )
+
+                locationsManager.updateLocation(updatedLocation)
                 dismiss()
             } catch {
                 self.error = "Could not find coordinates for this location. Please check and try again."
