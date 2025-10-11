@@ -46,9 +46,9 @@ class TfLService {
         components.queryItems = [
             URLQueryItem(name: "lat", value: String(latitude)),
             URLQueryItem(name: "lon", value: String(longitude)),
-            URLQueryItem(name: "stopTypes", value: "NaptanMetroStation,NaptanRailStation,NaptanBusCoachStation"), // Tube, DLR, and Bus
+            URLQueryItem(name: "stopTypes", value: "NaptanMetroStation,NaptanRailStation,NaptanBusCoachStation"), // Tube, DLR, Overground, and Bus
             URLQueryItem(name: "radius", value: String(radiusMeters)),
-            URLQueryItem(name: "modes", value: "tube,dlr,bus")
+            URLQueryItem(name: "modes", value: "tube,dlr,overground,elizabeth-line,bus")
         ]
 
         guard let url = components.url else {

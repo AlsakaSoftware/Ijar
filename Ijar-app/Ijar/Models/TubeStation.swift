@@ -63,8 +63,9 @@ struct TfLStopPoint: Codable {
     let lines: [TfLLine]?
 
     func toTubeStation() -> TubeStation? {
-        // Include tube and DLR stations
-        guard modes.contains("tube") || modes.contains("dlr") else { return nil }
+        // Include all rail stations: tube, DLR, Overground, Elizabeth Line, and National Rail
+        let railModes = ["tube", "dlr", "overground", "elizabeth-line", "national-rail"]
+        guard modes.contains(where: { railModes.contains($0) }) else { return nil }
 
         // Only include non-bus lines for rail stations
         let railLines = lines?.filter { line in

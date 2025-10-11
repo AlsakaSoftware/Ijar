@@ -83,10 +83,19 @@ struct PropertyDetailView: View {
                 do {
                     // Try to geocode the address
                     let address = property.area.isEmpty ? property.address : "\(property.address), \(property.area)"
+#if DEBUG
+                    print("🗺️ Geocoding address: \(address)")
+#endif
                     let coordinates = try await geocodingService.geocode(address)
                     geocodedCoordinates = coordinates
+#if DEBUG
+                    print("✅ Geocoded to: \(coordinates.latitude), \(coordinates.longitude)")
+#endif
                 } catch {
                     // If geocoding fails, we just won't show transport info
+#if DEBUG
+                    print("❌ Geocoding failed: \(error)")
+#endif
                     transportError = "Could not determine location coordinates"
                     return
                 }
@@ -97,6 +106,10 @@ struct PropertyDetailView: View {
             let lat = coordinates.latitude
             let lon = coordinates.longitude
 
+#if DEBUG
+            print("📍 Using coordinates: \(lat), \(lon)")
+#endif
+
             // Fetch nearby transport
             isLoadingTransport = true
             transportError = nil
@@ -105,8 +118,14 @@ struct PropertyDetailView: View {
                 let result = try await tflService.fetchNearbyStations(latitude: lat, longitude: lon)
                 nearbyStations = result.stations
                 nearbyBusStops = result.busStops
+#if DEBUG
+                print("✅ Found \(result.stations.count) stations, \(result.busStops.count) bus stops")
+#endif
             } catch {
                 transportError = error.localizedDescription
+#if DEBUG
+                print("❌ TfL API error: \(error)")
+#endif
             }
 
             isLoadingTransport = false
@@ -431,7 +450,7 @@ struct PropertyDetailView: View {
                     .font(.system(size: 16))
                     .foregroundColor(.rusticOrange)
 
-                Text("Tube & DLR")
+                Text("Rail Stations")
                     .font(.system(size: 18, weight: .semibold))
                     .foregroundColor(.coffeeBean)
             }
