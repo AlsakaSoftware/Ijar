@@ -854,61 +854,64 @@ struct FullScreenImageGallery: View {
 struct JourneyRow: View {
     let location: SavedLocation
     let journey: Journey
+    @State private var showingDetail = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            // Header with location name and total time
-            HStack(spacing: 12) {
-                Image(systemName: locationIcon)
-                    .font(.system(size: 16))
-                    .foregroundColor(.rusticOrange)
-                    .frame(width: 24)
+        HStack(alignment: .center, spacing: 12) {
+            // Location icon - centered vertically
+            Image(systemName: locationIcon)
+                .font(.system(size: 16))
+                .foregroundColor(.rusticOrange)
+                .frame(width: 24)
 
+            // Content column
+            VStack(alignment: .leading, spacing: 10) {
+                // Location name
                 Text(location.name)
                     .font(.system(size: 16, weight: .medium))
                     .foregroundColor(.coffeeBean)
 
-                Spacer()
+                // Journey legs breakdown with icons (no line names)
+                HStack(spacing: 6) {
+                    ForEach(Array(journey.legs.enumerated()), id: \.offset) { index, leg in
+                        HStack(spacing: 4) {
+                            // Leg icon and duration only
+                            Image(systemName: leg.icon)
+                                .font(.system(size: 11))
+                                .foregroundColor(.warmBrown.opacity(0.7))
 
-                Text(journey.formattedDuration)
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundColor(.rusticOrange)
-            }
-
-            // Journey legs breakdown with icons
-            HStack(spacing: 6) {
-                ForEach(Array(journey.legs.enumerated()), id: \.offset) { index, leg in
-                    HStack(spacing: 4) {
-                        // Leg icon and info
-                        Image(systemName: leg.icon)
-                            .font(.system(size: 11))
-                            .foregroundColor(.warmBrown.opacity(0.7))
-
-                        if let lineName = leg.lineName {
-                            Text(lineName)
-                                .font(.system(size: 11, weight: .medium))
-                                .foregroundColor(.coffeeBean)
+                            Text("\(leg.duration)m")
+                                .font(.system(size: 11))
+                                .foregroundColor(.warmBrown.opacity(0.6))
                         }
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 4)
+                        .background(
+                            Capsule()
+                                .fill(Color.warmCream.opacity(0.5))
+                        )
 
-                        Text("\(leg.duration)m")
-                            .font(.system(size: 11))
-                            .foregroundColor(.warmBrown.opacity(0.6))
-                    }
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 4)
-                    .background(
-                        Capsule()
-                            .fill(Color.warmCream.opacity(0.5))
-                    )
-
-                    if index < journey.legs.count - 1 {
-                        Image(systemName: "arrow.right")
-                            .font(.system(size: 8))
-                            .foregroundColor(.warmBrown.opacity(0.4))
+                        if index < journey.legs.count - 1 {
+                            Image(systemName: "arrow.right")
+                                .font(.system(size: 8))
+                                .foregroundColor(.warmBrown.opacity(0.4))
+                        }
                     }
                 }
             }
-            .padding(.leading, 36)
+
+            Spacer()
+
+            // Time and chevron - centered vertically
+            HStack(spacing: 8) {
+                Text(journey.formattedDuration)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundColor(.rusticOrange)
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(.warmBrown.opacity(0.4))
+            }
         }
         .padding(14)
         .background(
@@ -916,6 +919,131 @@ struct JourneyRow: View {
                 .fill(Color.warmCream)
                 .shadow(color: .coffeeBean.opacity(0.05), radius: 4, y: 2)
         )
+        .onTapGesture {
+            showingDetail = true
+        }
+        .sheet(isPresented: $showingDetail) {
+            JourneyDetailView(location: location, journey: journey)
+        }
+    }
+
+    private var locationIcon: String {
+        let lowercasedName = location.name.lowercased()
+
+        if lowercasedName.contains("work") || lowercasedName.contains("office") {
+            return "briefcase.fill"
+        } else if lowercasedName.contains("gym") || lowercasedName.contains("fitness") {
+            return "figure.strengthtraining.traditional"
+        } else if lowercasedName.contains("school") {
+            return "building.2.fill"
+        } else if lowercasedName.contains("home") || lowercasedName.contains("house") {
+            return "house.fill"
+        } else if lowercasedName.contains("friend") {
+            return "person.2.fill"
+        } else {
+            return "mappin.circle.fill"
+        }
+    }
+}
+
+struct JourneyDetailView: View {
+    @Environment(\.dismiss) var dismiss
+    let location: SavedLocation
+    let journey: Journey
+
+    var body: some View {
+        NavigationView {
+            ScrollView {
+                VStack(spacing: 24) {
+                    // Header with total time
+                    VStack(spacing: 8) {
+                        HStack(spacing: 12) {
+                            Image(systemName: locationIcon)
+                                .font(.system(size: 24))
+                                .foregroundColor(.rusticOrange)
+
+                            Text(location.name)
+                                .font(.system(size: 24, weight: .bold))
+                                .foregroundColor(.coffeeBean)
+                        }
+
+                        Text("Total journey time: \(journey.formattedDuration)")
+                            .font(.system(size: 16, weight: .medium))
+                            .foregroundColor(.warmBrown)
+                    }
+                    .padding(.top, 20)
+
+                    // Journey legs
+                    VStack(spacing: 16) {
+                        ForEach(Array(journey.legs.enumerated()), id: \.offset) { index, leg in
+                            VStack(alignment: .leading, spacing: 12) {
+                                HStack(spacing: 12) {
+                                    // Step number
+                                    ZStack {
+                                        Circle()
+                                            .fill(Color.rusticOrange)
+                                            .frame(width: 32, height: 32)
+
+                                        Text("\(index + 1)")
+                                            .font(.system(size: 14, weight: .bold))
+                                            .foregroundColor(.white)
+                                    }
+
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        HStack(spacing: 8) {
+                                            Image(systemName: leg.icon)
+                                                .font(.system(size: 16))
+                                                .foregroundColor(.rusticOrange)
+
+                                            if let lineName = leg.lineName {
+                                                Text(lineName)
+                                                    .font(.system(size: 18, weight: .semibold))
+                                                    .foregroundColor(.coffeeBean)
+                                            } else {
+                                                Text(leg.mode.capitalized)
+                                                    .font(.system(size: 18, weight: .semibold))
+                                                    .foregroundColor(.coffeeBean)
+                                            }
+                                        }
+
+                                        Text("\(leg.duration) min")
+                                            .font(.system(size: 14))
+                                            .foregroundColor(.warmBrown.opacity(0.7))
+                                    }
+                                }
+
+                                // Instruction text
+                                if !leg.instruction.isEmpty {
+                                    Text(leg.instruction)
+                                        .font(.system(size: 14))
+                                        .foregroundColor(.warmBrown)
+                                        .padding(.leading, 44)
+                                }
+                            }
+                            .padding(16)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(Color.warmCream)
+                                    .shadow(color: .coffeeBean.opacity(0.05), radius: 4, y: 2)
+                            )
+                        }
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 20)
+                }
+            }
+            .navigationTitle("Journey Details")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                    .foregroundColor(.rusticOrange)
+                }
+            }
+        }
     }
 
     private var locationIcon: String {

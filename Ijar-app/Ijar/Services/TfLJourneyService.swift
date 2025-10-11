@@ -114,17 +114,15 @@ class TfLJourneyService {
                 let routeName = leg.routeOptions?.first?.name ?? ""
                 let instruction = leg.instruction?.summary ?? leg.instruction?.detailed ?? ""
 
-                // Build a friendly instruction
-                var legInstruction = instruction
-                if !routeName.isEmpty && modeName != "walking" {
-                    legInstruction = routeName
-                }
-
                 // Extract line name for display
                 var lineName: String? = nil
                 if modeName != "walking" {
                     lineName = routeName.isEmpty ? nil : routeName
                 }
+
+                // Keep the full instruction which includes direction info
+                // e.g., "Central line towards Ealing Broadway"
+                let legInstruction = instruction
 
                 return JourneyLeg(
                     duration: leg.duration,
