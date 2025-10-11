@@ -11,6 +11,12 @@ struct PropertyDetailView: View {
     @State private var nearbyBusStops: [BusStop] = []
     @State private var isLoadingTransport = false
     @State private var transportError: String?
+
+    // Journey times to saved locations
+    private let journeyService = TfLJourneyService()
+    @StateObject private var locationsManager = SavedLocationsManager()
+    @State private var journeys: [SavedLocation: Journey?] = [:]
+    @State private var isLoadingJourneys = false
     
     var body: some View {
         ScrollView {
@@ -34,6 +40,11 @@ struct PropertyDetailView: View {
                         nearbyStationsSection
                     }
 
+                    // Journey times to saved locations
+                    if !locationsManager.locations.isEmpty && property.latitude != nil && property.longitude != nil {
+                        journeyTimesSection
+                    }
+
                     // Agent contact section
                     agentContactSection
                     
@@ -55,24 +66,104 @@ struct PropertyDetailView: View {
             )
         }
         .task {
-            // Fetch nearby tube stations when view appears
-            if let lat = property.latitude, let lon = property.longitude {
-                isLoadingTransport = true
-                transportError = nil
+            // Fetch nearby tube stations and journey times when view appears
+            guard let lat = property.latitude, let lon = property.longitude else { return }
 
-                do {
-                    let result = try await tflService.fetchNearbyStations(latitude: lat, longitude: lon)
-                    nearbyStations = result.stations
-                    nearbyBusStops = result.busStops
-                } catch {
-                    transportError = error.localizedDescription
+            // Fetch nearby transport
+            isLoadingTransport = true
+            transportError = nil
+
+            do {
+                let result = try await tflService.fetchNearbyStations(latitude: lat, longitude: lon)
+                nearbyStations = result.stations
+                nearbyBusStops = result.busStops
+            } catch {
+                transportError = error.localizedDescription
+            }
+
+            isLoadingTransport = false
+
+            // Fetch journey times to saved locations
+            guard !locationsManager.locations.isEmpty else { return }
+
+            isLoadingJourneys = true
+
+            await withTaskGroup(of: (SavedLocation, Journey?).self) { group in
+                for location in locationsManager.locations {
+                    guard let toLat = location.latitude, let toLon = location.longitude else {
+                        journeys[location] = nil
+                        continue
+                    }
+
+                    group.addTask {
+                        do {
+                            let journey = try await self.journeyService.fetchJourney(
+                                fromLat: lat,
+                                fromLon: lon,
+                                toLat: toLat,
+                                toLon: toLon,
+                                mode: .all  // Always use all transport modes
+                            )
+                            return (location, journey)
+                        } catch {
+#if DEBUG
+                            print("❌ Failed to fetch journey to \(location.name): \(error)")
+#endif
+                            return (location, nil)
+                        }
+                    }
                 }
 
-                isLoadingTransport = false
+                for await (location, journey) in group {
+                    journeys[location] = journey
+                }
             }
+
+            isLoadingJourneys = false
         }
     }
-    
+
+    private func fetchJourneys() async {
+        guard let lat = property.latitude, let lon = property.longitude else { return }
+        guard !locationsManager.locations.isEmpty else { return }
+
+        isLoadingJourneys = true
+        journeys.removeAll()
+
+        await withTaskGroup(of: (SavedLocation, Journey?).self) { group in
+            for location in locationsManager.locations {
+                guard let toLat = location.latitude, let toLon = location.longitude else {
+                    journeys[location] = nil
+                    continue
+                }
+
+                group.addTask {
+                    do {
+                        let journey = try await self.journeyService.fetchJourney(
+                            fromLat: lat,
+                            fromLon: lon,
+                            toLat: toLat,
+                            toLon: toLon,
+                            mode: .all
+                        )
+                        return (location, journey)
+                    } catch {
+#if DEBUG
+                        print("❌ Failed to fetch journey to \(location.name): \(error)")
+#endif
+                        return (location, nil)
+                    }
+                }
+            }
+
+            for await (location, journey) in group {
+                journeys[location] = journey
+            }
+        }
+
+        isLoadingJourneys = false
+    }
+
     private var heroImageSection: some View {
         ZStack(alignment: .bottom) {
             // Main image carousel
@@ -423,6 +514,42 @@ struct PropertyDetailView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
+    private var journeyTimesSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(spacing: 6) {
+                Image(systemName: "mappin.circle.fill")
+                    .font(.system(size: 18))
+                    .foregroundColor(.rusticOrange)
+
+                Text("Journey Times")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundColor(.coffeeBean)
+            }
+
+            if isLoadingJourneys {
+                HStack(spacing: 8) {
+                    ProgressView()
+                        .tint(.rusticOrange)
+                    Text("Calculating journeys...")
+                        .font(.system(size: 13))
+                        .foregroundColor(.warmBrown.opacity(0.7))
+                }
+                .padding(.vertical, 8)
+            } else {
+                VStack(spacing: 12) {
+                    ForEach(locationsManager.locations) { location in
+                        if let journey = journeys[location] {
+                            if let actualJourney = journey {
+                                JourneyRow(location: location, journey: actualJourney)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
     @ViewBuilder
     private var agentContactSection: some View {
         let hasAgentInfo = (property.agentName != nil && !property.agentName!.isEmpty) ||
@@ -670,6 +797,92 @@ struct FullScreenImageGallery: View {
             scale = 1.0
             lastScale = 1.0
             offset = .zero
+        }
+    }
+}
+
+struct JourneyRow: View {
+    let location: SavedLocation
+    let journey: Journey
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            // Header with location name and total time
+            HStack(spacing: 12) {
+                Image(systemName: locationIcon)
+                    .font(.system(size: 16))
+                    .foregroundColor(.rusticOrange)
+                    .frame(width: 24)
+
+                Text(location.name)
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(.coffeeBean)
+
+                Spacer()
+
+                Text(journey.formattedDuration)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundColor(.rusticOrange)
+            }
+
+            // Journey legs breakdown with icons
+            HStack(spacing: 6) {
+                ForEach(Array(journey.legs.enumerated()), id: \.offset) { index, leg in
+                    HStack(spacing: 4) {
+                        // Leg icon and info
+                        Image(systemName: leg.icon)
+                            .font(.system(size: 11))
+                            .foregroundColor(.warmBrown.opacity(0.7))
+
+                        if let lineName = leg.lineName {
+                            Text(lineName)
+                                .font(.system(size: 11, weight: .medium))
+                                .foregroundColor(.coffeeBean)
+                        }
+
+                        Text("\(leg.duration)m")
+                            .font(.system(size: 11))
+                            .foregroundColor(.warmBrown.opacity(0.6))
+                    }
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 4)
+                    .background(
+                        Capsule()
+                            .fill(Color.warmCream.opacity(0.5))
+                    )
+
+                    if index < journey.legs.count - 1 {
+                        Image(systemName: "arrow.right")
+                            .font(.system(size: 8))
+                            .foregroundColor(.warmBrown.opacity(0.4))
+                    }
+                }
+            }
+            .padding(.leading, 36)
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color.warmCream)
+                .shadow(color: .coffeeBean.opacity(0.05), radius: 4, y: 2)
+        )
+    }
+
+    private var locationIcon: String {
+        let lowercasedName = location.name.lowercased()
+
+        if lowercasedName.contains("work") || lowercasedName.contains("office") {
+            return "briefcase.fill"
+        } else if lowercasedName.contains("gym") || lowercasedName.contains("fitness") {
+            return "figure.strengthtraining.traditional"
+        } else if lowercasedName.contains("school") {
+            return "building.2.fill"
+        } else if lowercasedName.contains("home") || lowercasedName.contains("house") {
+            return "house.fill"
+        } else if lowercasedName.contains("friend") {
+            return "person.2.fill"
+        } else {
+            return "mappin.circle.fill"
         }
     }
 }

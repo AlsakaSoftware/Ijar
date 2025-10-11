@@ -42,6 +42,7 @@ enum ProfileDestination: NavigationDestination {
     case editProfile
     case preferences
     case searchQueries
+    case savedLocations
 }
 
 enum AppDestination: NavigationDestination {

@@ -19,6 +19,9 @@ class ProfileCoordinator: ObservableObject, Coordinator {
         case .searchQueries:
             SearchQueriesView()
                 .environmentObject(self)
+        case .savedLocations:
+            SavedLocationsView()
+                .environmentObject(self)
         }
     }
     

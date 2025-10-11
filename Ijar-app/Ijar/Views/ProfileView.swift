@@ -7,7 +7,7 @@ struct ProfileView: View {
 
     var body: some View {
         VStack(spacing: 30) {
-            // Main action - Manage Searches
+            // Main actions
             VStack(spacing: 0) {
                 ProfileMenuRow(
                     icon: "magnifyingglass.circle.fill",
@@ -15,6 +15,18 @@ struct ProfileView: View {
                     subtitle: "Add or manage your search areas",
                     action: {
                         coordinator.navigate(to: .searchQueries)
+                    }
+                )
+
+                Divider()
+                    .padding(.leading, 60)
+
+                ProfileMenuRow(
+                    icon: "mappin.circle.fill",
+                    title: "My Locations",
+                    subtitle: "See journey times from properties",
+                    action: {
+                        coordinator.navigate(to: .savedLocations)
                     }
                 )
             }
