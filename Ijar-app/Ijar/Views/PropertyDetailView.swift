@@ -17,7 +17,19 @@ struct PropertyDetailView: View {
     @StateObject private var locationsManager = SavedLocationsManager()
     @State private var journeys: [SavedLocation: Journey?] = [:]
     @State private var isLoadingJourneys = false
-    
+
+    // Geocoding service for properties without coordinates
+    private let geocodingService = GeocodingService()
+    @State private var geocodedCoordinates: (latitude: Double, longitude: Double)?
+
+    // Computed property to get coordinates (from property or geocoded fallback)
+    private var propertyCoordinates: (latitude: Double, longitude: Double)? {
+        if let lat = property.latitude, let lon = property.longitude {
+            return (lat, lon)
+        }
+        return geocodedCoordinates
+    }
+
     var body: some View {
         ScrollView {
             VStack(spacing: 0) {
@@ -36,12 +48,12 @@ struct PropertyDetailView: View {
                     locationSection
 
                     // Nearby tube stations section
-                    if property.latitude != nil && property.longitude != nil {
+                    if propertyCoordinates != nil {
                         nearbyStationsSection
                     }
 
                     // Journey times to saved locations
-                    if !locationsManager.locations.isEmpty && property.latitude != nil && property.longitude != nil {
+                    if !locationsManager.locations.isEmpty && propertyCoordinates != nil {
                         journeyTimesSection
                     }
 
@@ -66,8 +78,24 @@ struct PropertyDetailView: View {
             )
         }
         .task {
-            // Fetch nearby tube stations and journey times when view appears
-            guard let lat = property.latitude, let lon = property.longitude else { return }
+            // Geocode address if property doesn't have coordinates
+            if property.latitude == nil || property.longitude == nil {
+                do {
+                    // Try to geocode the address
+                    let address = property.area.isEmpty ? property.address : "\(property.address), \(property.area)"
+                    let coordinates = try await geocodingService.geocode(address)
+                    geocodedCoordinates = coordinates
+                } catch {
+                    // If geocoding fails, we just won't show transport info
+                    transportError = "Could not determine location coordinates"
+                    return
+                }
+            }
+
+            // Get coordinates (either from property or geocoded)
+            guard let coordinates = propertyCoordinates else { return }
+            let lat = coordinates.latitude
+            let lon = coordinates.longitude
 
             // Fetch nearby transport
             isLoadingTransport = true
@@ -124,8 +152,11 @@ struct PropertyDetailView: View {
     }
 
     private func fetchJourneys() async {
-        guard let lat = property.latitude, let lon = property.longitude else { return }
+        guard let coordinates = propertyCoordinates else { return }
         guard !locationsManager.locations.isEmpty else { return }
+
+        let lat = coordinates.latitude
+        let lon = coordinates.longitude
 
         isLoadingJourneys = true
         journeys.removeAll()

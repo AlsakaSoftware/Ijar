@@ -99,6 +99,7 @@ struct LocationRow: View {
 struct AddLocationView: View {
     @Environment(\.dismiss) var dismiss
     @ObservedObject var locationsManager: SavedLocationsManager
+    private let geocodingService = GeocodingService()
 
     @State private var name = ""
     @State private var postcode = ""
@@ -160,10 +161,10 @@ struct AddLocationView: View {
         isGeocoding = true
         error = nil
 
-        // Geocode the postcode to get coordinates
+        // Geocode the postcode/address to get coordinates using CoreLocation
         Task {
             do {
-                let coordinates = try await geocodePostcode(postcode)
+                let coordinates = try await geocodingService.geocode(postcode)
                 let location = SavedLocation(
                     name: name,
                     postcode: postcode.uppercased(),
@@ -174,37 +175,11 @@ struct AddLocationView: View {
                 locationsManager.addLocation(location)
                 dismiss()
             } catch {
-                self.error = "Could not find coordinates for this postcode. Please check and try again."
+                self.error = "Could not find coordinates for this location. Please check and try again."
             }
 
             isGeocoding = false
         }
-    }
-
-    private func geocodePostcode(_ postcode: String) async throws -> (latitude: Double, longitude: Double) {
-        // Use UK postcode geocoding API
-        let cleanedPostcode = postcode.replacingOccurrences(of: " ", with: "")
-        guard let url = URL(string: "https://api.postcodes.io/postcodes/\(cleanedPostcode)") else {
-            throw NSError(domain: "InvalidURL", code: 0)
-        }
-
-        let (data, _) = try await URLSession.shared.data(from: url)
-        let response = try JSONDecoder().decode(PostcodeResponse.self, from: data)
-
-        guard let result = response.result else {
-            throw NSError(domain: "NoResult", code: 0)
-        }
-
-        return (result.latitude, result.longitude)
-    }
-}
-
-struct PostcodeResponse: Codable {
-    let result: PostcodeResult?
-
-    struct PostcodeResult: Codable {
-        let latitude: Double
-        let longitude: Double
     }
 }
 
