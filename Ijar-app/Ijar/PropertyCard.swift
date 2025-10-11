@@ -71,7 +71,7 @@ struct PropertyCard: View {
                         .foregroundColor(.warmCream.opacity(0.9))
                 }
                 .padding(.bottom, 12)
-                .opacity(dragAmount.height < -20 ? max(0, 1.0 - ((abs(dragAmount.height) - 20.0) / 60.0)) : 1.0)
+                .opacity(dragAmount.height < -30 ? max(0, 1.0 - ((abs(dragAmount.height) - 30.0) / 90.0)) : 1.0)
                 .offset(y: min(0, dragAmount.height / 3))
                 .animation(.spring(response: 0.3, dampingFraction: 0.6), value: dragAmount)
                 .onAppear {
@@ -320,7 +320,7 @@ struct PropertyCard: View {
     @ViewBuilder
     private var releaseToViewFeedback: some View {
         // Only show if primarily swiping up (not left or right)
-        if dragAmount.height < -30 && abs(dragAmount.width) < 40 {
+        if dragAmount.height < -60 && abs(dragAmount.width) < 40 {
             VStack {
                 Spacer()
 
@@ -355,7 +355,7 @@ struct PropertyCard: View {
                     .offset(y: 30)
                 }
             }
-            .opacity(min(1.0, (abs(dragAmount.height) - 30.0) / 50.0))
+            .opacity(min(1.0, (abs(dragAmount.height) - 60.0) / 60.0))
             .animation(.interactiveSpring(response: 0.3, dampingFraction: 0.7), value: dragAmount)
         }
     }

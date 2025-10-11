@@ -128,12 +128,16 @@ struct CardStackView<Content: View, Overlay: View>: View {
             .onEnded { value in
                 isDragging = false
                 let horizontalThreshold: CGFloat = 90
-                let verticalThreshold: CGFloat = 80
+                let verticalThreshold: CGFloat = 120  // Increased from 80 to make less sensitive
                 let horizontalVelocity = value.predictedEndLocation.x - value.location.x
                 let verticalVelocity = value.predictedEndLocation.y - value.location.y
 
                 // Check for swipe up first (prioritize vertical gesture)
-                if value.translation.height < -verticalThreshold || verticalVelocity < -120 {
+                // Only trigger if it's primarily a vertical swipe (horizontal movement must be small)
+                let isVerticalSwipe = value.translation.height < -verticalThreshold || verticalVelocity < -150
+                let isPureVertical = abs(value.translation.width) < 40  // Horizontal movement must be < 40
+
+                if isVerticalSwipe && isPureVertical {
                     // Swipe up - view details
                     if let onSwipeUp = onSwipeUp, topItem < items.count {
                         let property = items[topItem]
