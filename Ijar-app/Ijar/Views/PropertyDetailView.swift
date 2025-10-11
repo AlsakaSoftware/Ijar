@@ -4,6 +4,13 @@ struct PropertyDetailView: View {
     let property: Property
     @State private var currentImageIndex = 0
     @State private var showingFullScreenImages = false
+
+    // TfL transport data
+    private let tflService = TfLService()
+    @State private var nearbyStations: [TubeStation] = []
+    @State private var nearbyBusStops: [BusStop] = []
+    @State private var isLoadingTransport = false
+    @State private var transportError: String?
     
     var body: some View {
         ScrollView {
@@ -21,7 +28,12 @@ struct PropertyDetailView: View {
                     
                     // Location section
                     locationSection
-                    
+
+                    // Nearby tube stations section
+                    if property.latitude != nil && property.longitude != nil {
+                        nearbyStationsSection
+                    }
+
                     // Agent contact section
                     agentContactSection
                     
@@ -41,6 +53,23 @@ struct PropertyDetailView: View {
                 currentIndex: $currentImageIndex,
                 isPresented: $showingFullScreenImages
             )
+        }
+        .task {
+            // Fetch nearby tube stations when view appears
+            if let lat = property.latitude, let lon = property.longitude {
+                isLoadingTransport = true
+                transportError = nil
+
+                do {
+                    let result = try await tflService.fetchNearbyStations(latitude: lat, longitude: lon)
+                    nearbyStations = result.stations
+                    nearbyBusStops = result.busStops
+                } catch {
+                    transportError = error.localizedDescription
+                }
+
+                isLoadingTransport = false
+            }
         }
     }
     
@@ -260,6 +289,140 @@ struct PropertyDetailView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
     
+    private var nearbyStationsSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            // Rail Stations Section
+            railStationsSection
+
+            // Bus Stops Section
+            if !nearbyBusStops.isEmpty {
+                busStopsSection
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var railStationsSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 6) {
+                Image(systemName: "tram.fill")
+                    .font(.system(size: 16))
+                    .foregroundColor(.rusticOrange)
+
+                Text("Tube & DLR")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(.coffeeBean)
+            }
+
+            if isLoadingTransport {
+                HStack(spacing: 8) {
+                    ProgressView()
+                        .tint(.rusticOrange)
+                    Text("Finding stations...")
+                        .font(.system(size: 13))
+                        .foregroundColor(.warmBrown.opacity(0.7))
+                }
+                .padding(.vertical, 8)
+            } else if let error = transportError {
+                HStack(spacing: 8) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.system(size: 14))
+                        .foregroundColor(.rusticOrange)
+                    Text(error)
+                        .font(.system(size: 13))
+                        .foregroundColor(.warmBrown)
+                }
+                .padding(.vertical, 8)
+            } else if nearbyStations.isEmpty && !isLoadingTransport {
+                HStack(spacing: 8) {
+                    Image(systemName: "info.circle.fill")
+                        .font(.system(size: 14))
+                        .foregroundColor(.rusticOrange)
+                    Text("No stations nearby")
+                        .font(.system(size: 13))
+                        .foregroundColor(.warmBrown)
+                }
+                .padding(.vertical, 8)
+            } else if !nearbyStations.isEmpty {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(nearbyStations) { station in
+                            HStack(spacing: 8) {
+                                Image(systemName: "tram.fill")
+                                    .font(.system(size: 13))
+                                    .foregroundColor(.rusticOrange)
+
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(station.name)
+                                        .font(.system(size: 14, weight: .medium))
+                                        .foregroundColor(.coffeeBean)
+                                        .lineLimit(1)
+
+                                    Text(station.distanceInMinutes)
+                                        .font(.system(size: 12))
+                                        .foregroundColor(.warmBrown.opacity(0.7))
+                                }
+                            }
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 10)
+                            .background(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .fill(Color.warmCream)
+                            )
+                        }
+                    }
+                    .padding(.horizontal, 1)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var busStopsSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 6) {
+                Image(systemName: "bus.fill")
+                    .font(.system(size: 16))
+                    .foregroundColor(.rusticOrange)
+
+                Text("Buses")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(.coffeeBean)
+            }
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(nearbyBusStops) { busStop in
+                        HStack(spacing: 8) {
+                            Image(systemName: "bus.fill")
+                                .font(.system(size: 13))
+                                .foregroundColor(.rusticOrange)
+
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(busStop.name)
+                                    .font(.system(size: 14, weight: .medium))
+                                    .foregroundColor(.coffeeBean)
+                                    .lineLimit(1)
+
+                                Text(busStop.distanceInMinutes)
+                                    .font(.system(size: 12))
+                                    .foregroundColor(.warmBrown.opacity(0.7))
+                            }
+                        }
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 10)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color.warmCream)
+                        )
+                    }
+                }
+                .padding(.horizontal, 1)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
     @ViewBuilder
     private var agentContactSection: some View {
         let hasAgentInfo = (property.agentName != nil && !property.agentName!.isEmpty) ||

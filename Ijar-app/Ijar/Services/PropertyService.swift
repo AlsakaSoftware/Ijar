@@ -57,7 +57,9 @@ class PropertyService: ObservableObject {
                     rightmoveUrl: row.rightmove_url,
                     agentPhone: row.agent_phone,
                     agentName: row.agent_name,
-                    branchName: row.branch_name
+                    branchName: row.branch_name,
+                    latitude: row.latitude,
+                    longitude: row.longitude
                 )
             }
             
@@ -148,7 +150,13 @@ class PropertyService: ObservableObject {
                         bedrooms: row.bedrooms,
                         bathrooms: row.bathrooms,
                         address: row.address,
-                        area: row.area ?? ""
+                        area: row.area ?? "",
+                        rightmoveUrl: row.rightmove_url,
+                        agentPhone: row.agent_phone,
+                        agentName: row.agent_name,
+                        branchName: row.branch_name,
+                        latitude: row.latitude,
+                        longitude: row.longitude
                     )
                 }
                 
@@ -164,7 +172,7 @@ class PropertyService: ObservableObject {
                     let property_id: String
                     let created: String
                 }
-                
+
                 let savedActions: [SavedAction] = try await supabase
                     .from("user_property_action")
                     .select("property_id, created")
@@ -173,32 +181,22 @@ class PropertyService: ObservableObject {
                     .order("created", ascending: false)
                     .execute()
                     .value
-                
+
                 let propertyIds = savedActions.map { $0.property_id }
-                
+
 #if DEBUG
                 print("🔥 PropertyService: Found \(propertyIds.count) saved property IDs: \(propertyIds)")
 #endif
-                
+
                 if !propertyIds.isEmpty {
-                    struct PropertyData: Codable {
-                        let id: String
-                        let rightmove_id: Int
-                        let images: [String]
-                        let price: String
-                        let bedrooms: Int
-                        let bathrooms: Int
-                        let address: String
-                        let area: String?
-                    }
-                    
-                    let properties: [PropertyData] = try await supabase
+                    // Use PropertyRow to ensure consistency with property_feed
+                    let properties: [PropertyRow] = try await supabase
                         .from("property")
                         .select()
                         .in("id", values: propertyIds)
                         .execute()
                         .value
-                    
+
                     var propertyDict: [String: Property] = [:]
                     for prop in properties {
                         propertyDict[prop.id] = Property(
@@ -208,12 +206,18 @@ class PropertyService: ObservableObject {
                             bedrooms: prop.bedrooms,
                             bathrooms: prop.bathrooms,
                             address: prop.address,
-                            area: prop.area ?? ""
+                            area: prop.area ?? "",
+                            rightmoveUrl: prop.rightmove_url,
+                            agentPhone: prop.agent_phone,
+                            agentName: prop.agent_name,
+                            branchName: prop.branch_name,
+                            latitude: prop.latitude,
+                            longitude: prop.longitude
                         )
                     }
-                    
+
                     savedProperties = propertyIds.compactMap { propertyDict[$0] }
-                    
+
 #if DEBUG
                     print("✅ PropertyService: Loaded \(savedProperties.count) saved properties via manual query")
 #endif
@@ -252,8 +256,10 @@ private struct PropertyRow: Codable {
     let agent_phone: String?
     let agent_name: String?
     let branch_name: String?
-    let found_at: String
-    let found_by_query: String
+    let latitude: Double?
+    let longitude: Double?
+    let found_at: String?  // Optional: only in property_feed view
+    let found_by_query: String?  // Optional: only in property_feed view
 }
 
 private struct UserPropertyAction: Codable {

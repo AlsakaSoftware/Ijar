@@ -12,8 +12,10 @@ struct Property: Identifiable {
     let agentPhone: String?
     let agentName: String?
     let branchName: String?
+    let latitude: Double?
+    let longitude: Double?
 
-    init(id: String = UUID().uuidString, images: [String], price: String, bedrooms: Int, bathrooms: Int, address: String, area: String, rightmoveUrl: String? = nil, agentPhone: String? = nil, agentName: String? = nil, branchName: String? = nil) {
+    init(id: String = UUID().uuidString, images: [String], price: String, bedrooms: Int, bathrooms: Int, address: String, area: String, rightmoveUrl: String? = nil, agentPhone: String? = nil, agentName: String? = nil, branchName: String? = nil, latitude: Double? = nil, longitude: Double? = nil) {
         self.id = id
         self.images = images
         self.price = price
@@ -25,5 +27,7 @@ struct Property: Identifiable {
         self.agentPhone = agentPhone
         self.agentName = agentName
         self.branchName = branchName
+        self.latitude = latitude
+        self.longitude = longitude
     }
 }
