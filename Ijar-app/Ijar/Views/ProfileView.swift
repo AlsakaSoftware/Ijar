@@ -11,8 +11,8 @@ struct ProfileView: View {
             VStack(spacing: 0) {
                 ProfileMenuRow(
                     icon: "magnifyingglass.circle.fill",
-                    title: "Property Searches",
-                    subtitle: "Add or manage your search areas",
+                    title: "Areas I'm Exploring",
+                    subtitle: "Manage the neighborhoods you're searching",
                     action: {
                         coordinator.navigate(to: .searchQueries)
                     }
@@ -23,8 +23,8 @@ struct ProfileView: View {
 
                 ProfileMenuRow(
                     icon: "mappin.circle.fill",
-                    title: "My Locations",
-                    subtitle: "See journey times from properties",
+                    title: "Places That Matter",
+                    subtitle: "Your work, gym, and other important spots",
                     action: {
                         coordinator.navigate(to: .savedLocations)
                     }
@@ -65,7 +65,7 @@ struct ProfileView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.warmCream.opacity(0.3))
-        .navigationTitle("Profile")
+        .navigationTitle("Settings")
         .navigationBarTitleDisplayMode(.large)
     }
 }
@@ -100,6 +100,7 @@ struct ProfileMenuRow: View {
                         Text(subtitle)
                             .font(.system(size: 14))
                             .foregroundColor(.warmBrown.opacity(0.7))
+                            .multilineTextAlignment(.leading)
                     }
                 }
                 

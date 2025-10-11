@@ -13,11 +13,11 @@ struct SavedLocationsView: View {
                         .font(.system(size: 50))
                         .foregroundColor(.warmBrown.opacity(0.5))
 
-                    Text("No saved locations")
+                    Text("No places yet")
                         .font(.system(size: 18, weight: .medium))
                         .foregroundColor(.coffeeBean)
 
-                    Text("Add important places to see journey times from properties")
+                    Text("Add your work, gym, or anywhere you visit regularly. We'll show journey times from every property.")
                         .font(.system(size: 14))
                         .foregroundColor(.warmBrown.opacity(0.7))
                         .multilineTextAlignment(.center)
@@ -37,7 +37,7 @@ struct SavedLocationsView: View {
                 .onDelete(perform: locationsManager.deleteLocations)
             }
         }
-        .navigationTitle("My Locations")
+        .navigationTitle("Places That Matter")
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
@@ -165,12 +165,12 @@ struct AddLocationView: View {
                 }
 
                 Section {
-                    Text("Journey times from properties to this location will be calculated using TfL's Journey Planner.")
+                    Text("We'll calculate journey times from properties to this place using TfL's Journey Planner.")
                         .font(.system(size: 13))
                         .foregroundColor(.warmBrown.opacity(0.7))
                 }
             }
-            .navigationTitle("Add Location")
+            .navigationTitle("Add Place")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
@@ -253,12 +253,12 @@ struct EditLocationView: View {
                 }
 
                 Section {
-                    Text("Journey times from properties to this location will be calculated using TfL's Journey Planner.")
+                    Text("We'll calculate journey times from properties to this place using TfL's Journey Planner.")
                         .font(.system(size: 13))
                         .foregroundColor(.warmBrown.opacity(0.7))
                 }
             }
-            .navigationTitle("Edit Location")
+            .navigationTitle("Edit Place")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {

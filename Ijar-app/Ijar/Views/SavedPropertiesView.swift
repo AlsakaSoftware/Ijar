@@ -21,7 +21,7 @@ struct SavedPropertiesView: View {
                 }
             }
         }
-        .navigationTitle("Saved homes")
+        .navigationTitle("Your Favorites")
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
@@ -74,7 +74,7 @@ struct SavedPropertiesView: View {
                 }
             }
             
-            Text("Loading your favorites...")
+            Text("Finding your saved homes...")
                 .font(.system(size: 18, weight: .medium, design: .rounded))
                 .foregroundColor(.warmBrown)
             
@@ -112,7 +112,7 @@ struct SavedPropertiesView: View {
                     .font(.system(size: 28, weight: .semibold, design: .rounded))
                     .foregroundColor(.coffeeBean)
                 
-                Text("Swipe right on properties you love\nand they'll appear here")
+                Text("Heart the homes you love, and\nwe'll keep them here for you")
                     .font(.system(size: 16, weight: .regular))
                     .foregroundColor(.warmBrown.opacity(0.8))
                     .multilineTextAlignment(.center)

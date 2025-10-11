@@ -27,7 +27,7 @@ struct CreateSearchQueryView: View {
     var body: some View {
         NavigationView {
             Form {
-                Section("Basic Information") {
+                Section("Name & Location") {
                     TextField("e.g., Canary Wharf 2-bed", text: $name)
 
                     TextField("Postcode (e.g., E14 6FT)", text: $postcode)
@@ -121,7 +121,7 @@ struct CreateSearchQueryView: View {
                     }
                 }
             }
-            .navigationTitle("Create Search")
+            .navigationTitle("New Search")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {

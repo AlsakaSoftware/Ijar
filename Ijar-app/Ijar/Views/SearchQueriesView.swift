@@ -20,7 +20,7 @@ struct SearchQueriesView: View {
                     queryListView
                 }
             }
-            .navigationTitle("My Searches")
+            .navigationTitle("Areas I'm Exploring")
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -65,23 +65,23 @@ struct SearchQueriesView: View {
                 .foregroundColor(.warmBrown.opacity(0.3))
             
             VStack(spacing: 8) {
-                Text("No Search Queries")
+                Text("No searches yet")
                     .font(.system(size: 22, weight: .semibold))
                     .foregroundColor(.coffeeBean)
-                
-                Text("Create your first search to start finding properties that match your criteria")
+
+                Text("Tell us where you'd like to live and what you're looking for")
                     .font(.system(size: 16))
                     .foregroundColor(.warmBrown.opacity(0.7))
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 32)
             }
-            
+
             Button(action: {
                 showingCreateQuery = true
             }) {
                 HStack(spacing: 8) {
                     Image(systemName: "plus.circle.fill")
-                    Text("Create Search")
+                    Text("Start Exploring")
                 }
                 .font(.system(size: 16, weight: .medium))
                 .foregroundColor(.warmCream)
@@ -263,7 +263,7 @@ struct SearchQueryCard: View {
                 // Options menu button
                 Menu {
                     Button(action: { onEdit(query) }) {
-                        Label("Edit Search", systemImage: "pencil")
+                        Label("Edit This Search", systemImage: "pencil")
                     }
                     
                     Button(action: { onDuplicate(query) }) {

@@ -41,8 +41,8 @@ struct RootContentView: View {
                     
                     ProfileRootView()
                         .tabItem {
-                            Image(systemName: "person.fill")
-                            Text("Profile")
+                            Image(systemName: "gearshape.fill")
+                            Text("Settings")
                         }
                         .tag(AppDestination.profile)
                 }

@@ -75,11 +75,11 @@ struct CardSwipeView: View {
                     .foregroundStyle(Color.sunsetGradient)
                     .padding(.bottom, 4)
 
-                Text("All caught up")
+                Text("You're all caught up!")
                     .font(.system(size: 28, weight: .medium, design: .rounded))
                     .foregroundColor(.coffeeBean)
 
-                Text("We'll notify you as soon as new homes are ready to explore")
+                Text("We'll let you know when fresh properties match your searches")
                     .font(.system(size: 16, weight: .regular))
                     .foregroundColor(.warmBrown.opacity(0.8))
                     .multilineTextAlignment(.center)
@@ -90,7 +90,7 @@ struct CardSwipeView: View {
                 }) {
                     HStack(spacing: 8) {
                         Image(systemName: "plus.circle.fill")
-                        Text("Add Search Area")
+                        Text("Add a Search")
                     }
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundColor(.warmCream)
@@ -230,7 +230,7 @@ struct CardSwipeView: View {
                 .fill(Color.rusticOrange)
                 .frame(width: 8, height: 8)
             
-            Text("\(propertyService.properties.count) left")
+            Text("\(propertyService.properties.count) to explore")
                 .font(.system(size: 15, weight: .bold, design: .rounded))
                 .foregroundColor(.coffeeBean)
         }
