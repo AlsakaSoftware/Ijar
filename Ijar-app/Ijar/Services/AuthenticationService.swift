@@ -81,23 +81,68 @@ class AuthenticationService: ObservableObject {
     
     func signOut() async {
         isLoading = true
-        
+
         do {
             // Remove device token from server
             if let userId = user?.id.uuidString {
                 await notificationService.removeDeviceToken(for: userId)
             }
-            
+
             try await supabase.auth.signOut()
             self.user = nil
             self.isAuthenticated = false
-            
+
             // Clear saved user ID
             UserDefaults.standard.removeObject(forKey: "currentUserId")
         } catch {
             self.error = error.localizedDescription
         }
-        
+
+        isLoading = false
+    }
+
+    func deleteAccount() async throws {
+        isLoading = true
+        error = nil
+
+        guard let userId = user?.id else {
+            throw AuthError.noUserFound
+        }
+
+        do {
+            #if DEBUG
+            print("🗑️ Starting account deletion for user: \(userId.uuidString)")
+            #endif
+
+            // Remove device token from server
+            await notificationService.removeDeviceToken(for: userId.uuidString)
+
+            // Call the database function to delete the account
+            // This uses SECURITY DEFINER to run with elevated privileges
+            try await supabase.rpc("delete_user_account").execute()
+
+            #if DEBUG
+            print("✅ Account deleted successfully")
+            #endif
+
+            // Sign out from Supabase to clear cached session
+            try await supabase.auth.signOut()
+
+            // Sign out locally
+            self.user = nil
+            self.isAuthenticated = false
+
+            // Clear saved user ID and local data
+            UserDefaults.standard.removeObject(forKey: "currentUserId")
+
+        } catch {
+            #if DEBUG
+            print("❌ Account deletion failed: \(error.localizedDescription)")
+            #endif
+            self.error = "Failed to delete account. Please try again."
+            throw error
+        }
+
         isLoading = false
     }
     
@@ -131,11 +176,14 @@ class AuthenticationService: ObservableObject {
 
 enum AuthError: LocalizedError {
     case invalidCredentials
-    
+    case noUserFound
+
     var errorDescription: String? {
         switch self {
         case .invalidCredentials:
             return "Invalid Apple ID credentials"
+        case .noUserFound:
+            return "No user found"
         }
     }
 }

@@ -33,7 +33,7 @@ class GeocodingService {
         }
 
         do {
-            // Use CLGeocoder to geocode the address
+            // Use CLGeocoder to geocode the addressx
             // This works well for UK addresses, postcodes, and partial addresses
             let placemarks = try await geocoder.geocodeAddressString(address)
 

@@ -4,6 +4,7 @@ struct ProfileView: View {
     @EnvironmentObject var coordinator: ProfileCoordinator
     @EnvironmentObject var authService: AuthenticationService
     @EnvironmentObject var notificationService: NotificationService
+    @State private var showingDeleteConfirmation = false
 
     var body: some View {
         VStack(spacing: 30) {
@@ -37,31 +38,57 @@ struct ProfileView: View {
 
             Spacer()
 
-            // Sign out button
-            Button(action: {
-                Task {
-                    await authService.signOut()
+            VStack(spacing: 16) {
+                // Sign out button
+                Button(action: {
+                    Task {
+                        await authService.signOut()
+                    }
+                }) {
+                    HStack {
+                        Image(systemName: "rectangle.portrait.and.arrow.right")
+                        Text("Sign Out")
+                    }
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(.warmRed)
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 12)
+                    .background(
+                        Capsule()
+                            .stroke(Color.warmRed, lineWidth: 1)
+                    )
                 }
-            }) {
-                HStack {
-                    Image(systemName: "rectangle.portrait.and.arrow.right")
-                    Text("Sign Out")
+
+                // Delete account button
+                Button(action: {
+                    showingDeleteConfirmation = true
+                }) {
+                    Text("Delete Account")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(.warmBrown.opacity(0.6))
                 }
-                .font(.system(size: 16, weight: .medium))
-                .foregroundColor(.warmRed)
-                .padding(.horizontal, 24)
-                .padding(.vertical, 12)
-                .background(
-                    Capsule()
-                        .stroke(Color.warmRed, lineWidth: 1)
-                )
             }
             .padding(.bottom, 30)
 
+        }
+        .overlay {
             if authService.isLoading {
-                ProgressView()
-                    .tint(.rusticOrange)
+                LoadingOverlay()
             }
+        }
+        .alert("Delete Account", isPresented: $showingDeleteConfirmation) {
+            Button("Cancel", role: .cancel) { }
+            Button("Delete", role: .destructive) {
+                Task {
+                    do {
+                        try await authService.deleteAccount()
+                    } catch {
+                        // Error is already set in authService
+                    }
+                }
+            }
+        } message: {
+            Text("Are you sure you want to delete your account? This will permanently delete all your searches, saved properties, and account data. This action cannot be undone.")
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.warmCream.opacity(0.3))
