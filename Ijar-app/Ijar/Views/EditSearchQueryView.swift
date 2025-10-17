@@ -19,7 +19,7 @@ struct EditSearchQueryView: View {
     // Form state
     @State private var minPriceText = ""
     @State private var maxPriceText = ""
-    @State private var selectedRadiusOption: Double? = 5.0
+    @State private var selectedRadiusOption: Double? = 1.0
     @State private var selectedFurnishType = "Any"
 
     private let furnishOptions = ["Any", "Furnished", "Unfurnished"]
@@ -151,8 +151,6 @@ struct EditSearchQueryView: View {
 
     private func radiusDisplayText(for radius: Double?) -> String {
         switch radius {
-        case nil: return "This area only"
-        case 0.25: return "Within 1/4 mile"
         case 0.5: return "Within 1/2 mile"
         case 1.0: return "Within 1 mile"
         case 3.0: return "Within 3 miles"

@@ -865,39 +865,39 @@ struct JourneyRow: View {
                 .frame(width: 24)
 
             // Content column
-            VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: 8) {
                 // Location name
                 Text(location.name)
                     .font(.system(size: 16, weight: .medium))
                     .foregroundColor(.coffeeBean)
 
-                // Journey legs breakdown with icons (no line names)
-                HStack(spacing: 6) {
-                    ForEach(Array(journey.legs.enumerated()), id: \.offset) { index, leg in
-                        HStack(spacing: 4) {
-                            // Leg icon and duration only
+                // Journey legs summary (first 3 with times, or just icons if more)
+                HStack(spacing: 5) {
+                    ForEach(Array(journey.legs.prefix(3).enumerated()), id: \.offset) { index, leg in
+                        HStack(spacing: 3) {
                             Image(systemName: leg.icon)
-                                .font(.system(size: 11))
+                                .font(.system(size: 13))
                                 .foregroundColor(.warmBrown.opacity(0.7))
 
-                            Text("\(leg.duration)m")
-                                .font(.system(size: 11))
+                            Text("\(leg.duration)")
+                                .font(.system(size: 13))
                                 .foregroundColor(.warmBrown.opacity(0.6))
                         }
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 4)
-                        .background(
-                            Capsule()
-                                .fill(Color.warmCream.opacity(0.5))
-                        )
 
-                        if index < journey.legs.count - 1 {
+                        if index < min(2, journey.legs.count - 1) {
                             Image(systemName: "arrow.right")
-                                .font(.system(size: 8))
+                                .font(.system(size: 9))
                                 .foregroundColor(.warmBrown.opacity(0.4))
                         }
                     }
+
+                    if journey.legs.count > 3 {
+                        Text("+\(journey.legs.count - 3)")
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundColor(.warmBrown.opacity(0.6))
+                    }
                 }
+                .padding(.trailing, 8)
             }
 
             Spacer()
