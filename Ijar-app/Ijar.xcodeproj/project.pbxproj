@@ -13,7 +13,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		99885EDA2E385821006B4BC2 /* Ijar.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Ijar.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		99885EDA2E385821006B4BC2 /* SupHomey.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SupHomey.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -49,7 +49,7 @@
 		99885EDB2E385821006B4BC2 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				99885EDA2E385821006B4BC2 /* Ijar.app */,
+				99885EDA2E385821006B4BC2 /* SupHomey.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -79,7 +79,7 @@
 				99885F402E386186006B4BC2 /* Supabase */,
 			);
 			productName = Ijar;
-			productReference = 99885EDA2E385821006B4BC2 /* Ijar.app */;
+			productReference = 99885EDA2E385821006B4BC2 /* SupHomey.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -282,7 +282,7 @@
 				);
 				MARKETING_VERSION = 1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.corp.AlsakaSoftware.Ijar;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = SupHomey;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -312,7 +312,7 @@
 				);
 				MARKETING_VERSION = 1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.corp.AlsakaSoftware.Ijar;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = SupHomey;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
