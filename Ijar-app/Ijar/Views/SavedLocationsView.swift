@@ -1,9 +1,13 @@
 import SwiftUI
+import RevenueCatUI
 
 struct SavedLocationsView: View {
     @StateObject private var locationsManager = SavedLocationsManager()
+    @StateObject private var subscriptionManager = SubscriptionManager.shared
     @State private var showingAddLocation = false
+    @State private var showingPaywall = false
     @State private var locationToEdit: SavedLocation?
+    @State private var limitMessage: String?
 
     var body: some View {
         List {
@@ -41,7 +45,7 @@ struct SavedLocationsView: View {
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
-                Button(action: { showingAddLocation = true }) {
+                Button(action: handleAddLocation) {
                     Image(systemName: "plus")
                         .foregroundColor(.rusticOrange)
                 }
@@ -52,6 +56,17 @@ struct SavedLocationsView: View {
         }
         .sheet(item: $locationToEdit) { location in
             EditLocationView(locationsManager: locationsManager, location: location)
+        }
+        .upgradePrompt(limitMessage: $limitMessage, showPaywall: $showingPaywall)
+    }
+
+    private func handleAddLocation() {
+        let result = subscriptionManager.canAddSavedLocation(currentLocationCount: locationsManager.locations.count)
+
+        if result.canAdd {
+            showingAddLocation = true
+        } else {
+            limitMessage = result.reason
         }
     }
 }

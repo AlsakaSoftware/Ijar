@@ -46,6 +46,14 @@ struct ConfigManager {
     var githubToken: String? {
         return config["GitHubToken"] as? String
     }
+
+    var revenueCatApiKey: String {
+        guard let key = config["RevenueCatApiKey"] as? String,
+              !key.isEmpty else {
+            fatalError("RevenueCatApiKey not configured in Config.plist")
+        }
+        return key
+    }
 }
 
 // MARK: - Debug Helper

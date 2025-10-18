@@ -1,9 +1,13 @@
 import SwiftUI
+import RevenueCatUI
 
 struct SearchQueriesView: View {
     @StateObject private var searchService = SearchQueryService()
+    @StateObject private var subscriptionManager = SubscriptionManager.shared
     @State private var showingCreateQuery = false
+    @State private var showingPaywall = false
     @State private var editingQuery: SearchQuery? = nil
+    @State private var limitMessage: String?
     
     var body: some View {
         NavigationView {
@@ -24,9 +28,7 @@ struct SearchQueriesView: View {
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: {
-                        showingCreateQuery = true
-                    }) {
+                    Button(action: handleCreateQuery) {
                         Image(systemName: "plus")
                             .foregroundColor(.rusticOrange)
                     }
@@ -49,12 +51,58 @@ struct SearchQueriesView: View {
                     }
                 )
             }
+            .upgradePrompt(limitMessage: $limitMessage, showPaywall: $showingPaywall)
             .task {
                 await searchService.loadUserQueries()
             }
             .refreshable {
                 await searchService.loadUserQueries()
             }
+        }
+    }
+
+    private func handleCreateQuery() {
+        let activeQueryCount = searchService.queries.filter { $0.active }.count
+        let result = subscriptionManager.canCreateActiveQuery(activeQueryCount: activeQueryCount)
+
+        if result.canCreate {
+            showingCreateQuery = true
+        } else {
+            limitMessage = result.reason
+        }
+    }
+
+    private func handleToggleActive(_ query: SearchQuery) {
+        // If turning ON (activating), check limits
+        if !query.active {
+            let activeQueryCount = searchService.queries.filter { $0.active }.count
+            let result = subscriptionManager.canActivateQuery(activeQueryCount: activeQueryCount)
+
+            if !result.canActivate {
+                limitMessage = result.reason
+                return
+            }
+        }
+
+        // Proceed with toggle
+        Task {
+            let updatedQuery = SearchQuery(
+                id: query.id,
+                name: query.name,
+                postcode: query.postcode,
+                minPrice: query.minPrice,
+                maxPrice: query.maxPrice,
+                minBedrooms: query.minBedrooms,
+                maxBedrooms: query.maxBedrooms,
+                minBathrooms: query.minBathrooms,
+                maxBathrooms: query.maxBathrooms,
+                radius: query.radius,
+                furnishType: query.furnishType,
+                active: !query.active,
+                created: query.created,
+                updated: Date()
+            )
+            await searchService.updateQuery(updatedQuery)
         }
     }
     
@@ -76,9 +124,7 @@ struct SearchQueriesView: View {
                     .padding(.horizontal, 32)
             }
 
-            Button(action: {
-                showingCreateQuery = true
-            }) {
+            Button(action: handleCreateQuery) {
                 HStack(spacing: 8) {
                     Image(systemName: "plus.circle.fill")
                     Text("Start Exploring")
@@ -101,26 +147,7 @@ struct SearchQueriesView: View {
                 SearchQueryCard(
                     query: query,
                     onToggleActive: {
-                        Task {
-                            var updatedQuery = query
-                            updatedQuery = SearchQuery(
-                                id: updatedQuery.id,
-                                name: updatedQuery.name,
-                                postcode: updatedQuery.postcode,
-                                minPrice: updatedQuery.minPrice,
-                                maxPrice: updatedQuery.maxPrice,
-                                minBedrooms: updatedQuery.minBedrooms,
-                                maxBedrooms: updatedQuery.maxBedrooms,
-                                minBathrooms: updatedQuery.minBathrooms,
-                                maxBathrooms: updatedQuery.maxBathrooms,
-                                radius: updatedQuery.radius,
-                                furnishType: updatedQuery.furnishType,
-                                active: !updatedQuery.active,
-                                created: updatedQuery.created,
-                                updated: Date()
-                            )
-                            await searchService.updateQuery(updatedQuery)
-                        }
+                        handleToggleActive(query)
                     },
                     onEdit: { queryToEdit in
                         editingQuery = queryToEdit
