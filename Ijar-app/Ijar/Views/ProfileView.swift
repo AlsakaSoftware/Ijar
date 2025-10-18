@@ -1,13 +1,23 @@
 import SwiftUI
+import RevenueCatUI
 
 struct ProfileView: View {
     @EnvironmentObject var coordinator: ProfileCoordinator
     @EnvironmentObject var authService: AuthenticationService
     @EnvironmentObject var notificationService: NotificationService
+    @StateObject private var subscriptionManager = SubscriptionManager.shared
     @State private var showingDeleteConfirmation = false
+    @State private var showingPaywall = false
 
     var body: some View {
         VStack(spacing: 30) {
+            // Premium upgrade banner (only show if not subscribed)
+            if !subscriptionManager.isSubscribed {
+                PremiumUpgradeBanner(showPaywall: $showingPaywall)
+                    .padding(.horizontal)
+                    .padding(.top, 20)
+            }
+
             // Main actions
             VStack(spacing: 0) {
                 ProfileMenuRow(
@@ -75,6 +85,9 @@ struct ProfileView: View {
             if authService.isLoading {
                 LoadingOverlay()
             }
+        }
+        .sheet(isPresented: $showingPaywall) {
+            PaywallView(displayCloseButton: true)
         }
         .alert("Delete Account", isPresented: $showingDeleteConfirmation) {
             Button("Cancel", role: .cancel) { }

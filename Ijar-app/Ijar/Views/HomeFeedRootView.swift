@@ -17,7 +17,8 @@ struct HomeFeedRootView: View {
                     Task {
                         await subscriptionManager.checkSubscriptionStatus()
 
-                        if !subscriptionManager.isSubscribed {
+                        // Only show paywall every 3 sessions for free users
+                        if subscriptionManager.shouldShowPaywall() {
                             showPaywall = true
                         }
                     }

@@ -12,6 +12,10 @@ class SubscriptionManager: ObservableObject {
     private let freeQueryLimit = 1
     private let freeSavedLocationsLimit = 1
 
+    // Session tracking for paywall
+    private let sessionCountKey = "paywall_session_count"
+    private let paywallFrequency = 3 // Show paywall every 3 sessions
+
     private init() {
         Purchases.logLevel = .debug
         Purchases.configure(withAPIKey: ConfigManager.shared.revenueCatApiKey)
@@ -19,6 +23,30 @@ class SubscriptionManager: ObservableObject {
         Task {
             await checkSubscriptionStatus()
         }
+
+        // Increment session count
+        incrementSessionCount()
+    }
+
+    // MARK: - Session Tracking
+
+    private func incrementSessionCount() {
+        let currentCount = UserDefaults.standard.integer(forKey: sessionCountKey)
+        UserDefaults.standard.set(currentCount + 1, forKey: sessionCountKey)
+    }
+
+    /// Check if we should show the paywall this session
+    func shouldShowPaywall() -> Bool {
+        // Always show if not subscribed and it's been 3+ sessions
+        guard !isSubscribed else { return false }
+
+        let sessionCount = UserDefaults.standard.integer(forKey: sessionCountKey)
+        return sessionCount % paywallFrequency == 0
+    }
+
+    /// Reset session count (e.g., after showing paywall)
+    func resetSessionCount() {
+        UserDefaults.standard.set(1, forKey: sessionCountKey)
     }
 
     // MARK: - Subscription Status
