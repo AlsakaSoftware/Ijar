@@ -18,7 +18,7 @@ struct SignInView: View {
                         .font(.system(size: 80))
                         .foregroundStyle(Color.sunsetGradient)
                     
-                    Text("Ijar")
+                    Text("SupHomey")
                         .font(.system(size: 48, weight: .bold, design: .rounded))
                         .foregroundColor(.coffeeBean)
                     
@@ -31,7 +31,7 @@ struct SignInView: View {
                 
                 // Sign in section
                 VStack(spacing: 24) {
-                    Text("Welcome to Ijar")
+                    Text("Welcome to SupHomey")
                         .font(.system(size: 28, weight: .semibold))
                         .foregroundColor(.coffeeBean)
                     
