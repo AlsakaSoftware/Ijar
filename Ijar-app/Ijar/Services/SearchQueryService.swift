@@ -57,6 +57,7 @@ class SearchQueryService: ObservableObject {
         isLoading = false
     }
     
+    @discardableResult
     func createQuery(_ query: SearchQuery) async -> Bool {
         isLoading = true
         error = nil

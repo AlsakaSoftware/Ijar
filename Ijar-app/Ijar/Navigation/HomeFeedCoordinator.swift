@@ -11,7 +11,7 @@ class HomeFeedCoordinator: ObservableObject, Coordinator {
     func build(_ destination: HomeFeedDestination) -> some View {
         switch destination {
         case .propertyDetail(let property):
-            PropertyDetailView(property: property)
+            PropertyDetailView(property: property, isSavedProperty: false)
         }
     }
     

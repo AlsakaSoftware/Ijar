@@ -1,7 +1,9 @@
 import SwiftUI
+import SwiftData
 
 struct PropertyDetailView: View {
     let property: Property
+    let isSavedProperty: Bool
     @State private var currentImageIndex = 0
     @State private var showingFullScreenImages = false
 
@@ -22,6 +24,69 @@ struct PropertyDetailView: View {
     private let geocodingService = GeocodingService()
     @State private var geocodedCoordinates: (latitude: Double, longitude: Double)?
 
+    // SwiftData for property metadata
+    @Environment(\.modelContext) private var modelContext
+    @Query private var allMetadata: [PropertyMetadata]
+    @State private var metadata: PropertyMetadata?
+
+    // Checklist and notes state
+    @State private var calledAgent = false
+    @State private var setViewing = false
+    @State private var putOffer = false
+    @State private var notes = ""
+    @FocusState private var notesFieldFocused: Bool
+
+    private func loadOrCreateMetadata() {
+        // Find existing metadata for this property
+        if let existing = allMetadata.first(where: { $0.propertyId == property.id }) {
+            metadata = existing
+            calledAgent = existing.calledAgent
+            setViewing = existing.setViewing
+            putOffer = existing.putOffer
+            notes = existing.notes
+        } else {
+            // Create new metadata
+            let newMetadata = PropertyMetadata(propertyId: property.id)
+            modelContext.insert(newMetadata)
+            metadata = newMetadata
+        }
+    }
+
+    private func savePropertyMetadata() {
+#if DEBUG
+        print("🔥 PropertyDetailView: Saving metadata for property \(property.id)")
+        print("   - Called Agent: \(calledAgent)")
+        print("   - Set Viewing: \(setViewing)")
+        print("   - Put Offer: \(putOffer)")
+        print("   - Notes: '\(notes)'")
+#endif
+
+        if let metadata = metadata {
+            metadata.update(calledAgent: calledAgent, setViewing: setViewing, putOffer: putOffer, notes: notes)
+        } else {
+            let newMetadata = PropertyMetadata(
+                propertyId: property.id,
+                calledAgent: calledAgent,
+                setViewing: setViewing,
+                putOffer: putOffer,
+                notes: notes
+            )
+            modelContext.insert(newMetadata)
+            self.metadata = newMetadata
+        }
+
+        do {
+            try modelContext.save()
+#if DEBUG
+            print("✅ PropertyDetailView: Metadata saved successfully")
+#endif
+        } catch {
+#if DEBUG
+            print("❌ PropertyDetailView: Failed to save metadata: \(error)")
+#endif
+        }
+    }
+
     // Computed property to get coordinates (from property or geocoded fallback)
     private var propertyCoordinates: (latitude: Double, longitude: Double)? {
         if let lat = property.latitude, let lon = property.longitude {
@@ -35,15 +100,15 @@ struct PropertyDetailView: View {
             VStack(spacing: 0) {
                 // Hero image section
                 heroImageSection
-                
+
                 // Property details content
                 VStack(spacing: 24) {
                     // Price and basic info
                     propertyHeaderSection
-                    
+
                     // Features section
                     propertyFeaturesSection
-                    
+
                     // Location section
                     locationSection
 
@@ -57,9 +122,14 @@ struct PropertyDetailView: View {
                         journeyTimesSection
                     }
 
+                    // Progress section (checklist + notes combined) - only for saved properties
+                    if isSavedProperty {
+                        progressSection
+                    }
+
                     // Agent contact section
                     agentContactSection
-                    
+
                     // Additional details could go here
                     Spacer(minLength: 100)
                 }
@@ -70,12 +140,45 @@ struct PropertyDetailView: View {
         .ignoresSafeArea(edges: .top)
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.hidden, for: .navigationBar)
+        .toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+
+                Button(action: {
+                    notesFieldFocused = false
+                    savePropertyMetadata()
+                }) {
+                    Text("Save")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.rusticOrange)
+                }
+            }
+        }
+        .simultaneousGesture(
+            DragGesture().onChanged { _ in
+                if notesFieldFocused {
+                    savePropertyMetadata()
+                    notesFieldFocused = false
+                }
+            }
+        )
+        .onChange(of: notesFieldFocused) { _, newValue in
+            // Save when keyboard dismisses and there's content
+            if !newValue && isSavedProperty {
+                savePropertyMetadata()
+            }
+        }
         .fullScreenCover(isPresented: $showingFullScreenImages) {
             FullScreenImageGallery(
                 images: property.images,
                 currentIndex: $currentImageIndex,
                 isPresented: $showingFullScreenImages
             )
+        }
+        .onAppear {
+            if isSavedProperty {
+                loadOrCreateMetadata()
+            }
         }
         .task {
             // Geocode address if property doesn't have coordinates
@@ -600,6 +703,68 @@ struct PropertyDetailView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
+    private var progressSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Progress")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundColor(.coffeeBean)
+
+            VStack(spacing: 8) {
+                ChecklistItem(
+                    title: "Called agent",
+                    isChecked: calledAgent
+                ) {
+                    calledAgent.toggle()
+                    savePropertyMetadata()
+                }
+
+                ChecklistItem(
+                    title: "Set viewing",
+                    isChecked: setViewing
+                ) {
+                    setViewing.toggle()
+                    savePropertyMetadata()
+                }
+
+                ChecklistItem(
+                    title: "Put offer",
+                    isChecked: putOffer
+                ) {
+                    putOffer.toggle()
+                    savePropertyMetadata()
+                }
+            }
+
+            // Notes field integrated into progress section
+            ZStack(alignment: .topLeading) {
+                if notes.isEmpty && !notesFieldFocused {
+                    Text("Add your thoughts...")
+                        .font(.system(size: 15))
+                        .foregroundColor(.warmBrown.opacity(0.5))
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 10)
+                }
+
+                TextEditor(text: $notes)
+                    .font(.system(size: 15))
+                    .foregroundColor(.coffeeBean)
+                    .scrollContentBackground(.hidden)
+                    .background(Color.clear)
+                    .frame(minHeight: 80)
+                    .padding(6)
+                    .focused($notesFieldFocused)
+                    .autocorrectionDisabled(false)
+                    .textInputAutocapitalization(.sentences)
+            }
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color.warmCream)
+                    .shadow(color: .coffeeBean.opacity(0.05), radius: 4, y: 2)
+            )
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
     @ViewBuilder
     private var agentContactSection: some View {
         let hasAgentInfo = (property.agentName != nil && !property.agentName!.isEmpty) ||
@@ -1078,6 +1243,7 @@ struct JourneyDetailView: View {
             bathrooms: 2,
             address: "123 Canary Wharf",
             area: "London E14"
-        )
+        ),
+        isSavedProperty: true
     )
 }

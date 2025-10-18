@@ -11,7 +11,7 @@ class SavedPropertiesCoordinator: ObservableObject, Coordinator {
     func build(_ destination: SavedPropertiesDestination) -> some View {
         switch destination {
         case .propertyDetail(let property):
-            PropertyDetailView(property: property)
+            PropertyDetailView(property: property, isSavedProperty: true)
         }
     }
     
