@@ -18,7 +18,7 @@ struct SignInView: View {
                         .font(.system(size: 80))
                         .foregroundStyle(Color.sunsetGradient)
                     
-                    Text("SupHomey")
+                    Text("Ijar")
                         .font(.system(size: 48, weight: .bold, design: .rounded))
                         .foregroundColor(.coffeeBean)
                     
@@ -28,38 +28,19 @@ struct SignInView: View {
                 }
                 
                 Spacer()
-
-                // Features list
-                VStack(alignment: .leading, spacing: 16) {
-                    FeatureRow(
-                        icon: "hand.thumbsup.fill",
-                        title: "Swipe to decide",
-                        description: "Quickly filter properties you love or pass"
-                    )
-
-                    FeatureRow(
-                        icon: "mappin.and.ellipse",
-                        title: "Check proximity",
-                        description: "See journey times to work, gym, and places that matter"
-                    )
-
-                    FeatureRow(
-                        icon: "heart.fill",
-                        title: "Track your favorites",
-                        description: "Save properties and manage your search in one place"
-                    )
-                }
-                .padding(.horizontal, 40)
-
-                Spacer()
-
+                
                 // Sign in section
-                VStack(spacing: 16) {
-                    Text("Ready to find your perfect home?")
-                        .font(.system(size: 20, weight: .semibold))
+                VStack(spacing: 24) {
+                    Text("Welcome to Ijar")
+                        .font(.system(size: 28, weight: .semibold))
                         .foregroundColor(.coffeeBean)
+                    
+                    Text("Sign in to save your favorite properties and get personalized recommendations")
+                        .font(.system(size: 16))
+                        .foregroundColor(.warmBrown)
                         .multilineTextAlignment(.center)
-
+                        .padding(.horizontal, 20)
+                    
                     // Apple Sign In Button
                     SignInWithAppleButton(
                         onRequest: { request in
