@@ -4,6 +4,7 @@ struct CardSwipeView: View {
     @EnvironmentObject var coordinator: HomeFeedCoordinator
     @StateObject private var propertyService = PropertyService()
     @StateObject private var searchService = SearchQueryService()
+    @Environment(\.scenePhase) private var scenePhase
     @State private var dragDirection: SwipeDirection = .none
     @State private var buttonPressed: SwipeDirection = .none
     @State private var ambientAnimation = false
@@ -52,6 +53,13 @@ struct CardSwipeView: View {
         }
         .refreshable {
             await propertyService.loadPropertiesForUser()
+        }
+        .onChange(of: scenePhase) { oldPhase, newPhase in
+            if newPhase == .active && oldPhase == .background {
+                Task {
+                    await propertyService.loadPropertiesForUser()
+                }
+            }
         }
         .sheet(isPresented: $showingCreateQuery) {
             CreateSearchQueryView { query in
