@@ -94,22 +94,36 @@ class PropertyMonitor {
     return grouped;
   }
 
-  async run(): Promise<void> {
+  async run(targetUserId?: string): Promise<void> {
     const timestamp = new Date().toLocaleString();
-    console.log(`[${timestamp}] 🔍 Processing all user queries from database`);
-    
+    if (targetUserId) {
+      console.log(`[${timestamp}] 🔍 Processing queries for user: ${targetUserId}`);
+    } else {
+      console.log(`[${timestamp}] 🔍 Processing all user queries from database`);
+    }
+
     try {
       // Get all active queries from Supabase
       const userQueries = await this.supabase.getActiveQueries();
       console.log(`📊 Found ${userQueries.length} active user queries`);
-      
+
       if (userQueries.length === 0) {
         console.log('📭 No active queries to process');
         return;
       }
-      
+
+      // Filter by user if targetUserId is provided
+      const filteredQueries = targetUserId
+        ? userQueries.filter(q => q.user_id === targetUserId)
+        : userQueries;
+
+      if (targetUserId && filteredQueries.length === 0) {
+        console.log(`📭 No active queries found for user: ${targetUserId}`);
+        return;
+      }
+
       // Group queries by user_id
-      const queriesByUser = this.groupQueriesByUser(userQueries);
+      const queriesByUser = this.groupQueriesByUser(filteredQueries);
       console.log(`👥 Processing queries for ${queriesByUser.size} users`);
       
       let totalNewProperties = 0;
@@ -241,11 +255,19 @@ class PropertyMonitor {
 
 // Main execution
 async function main() {
-  console.log('Processing all user queries from Supabase database...');
+  // Check if user ID was passed as command-line argument
+  const targetUserId = process.argv[2];
+
+  if (targetUserId) {
+    console.log(`Processing queries for user: ${targetUserId}`);
+  } else {
+    console.log('Processing all user queries from Supabase database...');
+  }
+
   const monitor = new PropertyMonitor();
 
   try {
-    await monitor.run();
+    await monitor.run(targetUserId);
   } finally {
     // Always cleanup
     if (monitor.cleanup) {
