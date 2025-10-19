@@ -114,7 +114,7 @@ class PropertyMonitor {
 
       // Filter by user if targetUserId is provided
       const filteredQueries = targetUserId
-        ? userQueries.filter(q => q.user_id === targetUserId)
+        ? userQueries.filter(q => q.user_id?.toLowerCase() === targetUserId.toLowerCase())
         : userQueries;
 
       if (targetUserId && filteredQueries.length === 0) {
