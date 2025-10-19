@@ -257,8 +257,8 @@ export class SupabasePropertyClient {
 
     console.log(`🔍 Found ${newProperties.length} new properties (${properties.length - newProperties.length} already seen)`);
 
-    // Then take the top 5 new properties
-    const topNewProperties = newProperties.slice(0, 5);
+    // Then take the top 10 new properties
+    const topNewProperties = newProperties.slice(0, 10);
     console.log(`🎯 Processing top ${topNewProperties.length} new properties for query: ${query.name}`);
 
     if (topNewProperties.length === 0) {
