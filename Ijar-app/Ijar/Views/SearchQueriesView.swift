@@ -4,10 +4,12 @@ import RevenueCatUI
 struct SearchQueriesView: View {
     @StateObject private var searchService = SearchQueryService()
     @StateObject private var subscriptionManager = SubscriptionManager.shared
+    @StateObject private var monitorService = MonitorService()
     @State private var showingCreateQuery = false
     @State private var showingPaywall = false
     @State private var editingQuery: SearchQuery? = nil
     @State private var limitMessage: String?
+    @State private var showingInstantSearchPrompt = false
     
     var body: some View {
         NavigationView {
@@ -52,12 +54,34 @@ struct SearchQueriesView: View {
                 )
             }
             .upgradePrompt(limitMessage: $limitMessage, showPaywall: $showingPaywall)
+            .alert("Get Your First Properties!", isPresented: $showingInstantSearchPrompt) {
+                Button("Not Now", role: .cancel) { }
+                Button("Find Properties") {
+                    Task {
+                        await triggerInstantSearch()
+                    }
+                }
+            } message: {
+                Text("We'll search for properties matching your criteria right now. You'll get a notification when they're ready (1-2 minutes)!")
+            }
             .task {
                 await searchService.loadUserQueries()
             }
             .refreshable {
                 await searchService.loadUserQueries()
             }
+        }
+    }
+
+    private func triggerInstantSearch() async {
+        guard let userId = try? await searchService.getCurrentUserId() else {
+            return
+        }
+
+        let success = await monitorService.refreshPropertiesForUser(userId: userId)
+
+        if success {
+            // Show success feedback
         }
     }
 
@@ -106,6 +130,56 @@ struct SearchQueriesView: View {
         }
     }
     
+    private var instantSearchBanner: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 8) {
+                Image(systemName: "bolt.fill")
+                    .font(.system(size: 20))
+                    .foregroundColor(.rusticOrange)
+                Text("One-Time Instant Search")
+                    .font(.system(size: 17, weight: .bold))
+                    .foregroundColor(.coffeeBean)
+            }
+
+            Text("We'll search all your active areas right now and send you a notification when properties are ready (1-2 minutes). This is a one-time feature for new users.")
+                .font(.system(size: 14))
+                .foregroundColor(.warmBrown.opacity(0.8))
+                .fixedSize(horizontal: false, vertical: true)
+
+            Button(action: {
+                showingInstantSearchPrompt = true
+            }) {
+                HStack {
+                    if monitorService.isRefreshing {
+                        ProgressView()
+                            .tint(.warmCream)
+                    } else {
+                        Image(systemName: "bolt.fill")
+                    }
+                    Text(monitorService.isRefreshing ? "Searching..." : "Search Now (One-Time Only)")
+                }
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundColor(.warmCream)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
+                .background(
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(Color.rusticOrange)
+                )
+            }
+            .disabled(monitorService.isRefreshing)
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color.rusticOrange.opacity(0.1))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(Color.rusticOrange.opacity(0.3), lineWidth: 1.5)
+                )
+        )
+    }
+
     private var emptyStateView: some View {
         VStack(spacing: 24) {
             Image(systemName: "magnifyingglass.circle")
@@ -142,8 +216,18 @@ struct SearchQueriesView: View {
     }
     
     private var queryListView: some View {
-        List {
-            ForEach(searchService.queries) { query in
+        VStack(spacing: 0) {
+            // Show instant search banner at the top if they haven't used it yet and have active queries
+            if !monitorService.hasUsedInstantSearch && searchService.queries.contains(where: { $0.active }) {
+                instantSearchBanner
+                    .padding(.horizontal, 16)
+                    .padding(.top, 12)
+                    .padding(.bottom, 8)
+                    .background(Color.warmCream.opacity(0.3))
+            }
+
+            List {
+                ForEach(searchService.queries) { query in
                 SearchQueryCard(
                     query: query,
                     onToggleActive: {
@@ -179,9 +263,10 @@ struct SearchQueriesView: View {
                 .listRowSeparator(.hidden)
                 .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
             }
+            }
+            .listStyle(PlainListStyle())
+            .scrollContentBackground(.hidden)
         }
-        .listStyle(PlainListStyle())
-        .scrollContentBackground(.hidden)
     }
 }
 
