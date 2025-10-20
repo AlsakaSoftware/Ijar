@@ -225,14 +225,14 @@ class SearchQueryService: ObservableObject {
     func deleteQuery(_ query: SearchQuery) async -> Bool {
         isLoading = true
         error = nil
-        
+
         do {
             try await supabase
                 .from("query")
                 .delete()
                 .eq("id", value: query.id.uuidString)
                 .execute()
-            
+
             await loadUserQueries() // Refresh the list
             isLoading = false
             return true
@@ -242,6 +242,11 @@ class SearchQueryService: ObservableObject {
             isLoading = false
             return false
         }
+    }
+
+    func getCurrentUserId() async throws -> String {
+        let user = try await supabase.auth.user()
+        return user.id.uuidString
     }
 }
 
