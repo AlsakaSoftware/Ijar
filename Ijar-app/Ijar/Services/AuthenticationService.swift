@@ -1,6 +1,7 @@
 import Foundation
 import AuthenticationServices
 import Supabase
+import RevenueCat
 
 @MainActor
 class AuthenticationService: ObservableObject {
@@ -70,10 +71,19 @@ class AuthenticationService: ObservableObject {
             
             self.user = session.user
             self.isAuthenticated = true
-            
+
             // Save user ID to UserDefaults for device token registration
             UserDefaults.standard.set(session.user.id.uuidString, forKey: "currentUserId")
-            
+
+            // Login to RevenueCat with user ID
+            do {
+                let (customerInfo, _) = try await Purchases.shared.logIn(session.user.id.uuidString)
+                print("✅ RevenueCat logged in user: \(session.user.id.uuidString)")
+                print("   Active entitlements: \(customerInfo.entitlements.active.keys)")
+            } catch {
+                print("⚠️ RevenueCat login failed: \(error.localizedDescription)")
+            }
+
             // Register for push notifications and save device token
             await registerForNotifications()
             
@@ -92,6 +102,14 @@ class AuthenticationService: ObservableObject {
             // Remove device token from server
             if let userId = user?.id.uuidString {
                 await notificationService.removeDeviceToken(for: userId)
+            }
+
+            // Log out from RevenueCat
+            do {
+                _ = try await Purchases.shared.logOut()
+                print("✅ RevenueCat logged out")
+            } catch {
+                print("⚠️ RevenueCat logout failed: \(error.localizedDescription)")
             }
 
             try await supabase.auth.signOut()
