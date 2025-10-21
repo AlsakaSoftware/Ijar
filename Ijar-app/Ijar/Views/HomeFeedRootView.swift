@@ -17,7 +17,7 @@ struct HomeFeedRootView: View {
                 .onceTask {
                     await subscriptionManager.checkSubscriptionStatus()
 
-                    if subscriptionManager.shouldShowPaywall() {
+                    if await subscriptionManager.shouldShowPaywall() {
                         showPaywall = true
                     }
                 }
