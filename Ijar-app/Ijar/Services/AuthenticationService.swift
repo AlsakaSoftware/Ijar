@@ -16,21 +16,24 @@ class AuthenticationService: ObservableObject {
         self.notificationService = notificationService
         // Initialize Supabase client using ConfigManager
         let config = ConfigManager.shared
-        
+
         guard let url = URL(string: config.supabaseURL) else {
             fatalError("Invalid Supabase URL in configuration")
         }
-        
+
         supabase = SupabaseClient(supabaseURL: url, supabaseKey: config.supabaseAnonKey)
-        
+
         #if DEBUG
         config.debugPrint()
         #endif
-        
+
+        // Start with loading state
+        self.isLoading = true
+
         // Check if user is already signed in
         checkAuthStatus()
     }
-    
+
     private func checkAuthStatus() {
         Task {
             do {
@@ -41,6 +44,9 @@ class AuthenticationService: ObservableObject {
                 self.isAuthenticated = false
                 self.user = nil
             }
+
+            // Done checking auth
+            self.isLoading = false
         }
     }
     

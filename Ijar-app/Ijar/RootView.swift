@@ -23,7 +23,10 @@ struct RootContentView: View {
     
     var body: some View {
         Group {
-            if authService.isAuthenticated {
+            if authService.isLoading {
+                // Show loading state while checking authentication
+                AppLogoLoadingView()
+            } else if authService.isAuthenticated {
                 TabView {
                     HomeFeedRootView()
                         .tabItem {
@@ -31,14 +34,14 @@ struct RootContentView: View {
                             Text("Home")
                         }
                         .tag(AppDestination.homeFeed)
-                    
+
                     SavedPropertiesRootView()
                         .tabItem {
                             Image(systemName: "heart.fill")
                             Text("Saved")
                         }
                         .tag(AppDestination.savedProperties)
-                    
+
                     ProfileRootView()
                         .tabItem {
                             Image(systemName: "gearshape.fill")
