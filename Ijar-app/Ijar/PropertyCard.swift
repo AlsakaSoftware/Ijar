@@ -90,17 +90,24 @@ struct PropertyCard: View {
         .clipShape(RoundedRectangle(cornerRadius: 20))
         .overlay(swipeUpBorderEffect)
         .shadow(color: {
+                    let isUpwardMovement = dragAmount.height < -60
+                    let horizontalThreshold: CGFloat = isUpwardMovement ? 195 : 130
+
                     if dragAmount.height < -50 {
                         return .rusticOrange.opacity(0.3)
-                    } else if dragAmount.width > 50 {
+                    } else if dragAmount.width > horizontalThreshold {
                         return .rusticOrange.opacity(0.25)
-                    } else if dragAmount.width < -50 {
+                    } else if dragAmount.width < -horizontalThreshold {
                         return .warmBrown.opacity(0.15)
                     } else {
                         return .coffeeBean.opacity(0.08)
                     }
                 }(),
-                radius: (abs(dragAmount.width) > 50 || dragAmount.height < -50) ? 20 : 16,
+                radius: {
+                    let isUpwardMovement = dragAmount.height < -60
+                    let horizontalThreshold: CGFloat = isUpwardMovement ? 195 : 130
+                    return (abs(dragAmount.width) > horizontalThreshold || dragAmount.height < -50) ? 20 : 16
+                }(),
                 y: 8)
         .scaleEffect(dragAmount.height < -50 ? 0.95 : 1.0)
         .rotationEffect(.degrees(dragAmount.height < -30 ? Double(dragAmount.height + 30) / 15 : 0), anchor: .bottom)
@@ -280,7 +287,10 @@ struct PropertyCard: View {
     // MARK: - Overlay Components
 
     private var swipeUpBorderEffect: some View {
-        RoundedRectangle(cornerRadius: 20)
+        let isUpwardMovement = dragAmount.height < -60
+        let horizontalThreshold: CGFloat = isUpwardMovement ? 195 : 130
+
+        return RoundedRectangle(cornerRadius: 20)
             .stroke(
                 LinearGradient(
                     colors: {
@@ -292,14 +302,14 @@ struct PropertyCard: View {
                             ]
                         }
                         // Swipe right (save) - rustic orange glow
-                        else if dragAmount.width > 30 {
+                        else if dragAmount.width > horizontalThreshold {
                             return [
                                 Color.rusticOrange.opacity(min(0.7, dragAmount.width / 150)),
                                 Color.warmCream.opacity(min(0.5, dragAmount.width / 200))
                             ]
                         }
                         // Swipe left (reject) - subtle brown glow
-                        else if dragAmount.width < -30 {
+                        else if dragAmount.width < -horizontalThreshold {
                             return [
                                 Color.warmBrown.opacity(min(0.4, abs(dragAmount.width) / 200.0)),
                                 Color.coffeeBean.opacity(min(0.3, abs(dragAmount.width) / 250.0))
@@ -313,7 +323,7 @@ struct PropertyCard: View {
                     startPoint: dragAmount.height < -30 ? .top : .leading,
                     endPoint: dragAmount.height < -30 ? .bottom : .trailing
                 ),
-                lineWidth: (abs(dragAmount.width) > 30 || dragAmount.height < -30) ? 2 : 0
+                lineWidth: (abs(dragAmount.width) > horizontalThreshold || dragAmount.height < -30) ? 2 : 0
             )
     }
 
