@@ -18,7 +18,15 @@ class SubscriptionManager: ObservableObject {
 
     private init() {
         Purchases.logLevel = .debug
-        Purchases.configure(withAPIKey: ConfigManager.shared.revenueCatApiKey)
+
+        // Configure with user ID if available
+        if let userId = UserDefaults.standard.string(forKey: "currentUserId") {
+            Purchases.configure(withAPIKey: ConfigManager.shared.revenueCatApiKey, appUserID: userId)
+            print("✅ RevenueCat configured with user ID: \(userId)")
+        } else {
+            Purchases.configure(withAPIKey: ConfigManager.shared.revenueCatApiKey)
+            print("✅ RevenueCat configured without user ID (anonymous)")
+        }
 
         Task {
             await checkSubscriptionStatus()

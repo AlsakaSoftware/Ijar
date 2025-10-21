@@ -75,17 +75,32 @@ class AuthenticationService: ObservableObject {
             // Save user ID to UserDefaults for device token registration
             UserDefaults.standard.set(session.user.id.uuidString, forKey: "currentUserId")
 
-            // Login to RevenueCat with user ID
-            do {
-                let (customerInfo, _) = try await Purchases.shared.logIn(session.user.id.uuidString)
-                print("✅ RevenueCat logged in user: \(session.user.id.uuidString)")
-                print("   Active entitlements: \(customerInfo.entitlements.active.keys)")
-            } catch {
-                print("⚠️ RevenueCat login failed: \(error.localizedDescription)")
-            }
-
             // Register for push notifications and save device token
             await registerForNotifications()
+
+            // Login to RevenueCat with user ID AFTER main sign-in flow completes
+            // This will migrate anonymous user to identified user if needed
+            Task {
+                // Ensure RevenueCat is configured by accessing SubscriptionManager first
+                _ = SubscriptionManager.shared
+
+                // Verify it's actually configured
+                guard Purchases.isConfigured else {
+                    print("❌ RevenueCat not configured, skipping login")
+                    return
+                }
+
+                do {
+                    let (customerInfo, _) = try await Purchases.shared.logIn(session.user.id.uuidString)
+                    print("✅ RevenueCat logged in user: \(session.user.id.uuidString)")
+                    print("   Active entitlements: \(customerInfo.entitlements.active.keys)")
+
+                    // Update subscription status
+                    await SubscriptionManager.shared.checkSubscriptionStatus()
+                } catch {
+                    print("⚠️ RevenueCat login failed: \(error.localizedDescription)")
+                }
+            }
             
         } catch {
             self.error = error.localizedDescription
