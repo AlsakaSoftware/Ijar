@@ -6,42 +6,51 @@ struct SignInView: View {
     
     var body: some View {
         ZStack {
+            // Simple background
             Color.warmCream
                 .ignoresSafeArea()
-            
-            VStack(spacing: 40) {
+
+            VStack(spacing: 0) {
                 Spacer()
-                
-                // App branding
-                VStack(spacing: 16) {
-                    Image(systemName: "house.lodge.fill")
-                        .font(.system(size: 80))
-                        .foregroundStyle(Color.sunsetGradient)
-                    
+                    .frame(minHeight: 60)
+
+                // Logo
+                Image("logo")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 110, height: 110)
+
+                Spacer()
+                    .frame(height: 15)
+
+                // Branding
+                VStack(spacing: 5) {
                     Text("SupHomey")
-                        .font(.system(size: 48, weight: .bold, design: .rounded))
+                        .font(.system(size: 50, weight: .black, design: .rounded))
                         .foregroundColor(.coffeeBean)
-                    
-                    Text("Find your perfect home")
-                        .font(.system(size: 18, weight: .medium))
-                        .foregroundColor(.warmBrown.opacity(0.8))
-                }
-                
-                Spacer()
-                
-                // Sign in section
-                VStack(spacing: 24) {
-                    Text("Welcome to SupHomey")
-                        .font(.system(size: 28, weight: .semibold))
-                        .foregroundColor(.coffeeBean)
-                    
-                    Text("Sign in to save your favorite properties and get personalized recommendations")
-                        .font(.system(size: 16))
+
+                    Text("Rightmove went to therapy")
+                        .font(.system(size: 20, weight: .bold))
                         .foregroundColor(.warmBrown)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 20)
-                    
-                    // Apple Sign In Button
+                }
+
+                Spacer()
+                    .frame(height: 48)
+
+                // Features list
+                VStack(alignment: .leading, spacing: 14) {
+                        FeatureBullet(text: "Swipe your way to your perfect home")
+                        FeatureBullet(text: "See your commute to work, gym, or family at a glance")
+                        FeatureBullet(text: "Keep track of where you are with each place")
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 40)
+
+                Spacer()
+                    .frame(minHeight: 40)
+
+                // Sign in button
+                VStack(spacing: 16) {
                     SignInWithAppleButton(
                         onRequest: { request in
                             request.requestedScopes = [.fullName, .email]
@@ -53,43 +62,18 @@ struct SignInView: View {
                         }
                     )
                     .signInWithAppleButtonStyle(.black)
-                    .frame(height: 50)
-                    .cornerRadius(25)
+                    .frame(height: 54)
+                    .cornerRadius(14)
                     .padding(.horizontal, 40)
-                    
+
                     if authService.isLoading {
                         ProgressView()
                             .tint(.rusticOrange)
                     }
                 }
-                
+
                 Spacer()
-                
-                // Terms and privacy
-                VStack(spacing: 8) {
-                    Text("By signing in, you agree to our")
-                        .font(.system(size: 12))
-                        .foregroundColor(.warmBrown.opacity(0.6))
-                    
-                    HStack(spacing: 4) {
-                        Button("Terms of Service") {
-                            // Handle terms tap
-                        }
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundColor(.rusticOrange)
-                        
-                        Text("and")
-                            .font(.system(size: 12))
-                            .foregroundColor(.warmBrown.opacity(0.6))
-                        
-                        Button("Privacy Policy") {
-                            // Handle privacy tap
-                        }
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundColor(.rusticOrange)
-                    }
-                }
-                .padding(.bottom, 30)
+                    .frame(height: 50)
             }
         }
         .alert("Sign In Error", isPresented: .constant(authService.error != nil)) {
@@ -113,6 +97,26 @@ struct SignInView: View {
     }
 }
 
+// Feature bullet component
+struct FeatureBullet: View {
+    let text: String
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Circle()
+                .fill(Color.rusticOrange)
+                .frame(width: 6, height: 6)
+                .padding(.top, 6)
+
+            Text(text)
+                .font(.system(size: 16, weight: .regular))
+                .foregroundColor(.coffeeBean.opacity(0.9))
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+}
+
 #Preview {
     SignInView()
+        .environmentObject(AuthenticationService(notificationService: NotificationService()))
 }
