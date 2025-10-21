@@ -1,5 +1,33 @@
 import SwiftUI
 
+enum SearchRadius: Double, CaseIterable, Identifiable {
+    case halfMile = 0.5
+    case oneMile = 1.0
+    case threeMiles = 3.0
+    case fiveMiles = 5.0
+    case tenMiles = 10.0
+    case fifteenMiles = 15.0
+    case twentyMiles = 20.0
+    case thirtyMiles = 30.0
+    case fortyMiles = 40.0
+
+    var id: Double { rawValue }
+
+    var displayText: String {
+        switch self {
+        case .halfMile: return "Within 1/2 mile"
+        case .oneMile: return "Within 1 mile"
+        case .threeMiles: return "Within 3 miles"
+        case .fiveMiles: return "Within 5 miles"
+        case .tenMiles: return "Within 10 miles"
+        case .fifteenMiles: return "Within 15 miles"
+        case .twentyMiles: return "Within 20 miles"
+        case .thirtyMiles: return "Within 30 miles"
+        case .fortyMiles: return "Within 40 miles"
+        }
+    }
+}
+
 struct CreateSearchQueryView: View {
     @Environment(\.dismiss) private var dismiss
     let onSave: (SearchQuery) -> Void
@@ -18,11 +46,10 @@ struct CreateSearchQueryView: View {
     // Form state
     @State private var minPriceText = ""
     @State private var maxPriceText = ""
-    @State private var selectedRadiusOption: Double? = 1.0
+    @State private var selectedRadius: SearchRadius = .oneMile
     @State private var selectedFurnishType = "Any"
 
     private let furnishOptions = ["Any", "Furnished", "Unfurnished"]
-    private let radiusOptions: [Double?] = [nil, 0.25, 0.5, 1.0, 3.0, 5.0, 10.0, 15.0, 20.0, 30.0, 40.0]
     
     var body: some View {
         NavigationView {
@@ -102,13 +129,10 @@ struct CreateSearchQueryView: View {
                 }
                 
                 Section("Additional Options") {
-                    Picker("Search Radius", selection: $selectedRadiusOption) {
-                        ForEach(radiusOptions, id: \.self) { option in
-                            Text(radiusDisplayText(for: option)).tag(option)
+                    Picker("Search Radius", selection: $selectedRadius) {
+                        ForEach(SearchRadius.allCases) { radiusOption in
+                            Text(radiusOption.displayText).tag(radiusOption)
                         }
-                    }
-                    .onChange(of: selectedRadiusOption) { _, newValue in
-                        radius = newValue
                     }
 
                     Picker("Furnish Type", selection: $selectedFurnishType) {
@@ -148,21 +172,6 @@ struct CreateSearchQueryView: View {
         !postcode.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
-    private func radiusDisplayText(for radius: Double?) -> String {
-        switch radius {
-        case 0.5: return "Within 1/2 mile"
-        case 1.0: return "Within 1 mile"
-        case 3.0: return "Within 3 miles"
-        case 5.0: return "Within 5 miles"
-        case 10.0: return "Within 10 miles"
-        case 15.0: return "Within 15 miles"
-        case 20.0: return "Within 20 miles"
-        case 30.0: return "Within 30 miles"
-        case 40.0: return "Within 40 miles"
-        default: return "Within 5 miles"
-        }
-    }
-
     private func saveQuery() {
         let query = SearchQuery(
             name: name.trimmingCharacters(in: .whitespacesAndNewlines),
@@ -173,7 +182,7 @@ struct CreateSearchQueryView: View {
             maxBedrooms: maxBedrooms,
             minBathrooms: minBathrooms,
             maxBathrooms: maxBathrooms,
-            radius: selectedRadiusOption,
+            radius: selectedRadius.rawValue,
             furnishType: furnishType
         )
 

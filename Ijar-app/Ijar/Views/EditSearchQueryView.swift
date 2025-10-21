@@ -19,11 +19,10 @@ struct EditSearchQueryView: View {
     // Form state
     @State private var minPriceText = ""
     @State private var maxPriceText = ""
-    @State private var selectedRadiusOption: Double? = 1.0
+    @State private var selectedRadius: SearchRadius = .oneMile
     @State private var selectedFurnishType = "Any"
 
     private let furnishOptions = ["Any", "Furnished", "Unfurnished"]
-    private let radiusOptions: [Double?] = [nil, 0.25, 0.5, 1.0, 3.0, 5.0, 10.0, 15.0, 20.0, 30.0, 40.0]
     
     var body: some View {
         NavigationView {
@@ -103,13 +102,10 @@ struct EditSearchQueryView: View {
                 }
                 
                 Section("Additional Options") {
-                    Picker("Search Radius", selection: $selectedRadiusOption) {
-                        ForEach(radiusOptions, id: \.self) { option in
-                            Text(radiusDisplayText(for: option)).tag(option)
+                    Picker("Search Radius", selection: $selectedRadius) {
+                        ForEach(SearchRadius.allCases) { radiusOption in
+                            Text(radiusOption.displayText).tag(radiusOption)
                         }
-                    }
-                    .onChange(of: selectedRadiusOption) { _, newValue in
-                        radius = newValue
                     }
 
                     Picker("Furnish Type", selection: $selectedFurnishType) {
@@ -149,21 +145,6 @@ struct EditSearchQueryView: View {
         !postcode.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
-    private func radiusDisplayText(for radius: Double?) -> String {
-        switch radius {
-        case 0.5: return "Within 1/2 mile"
-        case 1.0: return "Within 1 mile"
-        case 3.0: return "Within 3 miles"
-        case 5.0: return "Within 5 miles"
-        case 10.0: return "Within 10 miles"
-        case 15.0: return "Within 15 miles"
-        case 20.0: return "Within 20 miles"
-        case 30.0: return "Within 30 miles"
-        case 40.0: return "Within 40 miles"
-        default: return "Within 5 miles"
-        }
-    }
-
     private func populateFields() {
         name = query.name
         postcode = query.postcode
@@ -182,7 +163,12 @@ struct EditSearchQueryView: View {
         selectedFurnishType = query.furnishType?.capitalized ?? "Any"
 
         // Set radius option based on the stored radius value
-        selectedRadiusOption = query.radius
+        if let radiusValue = query.radius,
+           let radiusEnum = SearchRadius(rawValue: radiusValue) {
+            selectedRadius = radiusEnum
+        } else {
+            selectedRadius = .oneMile
+        }
     }
 
     private func saveQuery() {
@@ -196,13 +182,13 @@ struct EditSearchQueryView: View {
             maxBedrooms: maxBedrooms,
             minBathrooms: minBathrooms,
             maxBathrooms: maxBathrooms,
-            radius: selectedRadiusOption,
+            radius: selectedRadius.rawValue,
             furnishType: furnishType,
             active: query.active,
             created: query.created,
             updated: Date()
         )
-        
+
         onSave(updatedQuery)
         dismiss()
     }
