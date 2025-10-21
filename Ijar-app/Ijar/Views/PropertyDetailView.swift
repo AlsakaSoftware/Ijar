@@ -1047,6 +1047,7 @@ struct JourneyRow: View {
                             Text("\(leg.duration)")
                                 .font(.system(size: 13))
                                 .foregroundColor(.warmBrown.opacity(0.6))
+                                .fixedSize()
                         }
 
                         if index < min(2, journey.legs.count - 1) {
@@ -1060,6 +1061,7 @@ struct JourneyRow: View {
                         Text("+\(journey.legs.count - 3)")
                             .font(.system(size: 13, weight: .medium))
                             .foregroundColor(.warmBrown.opacity(0.6))
+                            .fixedSize()
                     }
                 }
                 .padding(.trailing, 8)
@@ -1067,7 +1069,6 @@ struct JourneyRow: View {
 
             Spacer()
 
-            // Time and chevron - centered vertically
             HStack(spacing: 8) {
                 Text(journey.formattedDuration)
                     .font(.system(size: 15, weight: .semibold))
