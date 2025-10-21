@@ -14,10 +14,10 @@ struct HomeFeedRootView: View {
                 .navigationDestination(for: HomeFeedDestination.self) { destination in
                     coordinator.build(destination)
                 }
-                .task(id: "paywall-check") {
+                .onceTask {
                     await subscriptionManager.checkSubscriptionStatus()
 
-                    if subscriptionManager.shouldShowPaywall() {
+                    if await subscriptionManager.shouldShowPaywall() {
                         showPaywall = true
                     }
                 }

@@ -14,7 +14,7 @@ class SubscriptionManager: ObservableObject {
 
     // Session tracking for paywall
     private let sessionCountKey = "paywall_session_count"
-    private let paywallFrequency = 3 // Show paywall every 3 sessions
+    private let paywallFrequency = 5
 
     private init() {
         Purchases.logLevel = .debug
@@ -37,7 +37,6 @@ class SubscriptionManager: ObservableObject {
 
     /// Check if we should show the paywall this session
     func shouldShowPaywall() -> Bool {
-        // Always show if not subscribed and it's been 3+ sessions
         guard !isSubscribed else { return false }
 
         let sessionCount = UserDefaults.standard.integer(forKey: sessionCountKey)
