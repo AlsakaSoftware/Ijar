@@ -5,6 +5,7 @@ struct HomeFeedRootView: View {
     @StateObject private var coordinator = HomeFeedCoordinator()
     @StateObject private var subscriptionManager = SubscriptionManager.shared
     @State private var showPaywall = false
+    @State private var showOnboarding = !UserDefaults.standard.bool(forKey: "has_completed_onboarding")
 
     var body: some View {
         NavigationStack(path: $coordinator.navigationPath) {
@@ -13,14 +14,11 @@ struct HomeFeedRootView: View {
                 .navigationDestination(for: HomeFeedDestination.self) { destination in
                     coordinator.build(destination)
                 }
-                .onAppear {
-                    Task {
-                        await subscriptionManager.checkSubscriptionStatus()
+                .task(id: "paywall-check") {
+                    await subscriptionManager.checkSubscriptionStatus()
 
-                        // Only show paywall every 3 sessions for free users
-                        if subscriptionManager.shouldShowPaywall() {
-                            showPaywall = true
-                        }
+                    if subscriptionManager.shouldShowPaywall() {
+                        showPaywall = true
                     }
                 }
                 .sheet(isPresented: $showPaywall) {
@@ -28,6 +26,9 @@ struct HomeFeedRootView: View {
                         .onPurchaseCompleted { _ in
                             showPaywall = false
                         }
+                }
+                .fullScreenCover(isPresented: $showOnboarding) {
+                    OnboardingView(isPresented: $showOnboarding)
                 }
         }
     }
