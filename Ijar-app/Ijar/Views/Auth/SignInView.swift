@@ -92,7 +92,18 @@ struct SignInView: View {
                 await authService.signInWithApple(credential: appleIDCredential)
             }
         case .failure(let error):
-            authService.error = error.localizedDescription
+            // Don't show error if user canceled or dismissed
+            if let authError = error as? ASAuthorizationError {
+                switch authError.code {
+                case .canceled, .unknown:
+                    // User canceled or dismissed - do nothing
+                    return
+                default:
+                    authService.error = error.localizedDescription
+                }
+            } else {
+                authService.error = error.localizedDescription
+            }
         }
     }
 }
