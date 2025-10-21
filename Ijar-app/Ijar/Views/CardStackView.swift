@@ -104,16 +104,20 @@ struct CardStackView<Content: View, Overlay: View>: View {
                 withAnimation(.interactiveSpring(response: 0.2, dampingFraction: 0.95, blendDuration: 0)) {
                     // Allow free dragging in both X and Y axes
                     dragAmount = value.translation
-                    
+
+                    // Match the visual feedback threshold with action threshold
+                    let isUpwardMovement = value.translation.height < -60
+                    let visualThreshold: CGFloat = isUpwardMovement ? 130 * 1.5 : 130
+
                     let newDirection: SwipeDirection
-                    if value.translation.width > 40 {
+                    if value.translation.width > visualThreshold {
                         newDirection = .right
-                    } else if value.translation.width < -40 {
+                    } else if value.translation.width < -visualThreshold {
                         newDirection = .left
                     } else {
                         newDirection = .none
                     }
-                    
+
                     // Trigger haptic feedback when crossing direction threshold
                     if newDirection != lastHapticDirection && newDirection != .none {
                         impactFeedback.impactOccurred()
@@ -121,21 +125,27 @@ struct CardStackView<Content: View, Overlay: View>: View {
                     } else if newDirection == .none && lastHapticDirection != .none {
                         lastHapticDirection = .none
                     }
-                    
+
                     dragDirection = newDirection
                 }
             }
             .onEnded { value in
                 isDragging = false
-                let horizontalThreshold: CGFloat = 90
-                let verticalThreshold: CGFloat = 120  // Increased from 80 to make less sensitive
+                let baseHorizontalThreshold: CGFloat = 130  // Increased from 90 to require more deliberate swipes
+                let verticalThreshold: CGFloat = 120
                 let horizontalVelocity = value.predictedEndLocation.x - value.location.x
                 let verticalVelocity = value.predictedEndLocation.y - value.location.y
+
+                // Check if user is attempting to swipe up (even if not meeting full threshold)
+                let isUpwardMovement = value.translation.height < -60 // Detect any significant upward movement
+
+                // Increase horizontal threshold even more when swiping up to prevent accidental swipes
+                let horizontalThreshold = isUpwardMovement ? baseHorizontalThreshold * 1.5 : baseHorizontalThreshold
 
                 // Check for swipe up first (prioritize vertical gesture)
                 // Only trigger if it's primarily a vertical swipe (horizontal movement must be small)
                 let isVerticalSwipe = value.translation.height < -verticalThreshold || verticalVelocity < -150
-                let isPureVertical = abs(value.translation.width) < 40  // Horizontal movement must be < 40
+                let isPureVertical = abs(value.translation.width) < 80  // Allow up to 80px horizontal drift
 
                 if isVerticalSwipe && isPureVertical {
                     // Swipe up - view details
@@ -152,7 +162,7 @@ struct CardStackView<Content: View, Overlay: View>: View {
                         }
                     }
                 } else if value.translation.width > horizontalThreshold || horizontalVelocity > 150 {
-                    // Swipe right - save
+                    // Swipe right - save (requires more distance if swiping up)
                     selectionFeedback.selectionChanged() // Success haptic
                     if topItem < items.count {
                         let property = items[topItem]
@@ -166,7 +176,7 @@ struct CardStackView<Content: View, Overlay: View>: View {
                         }
                     }
                 } else if value.translation.width < -horizontalThreshold || horizontalVelocity < -150 {
-                    // Swipe left - dismiss
+                    // Swipe left - dismiss (requires more distance if swiping up)
                     selectionFeedback.selectionChanged() // Success haptic
                     if topItem < items.count {
                         let property = items[topItem]
