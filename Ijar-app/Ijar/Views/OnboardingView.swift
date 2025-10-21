@@ -8,7 +8,7 @@ struct OnboardingView: View {
         OnboardingPage(
             icon: "hand.point.up.left.fill",
             title: "Swipe to Find Your Home",
-            description: "Swipe right on properties you love, left on ones you don't.",
+            description: "Swipe right on properties you love, left on ones you don't. Up to see more information",
             accentColor: .rusticOrange
         ),
         OnboardingPage(
@@ -30,6 +30,13 @@ struct OnboardingView: View {
             description: "Save locations in Settings. Each property shows journey times to your important places.",
             accentColor: .rusticOrange,
             screenshotName: "onboarding4"
+        ),
+        OnboardingPage(
+            icon: "checklist",
+            title: "Track Your Progress",
+            description: "Keep notes on each property and track your viewing status as you move through the rental process.",
+            accentColor: .rusticOrange,
+            screenshotName: "onboarding5"
         )
     ]
 

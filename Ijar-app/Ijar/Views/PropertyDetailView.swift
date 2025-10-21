@@ -719,7 +719,7 @@ struct PropertyDetailView: View {
                 }
 
                 ChecklistItem(
-                    title: "Set viewing",
+                    title: "Viewed Property",
                     isChecked: setViewing
                 ) {
                     setViewing.toggle()
