@@ -25,6 +25,9 @@ struct HomeFeedRootView: View {
                     PaywallView(displayCloseButton: true)
                         .onPurchaseCompleted { _ in
                             showPaywall = false
+                            Task {
+                                await subscriptionManager.checkSubscriptionStatus()
+                            }
                         }
                 }
                 .fullScreenCover(isPresented: $showOnboarding) {
