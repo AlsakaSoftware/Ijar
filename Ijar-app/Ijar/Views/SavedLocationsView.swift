@@ -3,7 +3,7 @@ import RevenueCatUI
 
 struct SavedLocationsView: View {
     @StateObject private var locationsManager = SavedLocationsManager()
-    @StateObject private var subscriptionManager = SubscriptionManager.shared
+    @ObservedObject private var subscriptionManager = SubscriptionManager.shared
     @State private var showingAddLocation = false
     @State private var showingPaywall = false
     @State private var locationToEdit: SavedLocation?

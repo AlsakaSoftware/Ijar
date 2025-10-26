@@ -15,38 +15,32 @@ struct CardSwipeView: View {
     
     
     var body: some View {
-        VStack(spacing: 10) {
+            VStack {
 //            TimeBasedGreeting()
-            
-            if propertyService.properties.isEmpty {
-                emptyStateView
-            } else {
-                propertyCounter
-                    .padding(20)
 
-                cardStackSection
-                    .frame(maxWidth: .infinity)
-                    .layoutPriority(1)
-                
-                VStack(spacing: 15) {
+                if propertyService.properties.isEmpty {
+                    emptyStateView
+                } else {
+                    propertyCounter
+                        .padding(.top, 25)
+
+                    Spacer()
+
+                    cardStackSection
+                        .padding(.vertical, 15)
+
                     actionButtons
                     
+                    Spacer()
+
                 }
             }
         }
-        .padding(.bottom, 32)
-        .padding(.horizontal, 15)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(
-            Color.warmCream
-                .ignoresSafeArea()
-        )
-        .safeAreaInset(edge: .top, spacing: 0) {
-            Color.clear.frame(height: 0) // Ensure content starts below notch
-        }
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            Color.clear.frame(height: 0) // Ensure content ends above home indicator
-        }
+            .padding(.bottom, 32)
+            .padding(.horizontal, 15)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+        .background(Color.warmCream)
         .task {
             await propertyService.loadPropertiesForUser()
             ambientAnimation = true

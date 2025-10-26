@@ -3,7 +3,7 @@ import RevenueCatUI
 
 struct SearchQueriesView: View {
     @StateObject private var searchService = SearchQueryService()
-    @StateObject private var subscriptionManager = SubscriptionManager.shared
+    @ObservedObject private var subscriptionManager = SubscriptionManager.shared
     @StateObject private var monitorService = MonitorService()
     @State private var showingCreateQuery = false
     @State private var showingPaywall = false

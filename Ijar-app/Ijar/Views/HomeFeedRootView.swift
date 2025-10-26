@@ -3,7 +3,7 @@ import RevenueCatUI
 
 struct HomeFeedRootView: View {
     @StateObject private var coordinator = HomeFeedCoordinator()
-    @StateObject private var subscriptionManager = SubscriptionManager.shared
+    @ObservedObject private var subscriptionManager = SubscriptionManager.shared
     @State private var showPaywall = false
     @State private var showOnboarding = !UserDefaults.standard.bool(forKey: "has_completed_onboarding")
 

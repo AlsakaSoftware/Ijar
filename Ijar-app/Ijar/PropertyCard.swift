@@ -81,7 +81,6 @@ struct PropertyCard: View {
                 }
             }
         }
-        .frame(maxWidth: 350, maxHeight: .infinity) 
         .aspectRatio(0.65, contentMode: .fit)
         .background {
             imagesCarousel

@@ -5,7 +5,7 @@ struct ProfileView: View {
     @EnvironmentObject var coordinator: ProfileCoordinator
     @EnvironmentObject var authService: AuthenticationService
     @EnvironmentObject var notificationService: NotificationService
-    @StateObject private var subscriptionManager = SubscriptionManager.shared
+    @ObservedObject private var subscriptionManager = SubscriptionManager.shared
     @State private var showingDeleteConfirmation = false
     @State private var showingPaywall = false
 

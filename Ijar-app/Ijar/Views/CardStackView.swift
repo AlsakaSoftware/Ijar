@@ -30,7 +30,7 @@ struct CardStackView<Content: View, Overlay: View>: View {
             // Render only visible cards
             ForEach(Array(items.prefix(maxVisibleCards).enumerated()), id: \.element.id) { stackIndex, property in
                 let isTopCard = stackIndex == 0
-                
+
                 cardContent(property, isTopCard, isTopCard ? dragAmount : .zero)
                     .scaleEffect(cardScale(for: stackIndex))
                     .offset(cardOffset(for: stackIndex))
@@ -39,6 +39,7 @@ struct CardStackView<Content: View, Overlay: View>: View {
                     .zIndex(Double(maxVisibleCards - stackIndex))
                     .animation(isDragging ? nil : .spring(response: 0.4, dampingFraction: 0.75), value: dragAmount)
                     .gesture(isTopCard ? swipeGesture : nil)
+                    .allowsHitTesting(isTopCard)
                     .onAppear {
                         // Generate a random tilt for background cards if not already set
                         if cardRotations[property.id] == nil && stackIndex > 0 {
@@ -46,8 +47,8 @@ struct CardStackView<Content: View, Overlay: View>: View {
                         }
                     }
             }
-            
         }
+        .frame(height: 538)
     }
     
     

@@ -5,7 +5,7 @@ import RevenueCatUI
 struct UpgradePromptModifier: ViewModifier {
     @Binding var limitMessage: String?
     @Binding var showPaywall: Bool
-    @StateObject private var subscriptionManager = SubscriptionManager.shared
+    @ObservedObject private var subscriptionManager = SubscriptionManager.shared
 
     func body(content: Content) -> some View {
         content
