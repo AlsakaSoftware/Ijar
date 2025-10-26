@@ -88,11 +88,9 @@ struct ProfileView: View {
         }
         .sheet(isPresented: $showingPaywall) {
             PaywallView(displayCloseButton: true)
-                .onPurchaseCompleted { _ in
+                .onPurchaseCompleted { customerInfo in
+                    subscriptionManager.updateSubscriptionStatus(from: customerInfo)
                     showingPaywall = false
-                    Task {
-                        await subscriptionManager.checkSubscriptionStatus()
-                    }
                 }
         }
         .alert("Delete Account", isPresented: $showingDeleteConfirmation) {

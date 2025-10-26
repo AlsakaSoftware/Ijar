@@ -11,11 +11,9 @@ struct UpgradePromptModifier: ViewModifier {
         content
             .sheet(isPresented: $showPaywall) {
                 PaywallView(displayCloseButton: true)
-                    .onPurchaseCompleted { _ in
+                    .onPurchaseCompleted { customerInfo in
+                        subscriptionManager.updateSubscriptionStatus(from: customerInfo)
                         showPaywall = false
-                        Task {
-                            await subscriptionManager.checkSubscriptionStatus()
-                        }
                     }
             }
             .alert("Premium Required", isPresented: .constant(limitMessage != nil)) {

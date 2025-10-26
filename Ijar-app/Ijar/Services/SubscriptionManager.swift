@@ -67,6 +67,11 @@ class SubscriptionManager: ObservableObject {
         }
     }
 
+    /// Update subscription status from existing CustomerInfo (e.g., from purchase completion)
+    func updateSubscriptionStatus(from customerInfo: CustomerInfo) {
+        isSubscribed = customerInfo.entitlements["premium"]?.isActive == true
+    }
+
     // MARK: - Limit Enforcement
 
     /// Check if user can create a new active query

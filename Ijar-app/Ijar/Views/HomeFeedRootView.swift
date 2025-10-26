@@ -23,11 +23,9 @@ struct HomeFeedRootView: View {
                 }
                 .sheet(isPresented: $showPaywall) {
                     PaywallView(displayCloseButton: true)
-                        .onPurchaseCompleted { _ in
+                        .onPurchaseCompleted { customerInfo in
+                            subscriptionManager.updateSubscriptionStatus(from: customerInfo)
                             showPaywall = false
-                            Task {
-                                await subscriptionManager.checkSubscriptionStatus()
-                            }
                         }
                 }
                 .fullScreenCover(isPresented: $showOnboarding) {
