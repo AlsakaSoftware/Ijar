@@ -4,11 +4,13 @@ struct CardSwipeView: View {
     @EnvironmentObject var coordinator: HomeFeedCoordinator
     @StateObject private var propertyService = PropertyService()
     @StateObject private var searchService = SearchQueryService()
+    @StateObject private var monitorService = MonitorService()
     @Environment(\.scenePhase) private var scenePhase
     @State private var dragDirection: SwipeDirection = .none
     @State private var buttonPressed: SwipeDirection = .none
     @State private var ambientAnimation = false
     @State private var showingCreateQuery = false
+    @State private var showingSearchStartedAlert = false
 
     private let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
     private let selectionFeedback = UISelectionFeedbackGenerator()
@@ -35,7 +37,6 @@ struct CardSwipeView: View {
 
                 }
             }
-        }
             .padding(.bottom, 32)
             .padding(.horizontal, 15)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -59,10 +60,17 @@ struct CardSwipeView: View {
             CreateSearchQueryView { query in
                 Task {
                     await searchService.createQuery(query)
+                    // Automatically trigger search for the user's first query only
+                    await triggerSearchForNewQuery()
                     // Reload properties after creating a new search query
                     await propertyService.loadPropertiesForUser()
                 }
             }
+        }
+        .alert("Your First Search is Live!", isPresented: $showingSearchStartedAlert) {
+            Button("Got it!") { }
+        } message: {
+            Text("We'll send you some properties in a few minutes. We'll keep sending suitable matches for your area as we find them.")
         }
     }
     
@@ -272,6 +280,32 @@ struct CardSwipeView: View {
                     propertyService.removeTopProperty()
                 }
             }
+        }
+    }
+
+    private func triggerSearchForNewQuery() async {
+        // Two-layer defense:
+        // 1. Check if we've already triggered automatic search before (persists even if queries deleted)
+        let hasTriggeredFirstQuerySearch = UserDefaults.standard.bool(forKey: UserDefaultsKeys.hasTriggeredFirstQuerySearch)
+
+        // 2. Check if user only has one query (their first one)
+        let isFirstQuery = searchService.queries.count == 1
+
+        // Only trigger if both conditions are met
+        if hasTriggeredFirstQuerySearch || !isFirstQuery {
+            return
+        }
+
+        guard let userId = try? await searchService.getCurrentUserId() else {
+            return
+        }
+
+        let success = await monitorService.refreshPropertiesForUser(userId: userId)
+
+        if success {
+            // Mark that we've triggered the first query search
+            UserDefaults.standard.set(true, forKey: UserDefaultsKeys.hasTriggeredFirstQuerySearch)
+            showingSearchStartedAlert = true
         }
     }
 }

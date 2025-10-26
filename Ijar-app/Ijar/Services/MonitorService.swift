@@ -10,19 +10,9 @@ class MonitorService: ObservableObject {
     private let repoOwner = "AlsakaSoftware"
     private let repoName = "ijar"
 
-    // Track if user has used their one-time instant search
-    private let hasUsedInstantSearchKey = "has_used_instant_search"
-
-    var hasUsedInstantSearch: Bool {
-        UserDefaults.standard.bool(forKey: hasUsedInstantSearchKey)
-    }
 
     init() {
         self.githubToken = ConfigManager.shared.githubToken
-    }
-
-    private func markInstantSearchAsUsed() {
-        UserDefaults.standard.set(true, forKey: hasUsedInstantSearchKey)
     }
 
     /// Triggers the monitor workflow for a specific user
@@ -68,7 +58,6 @@ class MonitorService: ObservableObject {
             if httpResponse.statusCode == 204 {
                 print("✅ Successfully triggered monitor workflow for user: \(userId)")
                 lastRefreshDate = Date()
-                markInstantSearchAsUsed()
                 return true
             } else {
                 // Try to get error message from response

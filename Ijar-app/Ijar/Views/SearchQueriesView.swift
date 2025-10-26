@@ -9,7 +9,7 @@ struct SearchQueriesView: View {
     @State private var showingPaywall = false
     @State private var editingQuery: SearchQuery? = nil
     @State private var limitMessage: String?
-    @State private var showingInstantSearchPrompt = false
+    @State private var showingSearchStartedAlert = false
     
     var body: some View {
         NavigationView {
@@ -40,6 +40,8 @@ struct SearchQueriesView: View {
                 CreateSearchQueryView { query in
                     Task {
                         await searchService.createQuery(query)
+                        // Automatically trigger search for the user's first query only
+                        await triggerSearchForNewQuery()
                     }
                 }
             }
@@ -54,15 +56,10 @@ struct SearchQueriesView: View {
                 )
             }
             .upgradePrompt(limitMessage: $limitMessage, showPaywall: $showingPaywall)
-            .alert("Get Your First Properties!", isPresented: $showingInstantSearchPrompt) {
-                Button("Not Now", role: .cancel) { }
-                Button("Find Properties") {
-                    Task {
-                        await triggerInstantSearch()
-                    }
-                }
+            .alert("Your First Search is Live!", isPresented: $showingSearchStartedAlert) {
+                Button("Got it!") { }
             } message: {
-                Text("We'll search for properties matching your criteria right now. You'll get a notification when they're ready (1-2 minutes)!")
+                Text("We'll send you some properties in a few minutes. We'll keep sending suitable matches for your area as we find them.")
             }
             .task {
                 await searchService.loadUserQueries()
@@ -73,15 +70,19 @@ struct SearchQueriesView: View {
         }
     }
 
-    private func triggerInstantSearch() async {
-        guard let userId = try? await searchService.getCurrentUserId() else {
+    private func triggerSearchForNewQuery() async {
+        let hasTriggeredFirstQuerySearch = UserDefaults.standard.bool(forKey: UserDefaultsKeys.hasTriggeredFirstQuerySearch) || searchService.queries.count == 1
+
+        guard !hasTriggeredFirstQuerySearch,
+              let userId = try? await searchService.getCurrentUserId() else {
             return
         }
 
         let success = await monitorService.refreshPropertiesForUser(userId: userId)
 
         if success {
-            // Show success feedback
+            UserDefaults.standard.set(true, forKey: UserDefaultsKeys.hasTriggeredFirstQuerySearch)
+            showingSearchStartedAlert = true
         }
     }
 
@@ -130,56 +131,6 @@ struct SearchQueriesView: View {
         }
     }
     
-    private var instantSearchBanner: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 8) {
-                Image(systemName: "bolt.fill")
-                    .font(.system(size: 20))
-                    .foregroundColor(.rusticOrange)
-                Text("One-Time Instant Search")
-                    .font(.system(size: 17, weight: .bold))
-                    .foregroundColor(.coffeeBean)
-            }
-
-            Text("We'll search all your active areas right now and send you a notification when properties are ready (1-2 minutes). This is a one-time feature for new users.")
-                .font(.system(size: 14))
-                .foregroundColor(.warmBrown.opacity(0.8))
-                .fixedSize(horizontal: false, vertical: true)
-
-            Button(action: {
-                showingInstantSearchPrompt = true
-            }) {
-                HStack {
-                    if monitorService.isRefreshing {
-                        ProgressView()
-                            .tint(.warmCream)
-                    } else {
-                        Image(systemName: "bolt.fill")
-                    }
-                    Text(monitorService.isRefreshing ? "Searching..." : "Search Now (One-Time Only)")
-                }
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundColor(.warmCream)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 12)
-                .background(
-                    RoundedRectangle(cornerRadius: 10)
-                        .fill(Color.rusticOrange)
-                )
-            }
-            .disabled(monitorService.isRefreshing)
-        }
-        .padding(16)
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(Color.rusticOrange.opacity(0.1))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16)
-                        .stroke(Color.rusticOrange.opacity(0.3), lineWidth: 1.5)
-                )
-        )
-    }
-
     private var emptyStateView: some View {
         VStack(spacing: 24) {
             Image(systemName: "magnifyingglass.circle")
@@ -217,15 +168,6 @@ struct SearchQueriesView: View {
     
     private var queryListView: some View {
         VStack(spacing: 0) {
-            // Show instant search banner at the top if they haven't used it yet and have active queries
-            if !monitorService.hasUsedInstantSearch && searchService.queries.contains(where: { $0.active }) {
-                instantSearchBanner
-                    .padding(.horizontal, 16)
-                    .padding(.top, 12)
-                    .padding(.bottom, 8)
-                    .background(Color.warmCream.opacity(0.3))
-            }
-
             List {
                 ForEach(searchService.queries) { query in
                 SearchQueryCard(
