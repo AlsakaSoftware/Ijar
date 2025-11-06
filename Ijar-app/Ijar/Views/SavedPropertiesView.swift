@@ -181,7 +181,8 @@ struct SavedPropertyCard: View {
                                     .frame(height: 200)
                                     .clipped()
                             case .empty:
-                                ShimmerView()
+                                Rectangle()
+                                    .fill(Color.warmBrown.opacity(0.1))
                                     .frame(height: 200)
                             case .failure:
                                 Rectangle()
