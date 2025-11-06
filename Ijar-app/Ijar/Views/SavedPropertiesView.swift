@@ -163,6 +163,7 @@ struct SavedPropertyCard: View {
     let onRemove: () -> Void
     @State private var isPressed = false
     @State private var showingUnsaveConfirmation = false
+    @State private var isLoading = false
 
     var body: some View {
         Button(action: onTap) {
@@ -203,22 +204,30 @@ struct SavedPropertyCard: View {
                         }
                     }
                     
-                    // Heart button to unsave
-                    Button(action: {
-                        showingUnsaveConfirmation = true
-                    }) {
-                        ZStack {
-                            Image(systemName: "heart.fill")
-                                .font(.system(size: 35))
-                                .foregroundColor(.white)
-
-                            Image(systemName: "heart.fill")
-                                .font(.system(size: 30))
-                                .foregroundColor(.rusticOrange)
+                    Group {
+                        if isLoading {
+                            ProgressView()
+                                .scaleEffect(1.5)
+                                .shadow(color: .white, radius: 6, y: 3)
+                                .frame(width: 30, height: 30)
+                        } else {
+                            Button(action: {
+                                showingUnsaveConfirmation = true
+                            }) {
+                                ZStack {
+                                    Image(systemName: "heart.fill")
+                                        .font(.system(size: 35))
+                                        .foregroundColor(.white)
+                                    
+                                    Image(systemName: "heart.fill")
+                                        .font(.system(size: 30))
+                                        .foregroundColor(.rusticOrange)
+                                }
+                                .shadow(color: .black.opacity(0.3), radius: 4, y: 2)
+                            }
+                            .buttonStyle(PlainButtonStyle())
                         }
-                        .shadow(color: .black.opacity(0.3), radius: 4, y: 2)
                     }
-                    .buttonStyle(PlainButtonStyle())
                     .padding(12)
                 }
                 
@@ -286,6 +295,7 @@ struct SavedPropertyCard: View {
         .alert("Remove from favorites?", isPresented: $showingUnsaveConfirmation) {
             Button("Cancel", role: .cancel) { }
             Button("Remove", role: .destructive) {
+                isLoading = true
                 onRemove()
             }
         } message: {

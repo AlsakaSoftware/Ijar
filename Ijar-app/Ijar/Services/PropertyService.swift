@@ -238,13 +238,31 @@ class PropertyService: ObservableObject {
     }
 
     func unsaveProperty(_ property: Property) async -> Bool {
-        let success = await trackPropertyAction(propertyId: property.id, action: .passed)
+        do {
+            let user = try await supabase.auth.user()
 
-        if success {
+            // Update the existing saved action to passed
+            try await supabase
+                .from("user_property_action")
+                .update(["action": "passed"])
+                .eq("user_id", value: user.id.uuidString)
+                .eq("property_id", value: property.id)
+                .execute()
+
+            // Remove from local array immediately for UI responsiveness
             savedProperties.removeAll { $0.id == property.id }
-        }
 
-        return success
+#if DEBUG
+            print("✅ PropertyService: Successfully unsaved property \(property.id)")
+#endif
+
+            return true
+        } catch {
+#if DEBUG
+            print("❌ PropertyService: Failed to unsave property: \(error)")
+#endif
+            return false
+        }
     }
 }
 
