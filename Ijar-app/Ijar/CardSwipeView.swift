@@ -282,17 +282,11 @@ struct CardSwipeView: View {
     }
 
     private func triggerSearchForNewQuery() async {
-        // Two-layer defense:
-        // 1. Check if we've already triggered automatic search before (persists even if queries deleted)
         let hasTriggeredFirstQuerySearch = UserDefaults.standard.bool(forKey: UserDefaultsKeys.hasTriggeredFirstQuerySearch)
 
-        // 2. Check if user only has one query (their first one)
         let isFirstQuery = searchService.queries.count == 1
 
-        // Only trigger if both conditions are met
-        if hasTriggeredFirstQuerySearch || !isFirstQuery {
-            return
-        }
+        guard isFirstQuery, !hasTriggeredFirstQuerySearch else { return }
 
         guard let userId = try? await searchService.getCurrentUserId() else {
             return
@@ -301,7 +295,6 @@ struct CardSwipeView: View {
         let success = await monitorService.refreshPropertiesForUser(userId: userId)
 
         if success {
-            // Mark that we've triggered the first query search
             UserDefaults.standard.set(true, forKey: UserDefaultsKeys.hasTriggeredFirstQuerySearch)
             showingSearchStartedAlert = true
         }
