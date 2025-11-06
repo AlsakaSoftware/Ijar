@@ -12,35 +12,33 @@ struct SearchQueriesView: View {
     @State private var showingSearchStartedAlert = false
     
     var body: some View {
-        NavigationView {
-            ZStack {
-                Color.warmCream.opacity(0.3)
-                    .ignoresSafeArea()
-                
-                if searchService.isLoading && searchService.queries.isEmpty {
-                    ProgressView()
-                        .tint(.rusticOrange)
-                } else if searchService.queries.isEmpty {
-                    emptyStateView
-                } else {
-                    queryListView
+        ZStack {
+            Color.warmCream
+                .ignoresSafeArea()
+
+            if searchService.isLoading && searchService.queries.isEmpty {
+                ProgressView()
+                    .tint(.rusticOrange)
+            } else if searchService.queries.isEmpty {
+                emptyStateView
+            } else {
+                queryListView
+            }
+        }
+        .navigationTitle("Areas I'm Exploring")
+        .navigationBarTitleDisplayMode(.large)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button(action: handleCreateQuery) {
+                    Image(systemName: "plus")
+                        .foregroundColor(.rusticOrange)
                 }
             }
-            .navigationTitle("Areas I'm Exploring")
-            .navigationBarTitleDisplayMode(.large)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: handleCreateQuery) {
-                        Image(systemName: "plus")
-                            .foregroundColor(.rusticOrange)
-                    }
-                }
-            }
-            .sheet(isPresented: $showingCreateQuery) {
+        }
+        .sheet(isPresented: $showingCreateQuery) {
                 CreateSearchQueryView { query in
                     Task {
                         await searchService.createQuery(query)
-                        // Automatically trigger search for the user's first query only
                         await triggerSearchForNewQuery()
                     }
                 }
@@ -67,7 +65,6 @@ struct SearchQueriesView: View {
             .refreshable {
                 await searchService.loadUserQueries()
             }
-        }
     }
 
     private func triggerSearchForNewQuery() async {

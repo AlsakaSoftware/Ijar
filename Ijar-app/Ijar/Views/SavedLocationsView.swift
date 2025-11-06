@@ -10,39 +10,46 @@ struct SavedLocationsView: View {
     @State private var limitMessage: String?
 
     var body: some View {
-        List {
-            if locationsManager.locations.isEmpty {
-                VStack(spacing: 16) {
-                    Image(systemName: "mappin.slash")
-                        .font(.system(size: 50))
-                        .foregroundColor(.warmBrown.opacity(0.5))
+        ZStack {
+            Color.warmCream
+                .ignoresSafeArea()
 
-                    Text("No places yet")
-                        .font(.system(size: 18, weight: .medium))
-                        .foregroundColor(.coffeeBean)
+            List {
+                if locationsManager.locations.isEmpty {
+                    VStack(spacing: 16) {
+                        Image(systemName: "mappin.slash")
+                            .font(.system(size: 50))
+                            .foregroundColor(.warmBrown.opacity(0.5))
 
-                    Text("Add your work, gym, or anywhere you visit regularly. We'll show journey times from every property.")
-                        .font(.system(size: 14))
-                        .foregroundColor(.warmBrown.opacity(0.7))
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 40)
+                        Text("No places yet")
+                            .font(.system(size: 18, weight: .medium))
+                            .foregroundColor(.coffeeBean)
+
+                        Text("Add your work, gym, or anywhere you visit regularly. We'll show journey times from every property.")
+                            .font(.system(size: 14))
+                            .foregroundColor(.warmBrown.opacity(0.7))
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 40)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 60)
+                    .listRowBackground(Color.clear)
+                } else {
+                    ForEach(locationsManager.locations) { location in
+                        LocationRow(location: location, onEdit: {
+                            locationToEdit = location
+                        }, onDelete: {
+                            locationsManager.deleteLocation(location)
+                        })
+                    }
+                    .onDelete(perform: locationsManager.deleteLocations)
                 }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 60)
-                .listRowBackground(Color.clear)
-            } else {
-                ForEach(locationsManager.locations) { location in
-                    LocationRow(location: location, onEdit: {
-                        locationToEdit = location
-                    }, onDelete: {
-                        locationsManager.deleteLocation(location)
-                    })
-                }
-                .onDelete(perform: locationsManager.deleteLocations)
             }
+            .scrollContentBackground(.hidden)
         }
         .navigationTitle("Places That Matter")
         .navigationBarTitleDisplayMode(.large)
+        .tint(.rusticOrange)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button(action: handleAddLocation) {

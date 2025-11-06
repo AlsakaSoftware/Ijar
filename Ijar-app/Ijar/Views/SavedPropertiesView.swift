@@ -23,6 +23,8 @@ struct SavedPropertiesView: View {
         }
         .navigationTitle("Your Favorites")
         .navigationBarTitleDisplayMode(.large)
+        .toolbarColorScheme(.light, for: .navigationBar)
+        .tint(.rusticOrange)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 if !propertyService.savedProperties.isEmpty {

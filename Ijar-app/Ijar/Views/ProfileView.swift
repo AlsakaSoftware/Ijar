@@ -108,7 +108,7 @@ struct ProfileView: View {
             Text("Are you sure you want to delete your account? This will permanently delete all your searches, saved properties, and account data. This action cannot be undone.")
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.warmCream.opacity(0.3))
+        .background(Color.warmCream)
         .navigationTitle("Settings")
         .navigationBarTitleDisplayMode(.large)
     }
