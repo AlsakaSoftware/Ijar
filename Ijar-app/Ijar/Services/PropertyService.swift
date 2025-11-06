@@ -236,6 +236,16 @@ class PropertyService: ObservableObject {
         
         isLoading = false
     }
+
+    func unsaveProperty(_ property: Property) async -> Bool {
+        let success = await trackPropertyAction(propertyId: property.id, action: .passed)
+
+        if success {
+            savedProperties.removeAll { $0.id == property.id }
+        }
+
+        return success
+    }
 }
 
 enum PropertyAction: String {

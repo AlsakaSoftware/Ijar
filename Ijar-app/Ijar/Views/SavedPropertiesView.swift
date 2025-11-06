@@ -130,9 +130,17 @@ struct SavedPropertiesView: View {
         ScrollView {
             LazyVStack(spacing: 16) {
                 ForEach(Array(propertyService.savedProperties.enumerated()), id: \.element.id) { index, property in
-                    SavedPropertyCard(property: property) {
-                        coordinator.navigate(to: .propertyDetail(property: property))
-                    }
+                    SavedPropertyCard(
+                        property: property,
+                        onTap: {
+                            coordinator.navigate(to: .propertyDetail(property: property))
+                        },
+                        onRemove: {
+                            Task {
+                                await propertyService.unsaveProperty(property)
+                            }
+                        }
+                    )
                     .padding(.horizontal, 20)
                     .opacity(animateContent ? 1 : 0)
                     .offset(y: animateContent ? 0 : 50)
@@ -152,8 +160,10 @@ struct SavedPropertiesView: View {
 struct SavedPropertyCard: View {
     let property: Property
     let onTap: () -> Void
+    let onRemove: () -> Void
     @State private var isPressed = false
-    
+    @State private var showingUnsaveConfirmation = false
+
     var body: some View {
         Button(action: onTap) {
             VStack(alignment: .leading, spacing: 0) {
@@ -193,21 +203,22 @@ struct SavedPropertyCard: View {
                         }
                     }
                     
-                    // Saved badge
-                    HStack(spacing: 4) {
-                        Image(systemName: "heart.fill")
-                            .font(.system(size: 12))
-                        Text("Saved")
-                            .font(.system(size: 12, weight: .semibold))
+                    // Heart button to unsave
+                    Button(action: {
+                        showingUnsaveConfirmation = true
+                    }) {
+                        ZStack {
+                            Image(systemName: "heart.fill")
+                                .font(.system(size: 35))
+                                .foregroundColor(.white)
+
+                            Image(systemName: "heart.fill")
+                                .font(.system(size: 30))
+                                .foregroundColor(.rusticOrange)
+                        }
+                        .shadow(color: .black.opacity(0.3), radius: 4, y: 2)
                     }
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .background(
-                        Capsule()
-                            .fill(Color.rusticOrange)
-                            .shadow(color: .black.opacity(0.2), radius: 4, y: 2)
-                    )
+                    .buttonStyle(PlainButtonStyle())
                     .padding(12)
                 }
                 
@@ -272,6 +283,14 @@ struct SavedPropertyCard: View {
                 isPressed = pressing
             }
         }, perform: {})
+        .alert("Remove from favorites?", isPresented: $showingUnsaveConfirmation) {
+            Button("Cancel", role: .cancel) { }
+            Button("Remove", role: .destructive) {
+                onRemove()
+            }
+        } message: {
+            Text("This property will be removed from your saved list")
+        }
     }
 }
 
