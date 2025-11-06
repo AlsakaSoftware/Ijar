@@ -42,6 +42,7 @@ struct CardSwipeView: View {
         .background(Color.warmCream)
         .task {
             await propertyService.loadPropertiesForUser()
+            await searchService.loadUserQueries()
             ambientAnimation = true
         }
         .refreshable {
@@ -74,20 +75,22 @@ struct CardSwipeView: View {
     
     // MARK: - View Components
     private var emptyStateView: some View {
-        VStack(spacing: 0) {
+        let hasQueries = !searchService.queries.isEmpty
+
+        return VStack(spacing: 0) {
             Spacer()
 
             VStack(spacing: 16) {
-                Image(systemName: "sparkles")
+                Image(systemName: hasQueries ? "sparkles" : "magnifyingglass.circle")
                     .font(.system(size: 60, weight: .light))
                     .foregroundStyle(Color.sunsetGradient)
                     .padding(.bottom, 4)
 
-                Text("You're all caught up!")
+                Text(hasQueries ? "You're all set" : "Let's find your place")
                     .font(.system(size: 28, weight: .medium, design: .rounded))
                     .foregroundColor(.coffeeBean)
 
-                Text("We'll let you know when fresh properties match your searches")
+                Text(hasQueries ? "We'll notify you when new properties match your searches" : "Tell us where you want to live and we'll send you the best matches")
                     .font(.system(size: 16, weight: .regular))
                     .foregroundColor(.warmBrown.opacity(0.8))
                     .multilineTextAlignment(.center)
@@ -98,7 +101,7 @@ struct CardSwipeView: View {
                 }) {
                     HStack(spacing: 8) {
                         Image(systemName: "plus.circle.fill")
-                        Text("Add a Search")
+                        Text(hasQueries ? "Add Another Area" : "Get Started")
                     }
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundColor(.warmCream)
