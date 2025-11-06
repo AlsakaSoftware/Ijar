@@ -12,10 +12,7 @@ struct SearchQueriesView: View {
     @State private var showingSearchStartedAlert = false
     
     var body: some View {
-        ZStack {
-            Color.warmCream
-                .ignoresSafeArea()
-
+        Group {
             if searchService.isLoading && searchService.queries.isEmpty {
                 ProgressView()
                     .tint(.rusticOrange)
@@ -25,6 +22,8 @@ struct SearchQueriesView: View {
                 queryListView
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.warmCream)
         .navigationTitle("Areas I'm Exploring")
         .navigationBarTitleDisplayMode(.large)
         .toolbar {

@@ -6,21 +6,17 @@ struct SavedPropertiesView: View {
     @State private var animateContent = false
     
     var body: some View {
-        ZStack {
-            // Background
-            Color.warmCream
-                .ignoresSafeArea()
-            
-            VStack(spacing: 0) {
-                if propertyService.isLoading && propertyService.savedProperties.isEmpty {
-                    loadingView
-                } else if propertyService.savedProperties.isEmpty {
-                    emptyStateView
-                } else {
-                    savedPropertiesList
-                }
+        VStack(spacing: 0) {
+            if propertyService.isLoading && propertyService.savedProperties.isEmpty {
+                loadingView
+            } else if propertyService.savedProperties.isEmpty {
+                emptyStateView
+            } else {
+                savedPropertiesList
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.warmCream)
         .navigationTitle("Your Favorites")
         .navigationBarTitleDisplayMode(.large)
         .toolbarColorScheme(.light, for: .navigationBar)
