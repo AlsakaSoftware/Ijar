@@ -35,6 +35,7 @@ class SearchQueryService: ObservableObject {
                 SearchQuery(
                     id: UUID(uuidString: row.id) ?? UUID(),
                     name: row.name,
+                    areaName: row.area_name,
                     postcode: row.postcode,
                     minPrice: row.min_price,
                     maxPrice: row.max_price,
@@ -73,6 +74,7 @@ class SearchQueryService: ObservableObject {
                 id: query.id.uuidString,
                 user_id: user.id.uuidString,
                 name: query.name,
+                area_name: query.areaName,
                 postcode: query.postcode,
                 min_price: query.minPrice,
                 max_price: query.maxPrice,
@@ -86,12 +88,12 @@ class SearchQueryService: ObservableObject {
                 created: ISO8601DateFormatter().string(from: query.created),
                 updated: ISO8601DateFormatter().string(from: query.updated)
             )
-            
+
             try await supabase
                 .from("query")
                 .insert(queryRow)
                 .execute()
-            
+
             // If this is the first query, trigger GitHub workflow
             if isFirstQuery {
                 await triggerGitHubWorkflow()
@@ -121,6 +123,7 @@ class SearchQueryService: ObservableObject {
                 id: query.id.uuidString,
                 user_id: user.id.uuidString,
                 name: query.name,
+                area_name: query.areaName,
                 postcode: query.postcode,
                 min_price: query.minPrice,
                 max_price: query.maxPrice,
@@ -134,12 +137,12 @@ class SearchQueryService: ObservableObject {
                 created: ISO8601DateFormatter().string(from: query.created),
                 updated: ISO8601DateFormatter().string(from: query.updated)
             )
-            
+
             try await supabase
                 .from("query")
                 .insert(queryRow)
                 .execute()
-            
+
             // Add to bottom of local list instead of reloading
             queries.append(query)
             isLoading = false
@@ -191,6 +194,7 @@ class SearchQueryService: ObservableObject {
                 id: query.id.uuidString,
                 user_id: user.id.uuidString,
                 name: query.name,
+                area_name: query.areaName,
                 postcode: query.postcode,
                 min_price: query.minPrice,
                 max_price: query.maxPrice,
@@ -204,7 +208,7 @@ class SearchQueryService: ObservableObject {
                 created: ISO8601DateFormatter().string(from: query.created),
                 updated: ISO8601DateFormatter().string(from: Date())
             )
-            
+
             try await supabase
                 .from("query")
                 .update(queryRow)
@@ -255,6 +259,7 @@ private struct QueryRow: Codable {
     let id: String
     let user_id: String
     let name: String
+    let area_name: String
     let postcode: String
     let min_price: Int?
     let max_price: Int?

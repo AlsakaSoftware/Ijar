@@ -71,10 +71,18 @@ struct SearchQueriesView: View {
     }
 
     private func triggerSearchForNewQuery() async {
-        let hasTriggeredFirstQuerySearch = UserDefaults.standard.bool(forKey: UserDefaultsKeys.hasTriggeredFirstQuerySearch) || searchService.queries.count == 1
+        // 1. Check if we've already triggered automatic search before
+        let hasTriggeredFirstQuerySearch = UserDefaults.standard.bool(forKey: UserDefaultsKeys.hasTriggeredFirstQuerySearch)
 
-        guard !hasTriggeredFirstQuerySearch,
-              let userId = try? await searchService.getCurrentUserId() else {
+        // 2. Check if user only has one query (their first one)
+        let isFirstQuery = searchService.queries.count == 1
+
+        // Only trigger if: NOT triggered before AND is first query
+        if hasTriggeredFirstQuerySearch || !isFirstQuery {
+            return
+        }
+
+        guard let userId = try? await searchService.getCurrentUserId() else {
             return
         }
 
@@ -108,12 +116,12 @@ struct SearchQueriesView: View {
                 return
             }
         }
-
         // Proceed with toggle
         Task {
             let updatedQuery = SearchQuery(
                 id: query.id,
                 name: query.name,
+                areaName: query.areaName,
                 postcode: query.postcode,
                 minPrice: query.minPrice,
                 maxPrice: query.maxPrice,
@@ -181,6 +189,7 @@ struct SearchQueriesView: View {
                     onDuplicate: { queryToDuplicate in
                         let duplicatedQuery = SearchQuery(
                             name: "Copy of \(queryToDuplicate.name)",
+                            areaName: queryToDuplicate.areaName,
                             postcode: queryToDuplicate.postcode,
                             minPrice: queryToDuplicate.minPrice,
                             maxPrice: queryToDuplicate.maxPrice,
@@ -230,12 +239,12 @@ struct SearchQueryCard: View {
                         .font(.system(size: 19, weight: .bold))
                         .foregroundColor(.coffeeBean)
                         .lineLimit(2)
-                    
+
                     HStack(spacing: 6) {
                         Image(systemName: "location.fill")
                             .font(.system(size: 12))
                             .foregroundColor(.warmBrown.opacity(0.6))
-                        Text(query.postcode)
+                        Text(query.areaName)
                             .font(.system(size: 14, weight: .medium))
                             .foregroundColor(.warmBrown.opacity(0.8))
                     }

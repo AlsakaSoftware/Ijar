@@ -18,8 +18,6 @@ struct CardSwipeView: View {
     
     var body: some View {
             VStack {
-//            TimeBasedGreeting()
-
                 if propertyService.properties.isEmpty {
                     emptyStateView
                 } else {

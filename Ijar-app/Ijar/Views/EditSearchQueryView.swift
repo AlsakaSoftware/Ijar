@@ -1,4 +1,5 @@
 import SwiftUI
+import CoreLocation
 
 struct EditSearchQueryView: View {
     @Environment(\.dismiss) private var dismiss
@@ -6,7 +7,8 @@ struct EditSearchQueryView: View {
     let onSave: (SearchQuery) -> Void
     
     @State private var name = ""
-    @State private var postcode = ""
+    @State private var areaName = ""
+    @State private var postcode = "" // Hidden - populated via geocoding
     @State private var minPrice: Int? = nil
     @State private var maxPrice: Int? = nil
     @State private var minBedrooms: Int? = nil
@@ -22,7 +24,13 @@ struct EditSearchQueryView: View {
     @State private var selectedRadius: SearchRadius = .oneMile
     @State private var selectedFurnishType = "Any"
 
+    // Geocoding state
+    @State private var isGeocoding = false
+    @State private var geocodingError: String?
+    @State private var geocodingTask: Task<Void, Never>?
+
     private let furnishOptions = ["Any", "Furnished", "Unfurnished"]
+    private let geocodingService = GeocodingService()
     
     var body: some View {
         NavigationView {
@@ -30,10 +38,30 @@ struct EditSearchQueryView: View {
                 Section("Basic Information") {
                     TextField("Search Name", text: $name)
 
-                    TextField("Postcode (e.g., E14 6FT)", text: $postcode)
-                        .textContentType(.postalCode)
-                        .autocapitalization(.allCharacters)
-                        .disableAutocorrection(true)
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack {
+                            TextField("Area (e.g., Canary Wharf, London)", text: $areaName)
+                                .textContentType(.fullStreetAddress)
+                                .autocapitalization(.words)
+                                .onChange(of: areaName) { _, newValue in
+                                    geocodeArea(newValue)
+                                }
+
+                            if isGeocoding {
+                                ProgressView()
+                                    .scaleEffect(0.8)
+                            } else if !postcode.isEmpty && geocodingError == nil {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundColor(.green)
+                            }
+                        }
+
+                        if let error = geocodingError {
+                            Text(error)
+                                .font(.caption)
+                                .foregroundColor(.red)
+                        }
+                    }
                 }
                 
                 Section("Price Range (£/month)") {
@@ -142,11 +170,14 @@ struct EditSearchQueryView: View {
     
     private var isValidForm: Bool {
         !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
-        !postcode.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        !areaName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+        !postcode.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+        geocodingError == nil
     }
 
     private func populateFields() {
         name = query.name
+        areaName = query.areaName // Pre-populate with existing area name
         postcode = query.postcode
         minPrice = query.minPrice
         maxPrice = query.maxPrice
@@ -175,6 +206,7 @@ struct EditSearchQueryView: View {
         let updatedQuery = SearchQuery(
             id: query.id,
             name: name.trimmingCharacters(in: .whitespacesAndNewlines),
+            areaName: areaName.trimmingCharacters(in: .whitespacesAndNewlines),
             postcode: postcode.trimmingCharacters(in: .whitespacesAndNewlines).uppercased(),
             minPrice: minPrice,
             maxPrice: maxPrice,
@@ -191,6 +223,63 @@ struct EditSearchQueryView: View {
 
         onSave(updatedQuery)
         dismiss()
+    }
+
+    private func geocodeArea(_ area: String) {
+        // Cancel previous geocoding task
+        geocodingTask?.cancel()
+
+        // Clear previous results
+        postcode = ""
+        geocodingError = nil
+
+        // Don't geocode empty strings
+        let trimmedArea = area.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedArea.isEmpty else {
+            return
+        }
+
+        // Debounce: wait 0.5 seconds before geocoding
+        geocodingTask = Task {
+            do {
+                try await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
+
+                // Check if task was cancelled
+                guard !Task.isCancelled else { return }
+
+                await MainActor.run {
+                    isGeocoding = true
+                }
+
+                // Use the geocoding service
+                let result = try await geocodingService.geocodeAreaToPostcode(trimmedArea)
+
+                // Check if task was cancelled
+                guard !Task.isCancelled else { return }
+
+                await MainActor.run {
+                    isGeocoding = false
+                    postcode = result.postcode
+                    geocodingError = nil
+                }
+            } catch let error as GeocodingError {
+                guard !Task.isCancelled else { return }
+
+                await MainActor.run {
+                    isGeocoding = false
+                    postcode = ""
+                    geocodingError = error.localizedDescription
+                }
+            } catch {
+                guard !Task.isCancelled else { return }
+
+                await MainActor.run {
+                    isGeocoding = false
+                    postcode = ""
+                    geocodingError = "We couldn't find this area. Please check the spelling."
+                }
+            }
+        }
     }
 }
 
