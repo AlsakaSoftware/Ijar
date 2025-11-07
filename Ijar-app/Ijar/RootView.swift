@@ -7,6 +7,9 @@ struct RootView: View {
     
     var body: some View {
         RootContentView(notificationService: notificationService, coordinator: coordinator)
+            .onAppear {
+                notificationService.checkNotificationStatus()
+            }
     }
 }
 

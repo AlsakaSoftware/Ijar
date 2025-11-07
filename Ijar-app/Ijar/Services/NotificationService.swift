@@ -16,11 +16,8 @@ class NotificationService: ObservableObject {
         guard let url = URL(string: config.supabaseURL) else {
             fatalError("Invalid Supabase URL in configuration")
         }
-        
+
         supabase = SupabaseClient(supabaseURL: url, supabaseKey: config.supabaseAnonKey)
-        
-        // Check current notification permission status
-        checkNotificationStatus()
     }
     
     func checkNotificationStatus() {
