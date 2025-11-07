@@ -118,8 +118,12 @@ struct PropertyDetailView: View {
                     }
 
                     // Journey times to saved locations
-                    if !locationsManager.locations.isEmpty && propertyCoordinates != nil {
-                        journeyTimesSection
+                    if propertyCoordinates != nil {
+                        if !locationsManager.locations.isEmpty {
+                            journeyTimesSection
+                        } else {
+                            NoSavedLocationsPrompt()
+                        }
                     }
 
                     // Progress section (checklist + notes combined) - only for saved properties
