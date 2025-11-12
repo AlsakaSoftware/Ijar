@@ -113,6 +113,15 @@ struct PropertyDetailView: View {
                     // Location section
                     locationSection
 
+                    // Map section
+                    if let coordinates = propertyCoordinates {
+                        PropertyMapView(
+                            address: property.address,
+                            latitude: coordinates.latitude,
+                            longitude: coordinates.longitude
+                        )
+                    }
+
                     // Nearby tube stations section
                     if propertyCoordinates != nil {
                         nearbyStationsSection
@@ -549,7 +558,7 @@ struct PropertyDetailView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
-    
+
     private var nearbyStationsSection: some View {
         VStack(alignment: .leading, spacing: 16) {
             // Rail Stations Section
