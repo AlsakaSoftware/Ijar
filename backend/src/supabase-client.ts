@@ -218,6 +218,20 @@ export class SupabasePropertyClient {
     return newProperties;
   }
 
+  // Get properties that are new for a specific query (not yet linked)
+  async getNewPropertiesForQuery(query: UserQuery, properties: RightmoveProperty[]): Promise<RightmoveProperty[]> {
+    const newProperties: RightmoveProperty[] = [];
+
+    for (const property of properties) {
+      const isAlreadyLinked = await this.isPropertyLinkedToQuery(query.id!, property.id);
+      if (!isAlreadyLinked) {
+        newProperties.push(property);
+      }
+    }
+
+    return newProperties;
+  }
+
   // Get active user queries
   async getActiveQueries(): Promise<UserQuery[]> {
     try {
@@ -239,34 +253,18 @@ export class SupabasePropertyClient {
     }
   }
 
-  // Process properties for a specific query
+  // Process properties for a specific query (properties are already filtered for new ones)
   async processPropertiesForQuery(query: UserQuery, properties: RightmoveProperty[]): Promise<{ success: boolean; newCount: number; errors: string[] }> {
     const errors: string[] = [];
     let newCount = 0;
 
-    console.log(`📊 Found ${properties.length} properties for query: ${query.name}`);
-
-    // First, filter out properties we've already seen for this query
-    const newProperties: RightmoveProperty[] = [];
-    for (const property of properties) {
-      const isAlreadyLinked = await this.isPropertyLinkedToQuery(query.id!, property.id);
-      if (!isAlreadyLinked) {
-        newProperties.push(property);
-      }
-    }
-
-    console.log(`🔍 Found ${newProperties.length} new properties (${properties.length - newProperties.length} already seen)`);
-
-    // Then take the top 10 new properties
-    const topNewProperties = newProperties.slice(0, 10);
-    console.log(`🎯 Processing top ${topNewProperties.length} new properties for query: ${query.name}`);
-
-    if (topNewProperties.length === 0) {
-      console.log(`📭 No new properties to process for query: ${query.name}`);
+    if (properties.length === 0) {
       return { success: true, newCount: 0, errors: [] };
     }
 
-    for (const property of topNewProperties) {
+    console.log(`    💾 Saving ${properties.length} new properties to database...`);
+
+    for (const property of properties) {
       try {
         // Upsert the property to the database
         const propertyResult = await this.upsertProperty(property);
@@ -279,7 +277,7 @@ export class SupabasePropertyClient {
         const linkResult = await this.linkPropertyToQuery(query.id!, propertyResult.property!.id!);
         if (linkResult.success) {
           newCount++;
-          console.log(`✅ Successfully linked new property ${property.id} to query ${query.name}`);
+          console.log(`    ✅ Saved property ${property.id} (${property.displayAddress})`);
         } else {
           errors.push(`Failed to link property ${property.id} to query: ${linkResult.error}`);
         }

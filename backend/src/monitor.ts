@@ -212,22 +212,34 @@ class PropertyMonitor {
       if (query.furnish_type) searchOptions.furnishTypes = query.furnish_type as any;
       if (query.radius) searchOptions.radius = query.radius;
       
-      // Get properties for this query
+      // Get properties for this query (thumbnails only)
       const results = await this.scraper.searchProperties(searchOptions);
-      console.log(`    📊 Found ${results.properties.length} properties`);
+      console.log(`    📊 Found ${results.properties.length} properties from Rightmove`);
 
-      // Log data quality metrics
-      this.logDataQuality(results.properties, query.name);
-      
-      // Limit to max properties per query
-      let finalProperties = results.properties.slice(0, config.maxHDPropertiesPerQuery);
-      
-      // Enhance properties with HD images if enabled
+      // Filter for properties that are NEW for this specific query
+      const newPropertiesForQuery = await this.supabase.getNewPropertiesForQuery(query, results.properties);
+      console.log(`    🔍 ${newPropertiesForQuery.length} are new (${results.properties.length - newPropertiesForQuery.length} already seen for this query)`);
+
+      if (newPropertiesForQuery.length === 0) {
+        console.log(`    📭 No new properties to process for query: ${query.name}`);
+        return { newCount: 0, errors: [] };
+      }
+
+      // Take top N new properties (e.g., top 5)
+      const topNewProperties = newPropertiesForQuery.slice(0, config.maxHDPropertiesPerQuery);
+      console.log(`    🎯 Processing top ${topNewProperties.length} new properties`);
+
+      // Log data quality metrics for the properties we're about to process
+      this.logDataQuality(topNewProperties, query.name);
+
+      // NOW enhance with HD images (only for the new properties we're saving)
+      let finalProperties = topNewProperties;
       if (config.enableHDImages) {
-        const propertiesWithHD = await this.scraper.getPropertiesWithHDImages(finalProperties, true);
+        console.log(`    📸 Fetching HD images for ${topNewProperties.length} new properties...`);
+        const propertiesWithHD = await this.scraper.getPropertiesWithHDImages(topNewProperties, true);
         finalProperties = propertiesWithHD;
       }
-      
+
       // Process properties for this specific query
       const processResult = await this.supabase.processPropertiesForQuery(query, finalProperties);
       
