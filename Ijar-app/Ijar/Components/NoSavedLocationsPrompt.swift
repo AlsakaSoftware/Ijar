@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct NoSavedLocationsPrompt: View {
+    let onAddLocationsTap: () -> Void
+
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack(spacing: 6) {
@@ -19,10 +21,6 @@ struct NoSavedLocationsPrompt: View {
                         .font(.system(size: 20, weight: .semibold, design: .rounded))
                         .foregroundColor(.coffeeBean)
                         .multilineTextAlignment(.center)
-
-                    Text("Add yours in Settings → Places that matter")
-                        .font(.system(size: 15))
-                        .foregroundColor(.warmBrown.opacity(0.7))
                 }
 
                 HStack(spacing: 16) {
@@ -43,6 +41,24 @@ struct NoSavedLocationsPrompt: View {
                         }
                     }
                 }
+
+                Button(action: onAddLocationsTap) {
+                    HStack(spacing: 8) {
+                        Text("Add places")
+                            .font(.system(size: 16, weight: .semibold))
+
+                        Image(systemName: "arrow.right")
+                            .font(.system(size: 14, weight: .semibold))
+                    }
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(Color.rusticOrange)
+                    )
+                }
+                .padding(.top, 8)
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 20)

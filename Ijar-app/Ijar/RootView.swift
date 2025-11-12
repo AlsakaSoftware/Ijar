@@ -15,9 +15,9 @@ struct RootView: View {
 
 struct RootContentView: View {
     let notificationService: NotificationService
-    let coordinator: AppCoordinator
+    @ObservedObject var coordinator: AppCoordinator
     @StateObject private var authService: AuthenticationService
-    
+
     init(notificationService: NotificationService, coordinator: AppCoordinator) {
         self.notificationService = notificationService
         self.coordinator = coordinator
@@ -30,7 +30,7 @@ struct RootContentView: View {
                 // Show loading state while checking authentication
                 AppLogoLoadingView()
             } else if authService.isAuthenticated {
-                TabView {
+                TabView(selection: $coordinator.selectedTab) {
                     HomeFeedRootView()
                         .tabItem {
                             Image(systemName: "house.fill")
@@ -54,6 +54,7 @@ struct RootContentView: View {
                 }
                 .accentColor(.rusticOrange)
                 .environmentObject(authService)
+                .environmentObject(coordinator)
                 .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
                     // Clear notification badge when app enters foreground
                     Task {

@@ -6,6 +6,7 @@ struct PropertyDetailView: View {
     let isSavedProperty: Bool
     @State private var currentImageIndex = 0
     @State private var showingFullScreenImages = false
+    @EnvironmentObject var appCoordinator: AppCoordinator
 
     // TfL transport data
     private let tflService = TfLService()
@@ -122,7 +123,9 @@ struct PropertyDetailView: View {
                         if !locationsManager.locations.isEmpty {
                             journeyTimesSection
                         } else {
-                            NoSavedLocationsPrompt()
+                            NoSavedLocationsPrompt {
+                                appCoordinator.navigate(to: .profile(.savedLocations))
+                            }
                         }
                     }
 
@@ -182,6 +185,16 @@ struct PropertyDetailView: View {
         .onAppear {
             if isSavedProperty {
                 loadOrCreateMetadata()
+            }
+
+            // Reload locations in case new ones were added
+            locationsManager.loadLocations()
+
+            // Fetch journeys if we have both coordinates and locations
+            if propertyCoordinates != nil && !locationsManager.locations.isEmpty {
+                Task {
+                    await fetchJourneys()
+                }
             }
         }
         .task {

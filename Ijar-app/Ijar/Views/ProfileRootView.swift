@@ -1,15 +1,28 @@
 import SwiftUI
 
 struct ProfileRootView: View {
-    @StateObject private var coordinator = ProfileCoordinator()
-    
+    @EnvironmentObject var appCoordinator: AppCoordinator
+
     var body: some View {
-        NavigationStack(path: $coordinator.navigationPath) {
+        NavigationStack(path: $appCoordinator.profilePath) {
             ProfileView()
-                .environmentObject(coordinator)
                 .navigationDestination(for: ProfileDestination.self) { destination in
-                    coordinator.build(destination)
+                    buildDestination(destination)
                 }
+        }
+    }
+
+    @ViewBuilder
+    private func buildDestination(_ destination: ProfileDestination) -> some View {
+        switch destination {
+        case .editProfile:
+            EditProfileView()
+        case .preferences:
+            PreferencesView()
+        case .searchQueries:
+            SearchQueriesView()
+        case .savedLocations:
+            SavedLocationsView()
         }
     }
 }

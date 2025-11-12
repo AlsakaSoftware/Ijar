@@ -2,7 +2,7 @@ import SwiftUI
 import RevenueCatUI
 
 struct ProfileView: View {
-    @EnvironmentObject var coordinator: ProfileCoordinator
+    @EnvironmentObject var appCoordinator: AppCoordinator
     @EnvironmentObject var authService: AuthenticationService
     @EnvironmentObject var notificationService: NotificationService
     @ObservedObject private var subscriptionManager = SubscriptionManager.shared
@@ -25,7 +25,7 @@ struct ProfileView: View {
                     title: "Areas I'm Exploring",
                     subtitle: "Manage the neighborhoods you're searching",
                     action: {
-                        coordinator.navigate(to: .searchQueries)
+                        appCoordinator.profilePath.append(ProfileDestination.searchQueries)
                     }
                 )
 
@@ -37,7 +37,7 @@ struct ProfileView: View {
                     title: "Places That Matter",
                     subtitle: "Your work, gym, and other important spots",
                     action: {
-                        coordinator.navigate(to: .savedLocations)
+                        appCoordinator.profilePath.append(ProfileDestination.savedLocations)
                     }
                 )
             }

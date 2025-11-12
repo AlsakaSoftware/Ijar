@@ -11,7 +11,7 @@ class SavedLocationsManager: ObservableObject {
     }
 
     /// Load saved locations from UserDefaults
-    private func loadLocations() {
+    func loadLocations() {
         guard let data = UserDefaults.standard.data(forKey: userDefaultsKey),
               let decoded = try? JSONDecoder().decode([SavedLocation].self, from: data) else {
 #if DEBUG
