@@ -217,11 +217,11 @@ struct SavedPropertyCard: View {
                             }) {
                                 ZStack {
                                     Image(systemName: "heart.fill")
-                                        .font(.system(size: 35))
+                                        .font(.system(size: 30))
                                         .foregroundColor(.white)
                                     
                                     Image(systemName: "heart.fill")
-                                        .font(.system(size: 30))
+                                        .font(.system(size: 25))
                                         .foregroundColor(.rusticOrange)
                                 }
                                 .shadow(color: .black.opacity(0.3), radius: 4, y: 2)
