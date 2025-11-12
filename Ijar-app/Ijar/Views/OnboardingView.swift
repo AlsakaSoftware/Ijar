@@ -8,15 +8,15 @@ struct OnboardingView: View {
         OnboardingPage(
             icon: "hand.point.up.left.fill",
             title: "Swipe to Find Your Home",
-            description: "Swipe right on properties you love, left on ones you don't. Up to see more information",
+            description: "We'll send you properties that fit your criteria as soon as we find them!",
             accentColor: .rusticOrange
         ),
-        OnboardingPage(
-            icon: "clock.fill",
-            title: "Fresh Properties Twice Daily",
-            description: "We search at 9 AM and 6 PM daily. Get notified when we find something special.",
-            accentColor: .rusticOrange
-        ),
+//        OnboardingPage(
+//            icon: "clock.fill",
+//            title: "Fresh Properties Twice Daily",
+//            description: "We search at 9 AM and 6 PM daily. Get notified when we find something special.",
+//            accentColor: .rusticOrange
+//        ),
         OnboardingPage(
             icon: "magnifyingglass.circle.fill",
             title: "Explore Multiple Areas",
@@ -27,17 +27,17 @@ struct OnboardingView: View {
         OnboardingPage(
             icon: "mappin.circle.fill",
             title: "Places That Matter",
-            description: "Save locations in Settings. Each property shows journey times to your important places.",
+            description: "See journey times to your important places from each potential new home.",
             accentColor: .rusticOrange,
             screenshotName: "onboarding4"
         ),
-        OnboardingPage(
-            icon: "checklist",
-            title: "Track Your Progress",
-            description: "Keep notes on each property and track your viewing status as you move through the rental process.",
-            accentColor: .rusticOrange,
-            screenshotName: "onboarding5"
-        )
+//        OnboardingPage(
+//            icon: "checklist",
+//            title: "Track Your Progress",
+//            description: "Keep notes on each property and track your viewing status as you move through the rental process.",
+//            accentColor: .rusticOrange,
+//            screenshotName: "onboarding5"
+//        )
     ]
 
     var body: some View {
@@ -52,6 +52,7 @@ struct OnboardingView: View {
                     Button("Skip") {
                         completeOnboarding()
                     }
+                    .opacity(currentPage == pages.count - 1 ? 0 : 1)
                     .font(.system(size: 16, weight: .medium))
                     .foregroundColor(.warmBrown.opacity(0.7))
                     .padding(.trailing, 24)
