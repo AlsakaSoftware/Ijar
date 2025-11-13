@@ -847,7 +847,7 @@ struct PropertyDetailView: View {
                                         .font(.system(size: 16))
                                         .foregroundColor(.white)
                                     
-                                    Text("Call \(agentPhone)")
+                                    Text("Call Agent")
                                         .font(.system(size: 16, weight: .medium))
                                         .foregroundColor(.white)
                                     
