@@ -11,6 +11,7 @@ export interface SearchOptions {
   radius?: number;
   propertyTypes?: string;
   getAllPages?: boolean;
+  maxPages?: number;
   quiet?: boolean;
 }
 

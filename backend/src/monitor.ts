@@ -199,6 +199,7 @@ class PropertyMonitor {
         searchType: 'RENT', // Default to rent for now
         postcode: query.postcode, // Using postcode directly
         getAllPages: false,
+        maxPages: config.maxPagesToScrape,
         quiet: false // Show URL being scraped
       };
 
@@ -212,20 +213,20 @@ class PropertyMonitor {
       if (query.furnish_type) searchOptions.furnishTypes = query.furnish_type as any;
       if (query.radius) searchOptions.radius = query.radius;
       
-      // Get properties for this query (thumbnails only)
+      // Fetch first N pages (thumbnails only - fast!)
       const results = await this.scraper.searchProperties(searchOptions);
-      console.log(`    📊 Found ${results.properties.length} properties from Rightmove`);
+      console.log(`    📊 Scraped ${results.properties.length} properties from ${config.maxPagesToScrape} page(s)`);
 
       // Filter for properties that are NEW for this specific query
       const newPropertiesForQuery = await this.supabase.getNewPropertiesForQuery(query, results.properties);
-      console.log(`    🔍 ${newPropertiesForQuery.length} are new (${results.properties.length - newPropertiesForQuery.length} already seen for this query)`);
+      console.log(`    🔍 ${newPropertiesForQuery.length} are new (${results.properties.length - newPropertiesForQuery.length} already seen)`);
 
       if (newPropertiesForQuery.length === 0) {
         console.log(`    📭 No new properties to process for query: ${query.name}`);
         return { newCount: 0, errors: [] };
       }
 
-      // Take top N new properties (e.g., top 5)
+      // Take top N new properties (e.g., top 7)
       const topNewProperties = newPropertiesForQuery.slice(0, config.maxHDPropertiesPerQuery);
       console.log(`    🎯 Processing top ${topNewProperties.length} new properties`);
 

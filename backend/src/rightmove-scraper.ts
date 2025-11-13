@@ -136,18 +136,20 @@ export class RightmoveScraper {
   }
 
   async searchProperties(options: SearchOptions): Promise<SearchResults> {
-    const { getAllPages = false, quiet = false } = options;
+    const { getAllPages = false, maxPages, quiet = false } = options;
     let allProperties: RightmoveProperty[] = [];
     let index = 0;
     let totalProperties = 0;
+    let pagesFetched = 0;
+    let shouldContinue = true;
 
-    do {
+    while (shouldContinue) {
       const url = this.buildSearchUrl(options, index);
-      if (!quiet) console.log(`Fetching page ${Math.floor(index/24) + 1}: ${url}`);
-      
+      if (!quiet) console.log(`Fetching page ${pagesFetched + 1}: ${url}`);
+
       try {
         const response = await this.fetchPage(url);
-        
+
         if (response.statusCode === 404) {
           throw new Error(`Page not found (404) - Invalid search parameters or location identifier`);
         }
@@ -157,37 +159,62 @@ export class RightmoveScraper {
         }
 
         const nextData = this.extractNextData(response.data);
-        
+
         if (nextData?.props?.pageProps?.searchResults) {
           const searchResults = nextData.props.pageProps.searchResults;
           const properties = searchResults.properties || [];
-          
+
           allProperties = allProperties.concat(properties);
           totalProperties = searchResults.pagination?.total || 0;
-          
-          if (!quiet) console.log(`Got ${properties.length} properties from this page`);
-          
-          if (!getAllPages || properties.length === 0) break;
-          
+          pagesFetched++;
+
+          if (!quiet) console.log(`Got ${properties.length} properties from this page (total available: ${totalProperties}, fetched so far: ${allProperties.length})`);
+
+          // Stop if: no properties returned
+          if (properties.length === 0) {
+            shouldContinue = false;
+            break;
+          }
+
+          // Stop if not getting all pages and no maxPages limit (single page mode)
+          if (!getAllPages && !maxPages) {
+            shouldContinue = false;
+            break;
+          }
+
+          // Stop if reached maxPages limit
+          if (maxPages && pagesFetched >= maxPages) {
+            shouldContinue = false;
+            break;
+          }
+
+          // Stop if getAllPages is true and we've fetched everything
+          if (getAllPages && allProperties.length >= totalProperties) {
+            shouldContinue = false;
+            break;
+          }
+
           index += 24; // Rightmove shows 24 properties per page
-          
-          // Add delay to avoid rate limiting
+
+          // Add delay to avoid rate limiting (skip for last page)
           await new Promise(resolve => setTimeout(resolve, 1000));
-          
+
         } else {
           if (!quiet) console.warn('No search results found in response');
+          shouldContinue = false;
           break;
         }
       } catch (error) {
-        if (!quiet) console.error(`Failed to fetch page ${Math.floor(index/24) + 1}:`, error);
+        if (!quiet) console.error(`Failed to fetch page ${pagesFetched + 1}:`, error);
+        shouldContinue = false;
         break;
       }
-    } while (index < totalProperties);
+    }
 
     return {
       properties: allProperties,
       total: totalProperties,
-      pages: Math.floor(index/24) + 1
+      pages: pagesFetched
     };
   }
 

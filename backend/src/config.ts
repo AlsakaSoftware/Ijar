@@ -5,8 +5,12 @@ export const config = {
   enableHDImages: true,
 
   // Number of NEW properties to enhance with HD images per query
-  // Now that we filter duplicates before HD fetching, this is more efficient
-  maxHDPropertiesPerQuery: 10,
+  // Sweet spot: 7 properties provides value without overwhelming users
+  maxHDPropertiesPerQuery: 7,
+
+  // Number of pages to scrape from Rightmove (24 properties per page)
+  // 2 pages = 48 properties to check for new ones
+  maxPagesToScrape: 2,
 
   // Delay between HD image requests (milliseconds) - important for rate limiting
   hdImageDelay: 2000,
