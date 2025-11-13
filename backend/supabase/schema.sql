@@ -124,8 +124,9 @@ CREATE POLICY "Users manage own property actions" ON user_property_action
     FOR ALL USING (auth.uid() = user_id);
 
 -- Property feed - shows new recommendations for the user (excluding seen ones)
+-- No limit - returns all unseen properties (app only renders 3 cards at a time)
 CREATE OR REPLACE VIEW property_feed AS
-SELECT 
+SELECT
     p.*,
     qp.found_at,
     q.name as found_by_query
@@ -134,12 +135,11 @@ JOIN property p ON qp.property_id = p.id
 JOIN query q ON qp.query_id = q.id
 WHERE q.user_id = auth.uid()
 AND p.id NOT IN (
-    SELECT property_id 
-    FROM user_property_action 
+    SELECT property_id
+    FROM user_property_action
     WHERE user_id = auth.uid()
 )
-ORDER BY qp.found_at DESC
-LIMIT 50;
+ORDER BY qp.found_at DESC;
 
 -- View for saved properties
 CREATE OR REPLACE VIEW saved_properties AS
