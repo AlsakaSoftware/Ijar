@@ -1,4 +1,5 @@
 import SwiftUI
+import Kingfisher
 
 struct CardSwipeView: View {
     @EnvironmentObject var coordinator: HomeFeedCoordinator
@@ -43,17 +44,23 @@ struct CardSwipeView: View {
         .task {
             await propertyService.loadPropertiesForUser()
             await searchService.loadUserQueries()
+            prefetchTopProperties()
             ambientAnimation = true
         }
         .refreshable {
             await propertyService.loadPropertiesForUser()
+            prefetchTopProperties()
         }
         .onChange(of: scenePhase) { oldPhase, newPhase in
             if newPhase == .active && oldPhase == .background {
                 Task {
                     await propertyService.loadPropertiesForUser()
+                    prefetchTopProperties()
                 }
             }
+        }
+        .onChange(of: propertyService.properties.count) { _, _ in
+            prefetchTopProperties()
         }
         .sheet(isPresented: $showingCreateQuery) {
             CreateSearchQueryView { query in
@@ -301,6 +308,26 @@ struct CardSwipeView: View {
             UserDefaults.standard.set(true, forKey: UserDefaultsKeys.hasTriggeredFirstQuerySearch)
             showingSearchStartedAlert = true
         }
+    }
+
+    private func prefetchTopProperties() {
+        // Prefetch images for the top 3 properties
+        let propertiesToPrefetch = Array(propertyService.properties.prefix(3))
+
+        // Get all images from each property
+        let urls = propertiesToPrefetch.flatMap { property in
+            property.images.compactMap { URL(string: $0) }
+        }
+
+        guard !urls.isEmpty else { return }
+
+        // Start prefetching with Kingfisher
+        let prefetcher = ImagePrefetcher(urls: urls)
+        prefetcher.start()
+
+        #if DEBUG
+        print("🔄 Prefetching \(urls.count) images for \(propertiesToPrefetch.count) properties")
+        #endif
     }
 }
 

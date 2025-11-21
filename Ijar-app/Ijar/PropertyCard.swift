@@ -1,4 +1,5 @@
 import SwiftUI
+import Kingfisher
 
 struct PropertyCard: View {
     let property: Property
@@ -125,9 +126,8 @@ struct PropertyCard: View {
         ZStack {
             TabView(selection: $currentImageIndex) {
                 ForEach(0..<property.images.count, id: \.self) { index in
-                    AsyncImage(url: URL(string: property.images[index])) { phase in
-                        switch phase {
-                        case .empty:
+                    KFImage(URL(string: property.images[index]))
+                        .placeholder {
                             ZStack {
                                 LinearGradient(
                                     gradient: Gradient(colors: [
@@ -142,13 +142,8 @@ struct PropertyCard: View {
                                     .tint(.coffeeBean)
                             }
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        case .success(let image):
-                            image
-                                .renderingMode(.original)
-                                .resizable()
-                                .aspectRatio(contentMode: .fill)
-                                .ignoresSafeArea()
-                        case .failure(_):
+                        }
+                        .onFailure { _ in
                             LinearGradient(
                                 gradient: Gradient(colors: [
                                     Color.warmCream,
@@ -162,11 +157,11 @@ struct PropertyCard: View {
                                     .font(.system(size: 60))
                                     .foregroundColor(.coffeeBean.opacity(0.6))
                             }
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        @unknown default:
-                            EmptyView()
                         }
-                    }
+                        .resizable()
+                        .fade(duration: 0.25)
+                        .aspectRatio(contentMode: .fill)
+                        .ignoresSafeArea()
                     .tag(index)
                 }
             }
