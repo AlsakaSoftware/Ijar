@@ -14,8 +14,7 @@ struct SearchQueriesView: View {
     var body: some View {
         Group {
             if searchService.isLoading && searchService.queries.isEmpty {
-                ProgressView()
-                    .tint(.rusticOrange)
+                CircularLoadingView()
             } else if searchService.queries.isEmpty {
                 emptyStateView
             } else {

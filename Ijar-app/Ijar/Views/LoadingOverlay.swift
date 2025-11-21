@@ -6,9 +6,7 @@ struct LoadingOverlay: View {
             Color.black.opacity(0.1)
                 .ignoresSafeArea()
 
-            ProgressView()
-                .scaleEffect(1.5)
-                .tint(.rusticOrange)
+            CircularLoadingView()
         }
     }
 }

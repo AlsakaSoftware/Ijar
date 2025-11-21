@@ -67,8 +67,7 @@ struct SignInView: View {
                     .padding(.horizontal, 40)
 
                     if authService.isLoading {
-                        ProgressView()
-                            .tint(.rusticOrange)
+                        CircularLoadingView()
                     }
                 }
 
