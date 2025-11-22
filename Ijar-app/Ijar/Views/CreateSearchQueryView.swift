@@ -75,7 +75,8 @@ struct CreateSearchQueryView: View {
                                 }
 
                             if isGeocoding {
-                                CircularLoadingView()
+                                ProgressView()
+                                    .scaleEffect(0.8)
                             } else if !postcode.isEmpty && geocodingError == nil {
                                 Image(systemName: "checkmark.circle.fill")
                                     .foregroundColor(.green)

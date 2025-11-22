@@ -199,7 +199,7 @@ struct AddLocationView: View {
 
                 ToolbarItem(placement: .navigationBarTrailing) {
                     if isGeocoding {
-                        CircularLoadingView()
+                        ProgressView()
                     } else {
                         Button("Save") {
                             saveLocation()
@@ -287,7 +287,7 @@ struct EditLocationView: View {
 
                 ToolbarItem(placement: .navigationBarTrailing) {
                     if isGeocoding {
-                        CircularLoadingView()
+                        ProgressView()
                     } else {
                         Button("Save") {
                             updateLocation()

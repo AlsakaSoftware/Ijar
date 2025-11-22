@@ -364,7 +364,8 @@ struct PropertyDetailView: View {
                                 .fill(Color.warmBrown.opacity(0.1))
                                 .frame(height: 400)
                                 .overlay {
-                                    CircularLoadingView()
+                                    ProgressView()
+                                        .tint(.warmBrown)
                                 }
                         case .failure:
                             Rectangle()
@@ -585,7 +586,8 @@ struct PropertyDetailView: View {
 
             if isLoadingTransport {
                 HStack(spacing: 8) {
-                    CircularLoadingView()
+                    ProgressView()
+                        .tint(.rusticOrange)
                     Text("Finding stations...")
                         .font(.system(size: 13))
                         .foregroundColor(.warmBrown.opacity(0.7))
@@ -705,7 +707,8 @@ struct PropertyDetailView: View {
 
             if isLoadingJourneys {
                 HStack(spacing: 8) {
-                    CircularLoadingView()
+                    ProgressView()
+                        .tint(.rusticOrange)
                     Text("Calculating journeys...")
                         .font(.system(size: 13))
                         .foregroundColor(.warmBrown.opacity(0.7))
@@ -959,7 +962,8 @@ struct FullScreenImageGallery: View {
                                         }
                                     }
                             case .empty:
-                                CircularLoadingView()
+                                ProgressView()
+                                    .tint(.white)
                             case .failure:
                                 Image(systemName: "photo")
                                     .font(.system(size: 50))

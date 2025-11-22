@@ -207,8 +207,9 @@ struct SavedPropertyCard: View {
                     
                     Group {
                         if isLoading {
-                            CircularLoadingView()
-                                .shadow(color: .black.opacity(0.2), radius: 3, y: 2)
+                            ProgressView()
+                                .scaleEffect(1.5)
+                                .shadow(color: .white, radius: 6, y: 3)
                                 .frame(width: 30, height: 30)
                         } else {
                             Button(action: {

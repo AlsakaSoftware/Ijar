@@ -137,7 +137,9 @@ struct PropertyCard: View {
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                 )
-                                CircularLoadingView()
+                                ProgressView()
+                                    .scaleEffect(1.2)
+                                    .tint(.coffeeBean)
                             }
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                         }
