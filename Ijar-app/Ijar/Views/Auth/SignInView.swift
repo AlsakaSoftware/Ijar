@@ -26,7 +26,7 @@ struct SignInView: View {
                 // Branding
                 VStack(spacing: 5) {
                     Text("SupHomey")
-                        .font(.system(size: 50, weight: .black, design: .rounded))
+                        .font(.system(size: 45, weight: .black, design: .rounded))
                         .foregroundColor(.coffeeBean)
 
                     Text("Rightmove went to therapy")
