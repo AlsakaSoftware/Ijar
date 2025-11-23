@@ -20,7 +20,11 @@ struct CardSwipeView: View {
     var body: some View {
             VStack {
                 if propertyService.properties.isEmpty {
-                    emptyStateView
+                    if propertyService.isLoading {
+                        loadingView
+                    } else {
+                        emptyStateView
+                    }
                 } else {
                     propertyCounter
                         .padding(.top, 25)
@@ -31,7 +35,7 @@ struct CardSwipeView: View {
                         .padding(.vertical, 15)
 
                     actionButtons
-                    
+
                     Spacer()
 
                 }
@@ -81,6 +85,25 @@ struct CardSwipeView: View {
     }
     
     // MARK: - View Components
+    private var loadingView: some View {
+        VStack(spacing: 0) {
+            Spacer()
+
+            VStack(spacing: 16) {
+                ProgressView()
+                    .scaleEffect(1.2)
+                    .tint(.rusticOrange)
+
+                Text("Finding your matches...")
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(.warmBrown)
+            }
+
+            Spacer()
+        }
+        .frame(maxWidth: .infinity)
+    }
+
     private var emptyStateView: some View {
         let hasQueries = !searchService.queries.isEmpty
 
