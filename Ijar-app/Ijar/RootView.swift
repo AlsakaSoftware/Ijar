@@ -33,10 +33,17 @@ struct RootContentView: View {
                 TabView(selection: $coordinator.selectedTab) {
                     HomeFeedRootView()
                         .tabItem {
-                            Image(systemName: "house.fill")
-                            Text("Home")
+                            Image(systemName: "sparkles")
+                            Text("For You")
                         }
                         .tag(AppDestination.homeFeed)
+
+                    BrowseRootView()
+                        .tabItem {
+                            Image(systemName: "magnifyingglass")
+                            Text("Explore")
+                        }
+                        .tag(AppDestination.browse)
 
                     SavedPropertiesRootView()
                         .tabItem {
@@ -44,13 +51,6 @@ struct RootContentView: View {
                             Text("Saved")
                         }
                         .tag(AppDestination.savedProperties)
-
-                    BrowseRootView()
-                        .tabItem {
-                            Image(systemName: "magnifyingglass")
-                            Text("Browse")
-                        }
-                        .tag(AppDestination.browse)
 
                     ProfileRootView()
                         .tabItem {

@@ -21,9 +21,9 @@ struct ProfileView: View {
             // Main actions
             VStack(spacing: 0) {
                 ProfileMenuRow(
-                    icon: "magnifyingglass.circle.fill",
-                    title: "Areas I'm Exploring",
-                    subtitle: "Manage the neighborhoods you're searching",
+                    icon: "sparkles",
+                    title: "For You Areas",
+                    subtitle: "Add areas to get personalized property matches",
                     action: {
                         appCoordinator.profilePath.append(ProfileDestination.searchQueries)
                     }

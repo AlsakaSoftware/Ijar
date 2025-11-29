@@ -3,6 +3,7 @@ import Kingfisher
 
 struct CardSwipeView: View {
     @EnvironmentObject var coordinator: HomeFeedCoordinator
+    @EnvironmentObject var appCoordinator: AppCoordinator
     @StateObject private var propertyService = PropertyService()
     @StateObject private var searchService = SearchQueryService()
     @StateObject private var monitorService = MonitorService()
@@ -12,6 +13,7 @@ struct CardSwipeView: View {
     @State private var ambientAnimation = false
     @State private var showingCreateQuery = false
     @State private var showingSearchStartedAlert = false
+    @State private var showingAreasSheet = false
 
     private let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
     private let selectionFeedback = UISelectionFeedbackGenerator()
@@ -76,6 +78,12 @@ struct CardSwipeView: View {
                     await propertyService.loadPropertiesForUser()
                 }
             }
+        }
+        .sheet(isPresented: $showingAreasSheet) {
+            NavigationStack {
+                SearchQueriesView()
+            }
+            .presentationDragIndicator(.visible)
         }
         .alert("Your First Search is Live!", isPresented: $showingSearchStartedAlert) {
             Button("Got it!") { }
@@ -266,27 +274,39 @@ struct CardSwipeView: View {
     }
     
     private var propertyCounter: some View {
-        HStack(spacing: 6) {
-            Circle()
-                .fill(Color.rusticOrange)
-                .frame(width: 8, height: 8)
-            
-            Text("\(propertyService.properties.count) to explore")
-                .font(.system(size: 15, weight: .bold, design: .rounded))
-                .foregroundColor(.coffeeBean)
+        Button {
+            showingAreasSheet = true
+        } label: {
+            HStack(spacing: 6) {
+                Circle()
+                    .fill(Color.rusticOrange)
+                    .frame(width: 8, height: 8)
+
+                Text("\(propertyService.properties.count) to review")
+                    .font(.system(size: 15, weight: .bold, design: .rounded))
+                    .foregroundColor(.coffeeBean)
+
+                Text("•")
+                    .foregroundColor(.warmBrown.opacity(0.4))
+
+                Text("Edit areas")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(.rusticOrange)
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 8)
+            .background(
+                Capsule()
+                    .fill(Color.warmCream)
+                    .shadow(color: .rusticOrange.opacity(0.15), radius: 4, y: 2)
+                    .overlay(
+                        Capsule()
+                            .stroke(Color.rusticOrange.opacity(0.2), lineWidth: 1.5)
+                    )
+            )
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 8)
-        .background(
-            Capsule()
-                .fill(Color.warmCream)
-                .shadow(color: .rusticOrange.opacity(0.15), radius: 4, y: 2)
-                .overlay(
-                    Capsule()
-                        .stroke(Color.rusticOrange.opacity(0.2), lineWidth: 1.5)
-                )
-        )
-        .scaleEffect(ambientAnimation ? 1.05 : 1.0)
+        .buttonStyle(PlainButtonStyle())
+        .scaleEffect(ambientAnimation ? 1.02 : 1.0)
         .animation(.easeInOut(duration: 3).repeatForever(autoreverses: true), value: ambientAnimation)
     }
     
@@ -358,6 +378,7 @@ struct CardSwipeView: View {
     NavigationStack {
         CardSwipeView()
             .environmentObject(HomeFeedCoordinator())
+            .environmentObject(AppCoordinator())
     }
     .previewDevice("iPhone 15 Pro")
 }
@@ -366,6 +387,7 @@ struct CardSwipeView: View {
     NavigationStack {
         CardSwipeView()
             .environmentObject(HomeFeedCoordinator())
+            .environmentObject(AppCoordinator())
     }
     .previewDevice("iPhone SE (3rd generation)")
 }
@@ -374,6 +396,7 @@ struct CardSwipeView: View {
     NavigationStack {
         CardSwipeView()
             .environmentObject(HomeFeedCoordinator())
+            .environmentObject(AppCoordinator())
     }
     .previewDevice("iPhone 15 Pro Max")
 }

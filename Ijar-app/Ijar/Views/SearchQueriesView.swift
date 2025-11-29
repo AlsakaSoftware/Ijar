@@ -24,8 +24,17 @@ struct SearchQueriesView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.warmCream)
-        .navigationTitle("Areas I'm Exploring")
-        .navigationBarTitleDisplayMode(.large)
+        .safeAreaInset(edge: .top) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("We scan these areas multiple times a day and send matching properties to your For You feed.")
+                    .font(.system(size: 14))
+                    .foregroundColor(.warmBrown.opacity(0.8))
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .background(Color.warmCream)
+        }
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button(action: handleCreateQuery) {

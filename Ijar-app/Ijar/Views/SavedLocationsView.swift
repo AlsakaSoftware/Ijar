@@ -10,42 +10,62 @@ struct SavedLocationsView: View {
     @State private var limitMessage: String?
 
     var body: some View {
-        List {
+        VStack(spacing: 0) {
+            // Description
+            Text("Add your work, gym, or other important places. We'll show you commute times from every property.")
+                .font(.system(size: 14))
+                .foregroundColor(.warmBrown.opacity(0.8))
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 20)
+                .padding(.top, 8)
+                .padding(.bottom, 16)
+
             if locationsManager.locations.isEmpty {
+                Spacer()
                 VStack(spacing: 16) {
                     Image(systemName: "mappin.slash")
                         .font(.system(size: 50))
-                        .foregroundColor(.warmBrown.opacity(0.5))
+                        .foregroundColor(.warmBrown.opacity(0.3))
 
                     Text("No places yet")
                         .font(.system(size: 18, weight: .medium))
                         .foregroundColor(.coffeeBean)
 
-                    Text("Add your work, gym, or anywhere you visit regularly. We'll show journey times from every property.")
-                        .font(.system(size: 14))
-                        .foregroundColor(.warmBrown.opacity(0.7))
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 40)
+                    Button(action: handleAddLocation) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "plus.circle.fill")
+                            Text("Add a place")
+                        }
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundColor(.rusticOrange)
+                    }
                 }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 60)
-                .listRowBackground(Color.clear)
+                Spacer()
             } else {
-                ForEach(locationsManager.locations) { location in
-                    LocationRow(location: location, onEdit: {
-                        locationToEdit = location
-                    }, onDelete: {
-                        locationsManager.deleteLocation(location)
-                    })
+                // Locations in a card
+                VStack(spacing: 0) {
+                    ForEach(Array(locationsManager.locations.enumerated()), id: \.element.id) { index, location in
+                        LocationRow(location: location, onEdit: {
+                            locationToEdit = location
+                        }, onDelete: {
+                            locationsManager.deleteLocation(location)
+                        })
+
+                        if index < locationsManager.locations.count - 1 {
+                            Divider()
+                                .padding(.leading, 52)
+                        }
+                    }
                 }
-                .onDelete(perform: locationsManager.deleteLocations)
+                .background(Color.white)
+                .cornerRadius(12)
+                .padding(.horizontal, 20)
+
+                Spacer()
             }
         }
-        .scrollContentBackground(.hidden)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.warmCream)
-        .navigationTitle("Places That Matter")
-        .navigationBarTitleDisplayMode(.large)
-        .tint(.rusticOrange)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button(action: handleAddLocation) {
@@ -80,55 +100,46 @@ struct LocationRow: View {
     let onDelete: () -> Void
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 14) {
             Image(systemName: locationIcon)
                 .font(.system(size: 20))
                 .foregroundColor(.rusticOrange)
-                .frame(width: 32, height: 32)
+                .frame(width: 40, height: 40)
                 .background(
                     Circle()
                         .fill(Color.rusticOrange.opacity(0.1))
                 )
 
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 3) {
                 Text(location.name)
-                    .font(.system(size: 16, weight: .medium))
+                    .font(.system(size: 17, weight: .medium))
                     .foregroundColor(.coffeeBean)
 
                 Text(location.postcode)
                     .font(.system(size: 14))
-                    .foregroundColor(.warmBrown.opacity(0.7))
+                    .foregroundColor(.warmBrown.opacity(0.6))
             }
 
             Spacer()
 
-            HStack(spacing: 8) {
+            HStack(spacing: 12) {
                 Button(action: onEdit) {
                     Image(systemName: "pencil")
                         .font(.system(size: 16))
-                        .foregroundColor(.rusticOrange)
-                        .frame(width: 32, height: 32)
-                        .background(
-                            Circle()
-                                .fill(Color.rusticOrange.opacity(0.1))
-                        )
+                        .foregroundColor(.warmBrown.opacity(0.5))
                 }
                 .buttonStyle(.plain)
 
                 Button(action: onDelete) {
                     Image(systemName: "trash")
                         .font(.system(size: 16))
-                        .foregroundColor(.red)
-                        .frame(width: 32, height: 32)
-                        .background(
-                            Circle()
-                                .fill(Color.red.opacity(0.1))
-                        )
+                        .foregroundColor(.warmBrown.opacity(0.5))
                 }
                 .buttonStyle(.plain)
             }
         }
-        .padding(.vertical, 8)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
     }
 
     private var locationIcon: String {
