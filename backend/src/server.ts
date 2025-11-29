@@ -27,13 +27,11 @@ interface LiveSearchResponse {
 async function handleSearch(body: LiveSearchRequest): Promise<LiveSearchResponse> {
   const scraper = new RightmoveScraper();
 
-  let furnishTypes: 'furnished' | 'unfurnished' | 'partFurnished' | 'furnished_or_unfurnished' | undefined;
+  let furnishTypes: 'furnished' | 'unfurnished' | 'furnished_or_unfurnished' | undefined;
   if (body.furnishType === 'furnished') {
     furnishTypes = 'furnished';
   } else if (body.furnishType === 'unfurnished') {
     furnishTypes = 'unfurnished';
-  } else if (body.furnishType === 'partFurnished') {
-    furnishTypes = 'partFurnished';
   }
 
   const results = await scraper.searchProperties({
