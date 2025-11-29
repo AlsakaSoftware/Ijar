@@ -1,0 +1,281 @@
+import SwiftUI
+
+struct BrowseResultsView: View {
+    @EnvironmentObject private var coordinator: BrowseCoordinator
+    @StateObject private var searchService = LiveSearchService()
+    @StateObject private var propertyService = PropertyService()
+
+    let params: BrowseSearchParams
+
+    // Local filter state (for editing)
+    @State private var minPrice: Int?
+    @State private var maxPrice: Int?
+    @State private var minBedrooms: Int?
+    @State private var maxBedrooms: Int?
+    @State private var minBathrooms: Int?
+    @State private var maxBathrooms: Int?
+    @State private var radius: Double?
+    @State private var furnishType: String?
+
+    @State private var showFilters = false
+    @State private var animateContent = false
+    @State private var savedPropertyIds: Set<String> = []
+
+    var body: some View {
+        ZStack {
+            Color.warmCream.ignoresSafeArea()
+
+            if searchService.isLoading && searchService.properties.isEmpty {
+                loadingView
+            } else if searchService.properties.isEmpty && searchService.error == nil {
+                emptyView
+            } else if let error = searchService.error {
+                errorView(error)
+            } else {
+                resultsListView
+            }
+        }
+        .navigationTitle(params.areaName)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button {
+                    showFilters = true
+                } label: {
+                    Image(systemName: "slider.horizontal.3")
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundColor(.rusticOrange)
+                }
+            }
+        }
+        .sheet(isPresented: $showFilters) {
+            FilterSheet(
+                minPrice: $minPrice,
+                maxPrice: $maxPrice,
+                minBedrooms: $minBedrooms,
+                maxBedrooms: $maxBedrooms,
+                minBathrooms: $minBathrooms,
+                maxBathrooms: $maxBathrooms,
+                radius: $radius,
+                furnishType: $furnishType
+            )
+            .presentationDetents([.medium, .large])
+//            .presentationDragIndicator(.visible)
+            .onDisappear {
+                performSearch()
+            }
+        }
+        .onAppear {
+            // Initialize local state from params
+            minPrice = params.minPrice
+            maxPrice = params.maxPrice
+            minBedrooms = params.minBedrooms
+            maxBedrooms = params.maxBedrooms
+            minBathrooms = params.minBathrooms
+            maxBathrooms = params.maxBathrooms
+            radius = params.radius
+            furnishType = params.furnishType
+
+            if searchService.properties.isEmpty {
+                performSearch()
+            }
+        }
+    }
+
+    // MARK: - Views
+
+    private var loadingView: some View {
+        VStack(spacing: 16) {
+            ProgressView()
+                .scaleEffect(1.2)
+                .tint(.rusticOrange)
+
+            Text("Searching...")
+                .font(.system(size: 16, weight: .medium))
+                .foregroundColor(.warmBrown)
+        }
+    }
+
+    private var emptyView: some View {
+        VStack(spacing: 20) {
+            Image(systemName: "house.slash")
+                .font(.system(size: 50, weight: .light))
+                .foregroundColor(.warmBrown.opacity(0.4))
+
+            VStack(spacing: 8) {
+                Text("No properties found")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundColor(.coffeeBean)
+
+                Text("Try adjusting your filters or searching a different area")
+                    .font(.system(size: 15))
+                    .foregroundColor(.warmBrown)
+                    .multilineTextAlignment(.center)
+            }
+
+            Button {
+                showFilters = true
+            } label: {
+                Text("Adjust Filters")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 12)
+                    .background(Color.rusticOrange)
+                    .cornerRadius(10)
+            }
+        }
+        .padding(40)
+    }
+
+    private func errorView(_ error: String) -> some View {
+        VStack(spacing: 20) {
+            Image(systemName: "exclamationmark.triangle")
+                .font(.system(size: 50, weight: .light))
+                .foregroundColor(.orange)
+
+            VStack(spacing: 8) {
+                Text("Something went wrong")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundColor(.coffeeBean)
+
+                Text(error)
+                    .font(.system(size: 15))
+                    .foregroundColor(.warmBrown)
+                    .multilineTextAlignment(.center)
+            }
+
+            Button {
+                performSearch()
+            } label: {
+                Text("Try Again")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 12)
+                    .background(Color.rusticOrange)
+                    .cornerRadius(10)
+            }
+        }
+        .padding(40)
+    }
+
+    private var resultsListView: some View {
+        ScrollView {
+            LazyVStack(spacing: 16) {
+                // Results count
+                HStack {
+                    Text("\(searchService.total) properties")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(.warmBrown)
+
+                    Spacer()
+
+                    if searchService.hasMore {
+                        Text("Showing \(searchService.properties.count)")
+                            .font(.system(size: 13))
+                            .foregroundColor(.warmBrown.opacity(0.7))
+                    }
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 8)
+
+                // Property cards
+                ForEach(Array(searchService.properties.enumerated()), id: \.element.id) { index, property in
+                    PropertyListCard(
+                        property: property,
+                        isSaved: savedPropertyIds.contains(property.id),
+                        onTap: {
+                            coordinator.navigate(to: .propertyDetail(property: property))
+                        },
+                        onSaveToggle: {
+                            Task {
+                                if savedPropertyIds.contains(property.id) {
+                                    // Unsave
+                                    let success = await propertyService.unsaveLiveSearchProperty(property)
+                                    if success {
+                                        savedPropertyIds.remove(property.id)
+                                    }
+                                } else {
+                                    // Save
+                                    let success = await propertyService.saveLiveSearchProperty(property)
+                                    if success {
+                                        savedPropertyIds.insert(property.id)
+                                    }
+                                }
+                            }
+                        }
+                    )
+                    .padding(.horizontal, 20)
+                    .opacity(animateContent ? 1 : 0)
+                    .offset(y: animateContent ? 0 : 20)
+                    .animation(
+                        .easeOut(duration: 0.3).delay(Double(min(index, 8)) * 0.03),
+                        value: animateContent
+                    )
+                }
+
+                // Load more
+                if searchService.hasMore {
+                    Button {
+                        Task {
+                            await searchService.loadMore()
+                        }
+                    } label: {
+                        HStack(spacing: 8) {
+                            if searchService.isLoadingMore {
+                                ProgressView()
+                                    .tint(.rusticOrange)
+                            } else {
+                                Text("Load more")
+                            }
+                        }
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundColor(.rusticOrange)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background(Color.rusticOrange.opacity(0.1))
+                        .cornerRadius(10)
+                    }
+                    .disabled(searchService.isLoadingMore)
+                    .padding(.horizontal, 20)
+                }
+            }
+            .padding(.bottom, 20)
+        }
+        .scrollIndicators(.hidden)
+        .onAppear {
+            withAnimation {
+                animateContent = true
+            }
+        }
+    }
+
+    // MARK: - Actions
+
+    private func performSearch() {
+        animateContent = false
+        Task {
+            await searchService.search(
+                postcode: params.postcode,
+                minPrice: minPrice,
+                maxPrice: maxPrice,
+                minBedrooms: minBedrooms,
+                maxBedrooms: maxBedrooms,
+                minBathrooms: minBathrooms,
+                maxBathrooms: maxBathrooms,
+                radius: radius,
+                furnishType: furnishType
+            )
+
+            // Check which properties are already saved
+            let saved = await propertyService.getSavedPropertyIds(from: searchService.properties)
+            savedPropertyIds = saved
+
+            withAnimation {
+                animateContent = true
+            }
+        }
+    }
+}
+

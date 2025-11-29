@@ -130,12 +130,13 @@ struct SavedPropertiesView: View {
         ScrollView {
             LazyVStack(spacing: 16) {
                 ForEach(Array(propertyService.savedProperties.enumerated()), id: \.element.id) { index, property in
-                    SavedPropertyCard(
+                    PropertyListCard(
                         property: property,
+                        isSaved: true,
                         onTap: {
                             coordinator.navigate(to: .propertyDetail(property: property))
                         },
-                        onRemove: {
+                        onSaveToggle: {
                             Task {
                                 await propertyService.unsaveProperty(property)
                             }
@@ -154,154 +155,6 @@ struct SavedPropertiesView: View {
             .padding(.vertical, 20)
         }
         .scrollIndicators(.hidden)
-    }
-}
-
-struct SavedPropertyCard: View {
-    let property: Property
-    let onTap: () -> Void
-    let onRemove: () -> Void
-    @State private var isPressed = false
-    @State private var showingUnsaveConfirmation = false
-    @State private var isLoading = false
-
-    var body: some View {
-        Button(action: onTap) {
-            VStack(alignment: .leading, spacing: 0) {
-                // Property Image
-                ZStack(alignment: .topTrailing) {
-                    if let firstImage = property.images.first,
-                       let imageURL = URL(string: firstImage) {
-                        AsyncImage(url: imageURL) { phase in
-                            switch phase {
-                            case .success(let image):
-                                image
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fill)
-                                    .frame(height: 200)
-                                    .clipped()
-                            case .empty:
-                                Rectangle()
-                                    .fill(Color.warmBrown.opacity(0.1))
-                                    .frame(height: 200)
-                            case .failure:
-                                Rectangle()
-                                    .fill(
-                                        LinearGradient(
-                                            colors: [Color.warmCream, Color.warmBrown.opacity(0.2)],
-                                            startPoint: .topLeading,
-                                            endPoint: .bottomTrailing
-                                        )
-                                    )
-                                    .frame(height: 200)
-                                    .overlay {
-                                        Image(systemName: "photo")
-                                            .font(.system(size: 40))
-                                            .foregroundColor(.warmBrown.opacity(0.4))
-                                    }
-                            @unknown default:
-                                EmptyView()
-                            }
-                        }
-                    }
-                    
-                    Group {
-                        if isLoading {
-                            ProgressView()
-                                .scaleEffect(1.5)
-                                .shadow(color: .white, radius: 6, y: 3)
-                                .frame(width: 30, height: 30)
-                        } else {
-                            Button(action: {
-                                showingUnsaveConfirmation = true
-                            }) {
-                                ZStack {
-                                    Image(systemName: "heart.fill")
-                                        .font(.system(size: 30))
-                                        .foregroundColor(.white)
-                                    
-                                    Image(systemName: "heart.fill")
-                                        .font(.system(size: 25))
-                                        .foregroundColor(.rusticOrange)
-                                }
-                                .shadow(color: .black.opacity(0.3), radius: 4, y: 2)
-                            }
-                            .buttonStyle(PlainButtonStyle())
-                        }
-                    }
-                    .padding(12)
-                }
-                
-                // Property Details
-                VStack(alignment: .leading, spacing: 12) {
-                    // Price and features row
-                    HStack(alignment: .top) {
-                        Text(property.price)
-                            .font(.system(size: 24, weight: .bold, design: .rounded))
-                            .foregroundColor(.coffeeBean)
-                        
-                        Spacer()
-                        
-                        HStack(spacing: 12) {
-                            HStack(spacing: 4) {
-                                Image(systemName: "bed.double")
-                                    .font(.system(size: 14))
-                                Text("\(property.bedrooms)")
-                            }
-                            
-                            HStack(spacing: 4) {
-                                Image(systemName: "shower")
-                                    .font(.system(size: 14))
-                                Text("\(property.bathrooms)")
-                            }
-                        }
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(.warmBrown.opacity(0.8))
-                    }
-                    
-                    // Address
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(property.address)
-                            .font(.system(size: 16, weight: .medium))
-                            .foregroundColor(.warmBrown)
-                            .lineLimit(2)
-                            .fixedSize(horizontal: false, vertical: true)
-                        
-                        if !property.area.isEmpty {
-                            Text(property.area)
-                                .font(.system(size: 14, weight: .regular))
-                                .foregroundColor(.warmBrown.opacity(0.7))
-                        }
-                    }
-                }
-                .padding(16)
-            }
-            .background(
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(Color.white)
-                    .shadow(
-                        color: .coffeeBean.opacity(isPressed ? 0.12 : 0.06),
-                        radius: isPressed ? 6 : 10,
-                        y: isPressed ? 3 : 5
-                    )
-            )
-            .scaleEffect(isPressed ? 0.97 : 1)
-        }
-        .buttonStyle(PlainButtonStyle())
-        .onLongPressGesture(minimumDuration: 0.1, maximumDistance: .infinity, pressing: { pressing in
-            withAnimation(.easeInOut(duration: 0.15)) {
-                isPressed = pressing
-            }
-        }, perform: {})
-        .alert("Remove from favorites?", isPresented: $showingUnsaveConfirmation) {
-            Button("Cancel", role: .cancel) { }
-            Button("Remove", role: .destructive) {
-                isLoading = true
-                onRemove()
-            }
-        } message: {
-            Text("This property will be removed from your saved list")
-        }
     }
 }
 

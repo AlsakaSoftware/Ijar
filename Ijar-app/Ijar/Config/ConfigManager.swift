@@ -54,6 +54,14 @@ struct ConfigManager {
         }
         return key
     }
+
+    var liveSearchAPIURL: String {
+        guard let url = config["LiveSearchAPIURL"] as? String,
+              !url.isEmpty else {
+            fatalError("LiveSearchAPIURL not configured in Config.plist")
+        }
+        return url
+    }
 }
 
 // MARK: - Debug Helper

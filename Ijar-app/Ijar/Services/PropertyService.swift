@@ -237,6 +237,321 @@ class PropertyService: ObservableObject {
         isLoading = false
     }
 
+    /// Save a property from live search results (inserts into Supabase first if needed)
+    func saveLiveSearchProperty(_ property: Property) async -> Bool {
+        do {
+            let user = try await supabase.auth.user()
+
+#if DEBUG
+            print("🔥 PropertyService: Saving live search property - ID: \(property.id)")
+#endif
+
+            // First, check if property already exists by rightmove_id
+            let rightmoveId = Int(property.id) ?? 0
+
+            struct ExistingProperty: Codable {
+                let id: String
+            }
+
+            let existing: [ExistingProperty] = try await supabase
+                .from("property")
+                .select("id")
+                .eq("rightmove_id", value: rightmoveId)
+                .execute()
+                .value
+
+            let propertyUUID: String
+
+            if let existingProp = existing.first {
+                // Property already exists, use existing UUID
+                propertyUUID = existingProp.id
+#if DEBUG
+                print("🔥 PropertyService: Property already exists with UUID: \(propertyUUID)")
+#endif
+            } else {
+                // Insert new property
+                struct NewProperty: Codable {
+                    let rightmove_id: Int
+                    let images: [String]
+                    let price: String
+                    let bedrooms: Int
+                    let bathrooms: Int
+                    let address: String
+                    let area: String?
+                    let rightmove_url: String?
+                    let agent_phone: String?
+                    let agent_name: String?
+                    let branch_name: String?
+                    let latitude: Double?
+                    let longitude: Double?
+                }
+
+                struct InsertedProperty: Codable {
+                    let id: String
+                }
+
+                let newProp = NewProperty(
+                    rightmove_id: rightmoveId,
+                    images: property.images,
+                    price: property.price,
+                    bedrooms: property.bedrooms,
+                    bathrooms: property.bathrooms,
+                    address: property.address,
+                    area: property.area.isEmpty ? nil : property.area,
+                    rightmove_url: property.rightmoveUrl,
+                    agent_phone: property.agentPhone,
+                    agent_name: property.agentName,
+                    branch_name: property.branchName,
+                    latitude: property.latitude,
+                    longitude: property.longitude
+                )
+
+                let inserted: [InsertedProperty] = try await supabase
+                    .from("property")
+                    .insert(newProp)
+                    .select("id")
+                    .execute()
+                    .value
+
+                guard let insertedProp = inserted.first else {
+                    throw NSError(domain: "PropertyService", code: 1, userInfo: [NSLocalizedDescriptionKey: "Failed to insert property"])
+                }
+
+                propertyUUID = insertedProp.id
+#if DEBUG
+                print("🔥 PropertyService: Inserted new property with UUID: \(propertyUUID)")
+#endif
+            }
+
+            // Check if there's already a saved action for this property
+            struct ExistingAction: Codable {
+                let action: String
+            }
+
+            let existingActions: [ExistingAction] = try await supabase
+                .from("user_property_action")
+                .select("action")
+                .eq("user_id", value: user.id.uuidString)
+                .eq("property_id", value: propertyUUID)
+                .execute()
+                .value
+
+            if let existingAction = existingActions.first {
+                if existingAction.action == "saved" {
+                    // Already saved, nothing to do
+#if DEBUG
+                    print("🔥 PropertyService: Property already saved, skipping")
+#endif
+                    return true
+                } else {
+                    // Update from "passed" to "saved"
+                    try await supabase
+                        .from("user_property_action")
+                        .update(["action": "saved"])
+                        .eq("user_id", value: user.id.uuidString)
+                        .eq("property_id", value: propertyUUID)
+                        .execute()
+#if DEBUG
+                    print("✅ PropertyService: Updated action to saved")
+#endif
+                    return true
+                }
+            }
+
+            // No existing action, insert new one
+            let actionData = UserPropertyAction(
+                user_id: user.id.uuidString,
+                property_id: propertyUUID,
+                action: "saved"
+            )
+
+            try await supabase
+                .from("user_property_action")
+                .insert(actionData)
+                .execute()
+
+#if DEBUG
+            print("✅ PropertyService: Successfully saved live search property")
+#endif
+
+            return true
+        } catch {
+#if DEBUG
+            print("❌ PropertyService: Failed to save live search property: \(error)")
+#endif
+            return false
+        }
+    }
+
+    /// Unsave a property from live search results
+    func unsaveLiveSearchProperty(_ property: Property) async -> Bool {
+        do {
+            let user = try await supabase.auth.user()
+
+            // Find the property UUID by rightmove_id
+            let rightmoveId = Int(property.id) ?? 0
+
+            struct ExistingProperty: Codable {
+                let id: String
+            }
+
+            let existing: [ExistingProperty] = try await supabase
+                .from("property")
+                .select("id")
+                .eq("rightmove_id", value: rightmoveId)
+                .execute()
+                .value
+
+            guard let existingProp = existing.first else {
+#if DEBUG
+                print("⚠️ PropertyService: Property not found in database")
+#endif
+                return false
+            }
+
+            // Update the action to passed
+            try await supabase
+                .from("user_property_action")
+                .update(["action": "passed"])
+                .eq("user_id", value: user.id.uuidString)
+                .eq("property_id", value: existingProp.id)
+                .execute()
+
+#if DEBUG
+            print("✅ PropertyService: Successfully unsaved live search property")
+#endif
+
+            return true
+        } catch {
+#if DEBUG
+            print("❌ PropertyService: Failed to unsave live search property: \(error)")
+#endif
+            return false
+        }
+    }
+
+    /// Check which live search properties are saved (batch operation)
+    func getSavedPropertyIds(from properties: [Property]) async -> Set<String> {
+        do {
+            let user = try await supabase.auth.user()
+
+            // Get all rightmove IDs from the properties
+            let rightmoveIds = properties.compactMap { Int($0.id) }
+
+#if DEBUG
+            print("🔥 getSavedPropertyIds: Checking \(rightmoveIds.count) rightmove IDs")
+#endif
+
+            guard !rightmoveIds.isEmpty else { return [] }
+
+            struct PropertyWithRightmoveId: Codable {
+                let id: String
+                let rightmove_id: Int
+            }
+
+            // Find all properties that exist in our database
+            let existingProperties: [PropertyWithRightmoveId] = try await supabase
+                .from("property")
+                .select("id, rightmove_id")
+                .in("rightmove_id", values: rightmoveIds)
+                .execute()
+                .value
+
+#if DEBUG
+            print("🔥 getSavedPropertyIds: Found \(existingProperties.count) existing properties in DB")
+            for prop in existingProperties {
+                print("   - rightmove_id: \(prop.rightmove_id) -> UUID: \(prop.id)")
+            }
+#endif
+
+            guard !existingProperties.isEmpty else { return [] }
+
+            // Get the UUIDs of existing properties
+            let propertyUUIDs = existingProperties.map { $0.id }
+
+            struct SavedAction: Codable {
+                let property_id: String
+            }
+
+            // Check which ones are saved by this user
+            let savedActions: [SavedAction] = try await supabase
+                .from("user_property_action")
+                .select("property_id")
+                .eq("user_id", value: user.id.uuidString)
+                .eq("action", value: "saved")
+                .in("property_id", values: propertyUUIDs)
+                .execute()
+                .value
+
+#if DEBUG
+            print("🔥 getSavedPropertyIds: Found \(savedActions.count) saved actions")
+            for action in savedActions {
+                print("   - saved property_id: \(action.property_id)")
+            }
+#endif
+
+            // Map back from UUID to rightmove_id
+            let savedUUIDs = Set(savedActions.map { $0.property_id })
+            let savedRightmoveIds = existingProperties
+                .filter { savedUUIDs.contains($0.id) }
+                .map { String($0.rightmove_id) }
+
+#if DEBUG
+            print("🔥 PropertyService: Found \(savedRightmoveIds.count) saved properties out of \(properties.count)")
+            print("   Saved rightmove IDs: \(savedRightmoveIds)")
+#endif
+
+            return Set(savedRightmoveIds)
+        } catch {
+#if DEBUG
+            print("❌ PropertyService: Failed to check saved properties: \(error)")
+#endif
+            return []
+        }
+    }
+
+    /// Check if a live search property is saved
+    func isLiveSearchPropertySaved(_ property: Property) async -> Bool {
+        do {
+            let user = try await supabase.auth.user()
+            let rightmoveId = Int(property.id) ?? 0
+
+            struct ExistingProperty: Codable {
+                let id: String
+            }
+
+            // First find the property by rightmove_id
+            let existing: [ExistingProperty] = try await supabase
+                .from("property")
+                .select("id")
+                .eq("rightmove_id", value: rightmoveId)
+                .execute()
+                .value
+
+            guard let existingProp = existing.first else {
+                return false
+            }
+
+            // Check if there's a saved action for this property
+            struct SavedAction: Codable {
+                let id: Int
+            }
+
+            let savedActions: [SavedAction] = try await supabase
+                .from("user_property_action")
+                .select("id")
+                .eq("user_id", value: user.id.uuidString)
+                .eq("property_id", value: existingProp.id)
+                .eq("action", value: "saved")
+                .execute()
+                .value
+
+            return !savedActions.isEmpty
+        } catch {
+            return false
+        }
+    }
+
     func unsaveProperty(_ property: Property) async -> Bool {
         do {
             let user = try await supabase.auth.user()

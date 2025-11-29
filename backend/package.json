@@ -5,8 +5,10 @@
   "main": "dist/monitor.js",
   "scripts": {
     "build": "tsc",
+    "start": "tsx src/server.ts",
     "scrape": "tsx src/scrape.ts",
     "monitor": "tsx src/monitor.ts",
+    "server": "tsx src/server.ts",
     "generate-workflows": "tsx scripts/generate-workflows.ts"
   },
   "dependencies": {

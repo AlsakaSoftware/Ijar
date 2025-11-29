@@ -45,6 +45,13 @@ struct RootContentView: View {
                         }
                         .tag(AppDestination.savedProperties)
 
+                    BrowseRootView()
+                        .tabItem {
+                            Image(systemName: "magnifyingglass")
+                            Text("Browse")
+                        }
+                        .tag(AppDestination.browse)
+
                     ProfileRootView()
                         .tabItem {
                             Image(systemName: "gearshape.fill")
