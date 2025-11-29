@@ -22,6 +22,7 @@ struct BrowseView: View {
     @State private var furnishType: String?
 
     @State private var showFilters = false
+    @FocusState private var isAreaFieldFocused: Bool
 
     private let geocodingService = GeocodingService()
 
@@ -66,6 +67,7 @@ struct BrowseView: View {
 
                             TextField("Enter area, city or postcode", text: $areaName)
                                 .font(.system(size: 16))
+                                .focused($isAreaFieldFocused)
                                 .onChange(of: areaName) { _, newValue in
                                     geocodeArea(newValue)
                                 }
@@ -91,6 +93,7 @@ struct BrowseView: View {
 
                         HStack(spacing: 12) {
                             Button {
+                                isAreaFieldFocused = false
                                 showFilters = true
                             } label: {
                                 HStack(spacing: 6) {
@@ -116,6 +119,7 @@ struct BrowseView: View {
                             }
 
                             Button {
+                                isAreaFieldFocused = false
                                 performSearch()
                             } label: {
                                 HStack(spacing: 8) {
@@ -171,8 +175,11 @@ struct BrowseView: View {
                 Spacer()
             }
         }
-        .navigationTitle("Browse")
+        .navigationTitle("Explore")
         .navigationBarTitleDisplayMode(.inline)
+        .onTapGesture {
+            isAreaFieldFocused = false
+        }
         .sheet(isPresented: $showFilters) {
             FilterSheet(
                 minPrice: $minPrice,
@@ -188,6 +195,9 @@ struct BrowseView: View {
         }
         .task {
             await queryService.loadUserQueries()
+        }
+        .onDisappear {
+            isAreaFieldFocused = false
         }
     }
 

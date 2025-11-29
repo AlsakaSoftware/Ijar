@@ -65,7 +65,7 @@ struct BrowseResultsView: View {
                 performSearch()
             }
         }
-        .onAppear {
+        .task(id: params.postcode) {
             // Initialize local state from params
             minPrice = params.minPrice
             maxPrice = params.maxPrice
@@ -76,9 +76,8 @@ struct BrowseResultsView: View {
             radius = params.radius
             furnishType = params.furnishType
 
-            if searchService.properties.isEmpty {
-                performSearch()
-            }
+            // Always search when params change
+            performSearch()
         }
     }
 
