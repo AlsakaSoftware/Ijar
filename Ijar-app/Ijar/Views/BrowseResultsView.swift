@@ -24,6 +24,7 @@ struct BrowseResultsView: View {
     @State private var hasLoadedInitialData = false
     @State private var showSaveSearchSheet = false
     @State private var hasSavedQuery = false
+    @State private var hasSeenFullExplainer = UserDefaults.standard.bool(forKey: "has_seen_save_search_explainer")
 
     private var activeFiltersCount: Int {
         var count = 0
@@ -227,43 +228,54 @@ struct BrowseResultsView: View {
     private var resultsListView: some View {
         ScrollView {
             LazyVStack(spacing: 16) {
-                // Save search button (only show if not already saved)
+                // Save search banner (only show if not already saved)
                 if shouldShowSaveButton {
-                    Button {
-                        showSaveSearchSheet = true
-                    } label: {
-                        HStack(spacing: 10) {
-                            Image(systemName: "bell.badge.fill")
-                                .font(.system(size: 16, weight: .medium))
+                    if hasSeenFullExplainer {
+                        // Compact CTA for subsequent visits
+                        Button {
+                            showSaveSearchSheet = true
+                        } label: {
+                            HStack(spacing: 10) {
+                                Image(systemName: "bell.badge.fill")
+                                    .font(.system(size: 16, weight: .medium))
 
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("Save this search")
-                                    .font(.system(size: 15, weight: .semibold))
-                                Text("Get notified about new properties")
-                                    .font(.system(size: 13))
-                                    .opacity(0.8)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Monitor this for me")
+                                        .font(.system(size: 15, weight: .semibold))
+                                    Text("Get new properties sent directly to your 'For You' feed")
+                                        .font(.system(size: 13))
+                                        .opacity(0.8)
+                                }
+
+                                Spacer()
+
+                                Image(systemName: "arrow.right")
+                                    .font(.system(size: 13, weight: .semibold))
+                                    .opacity(0.6)
                             }
-
-                            Spacer()
-
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 14, weight: .semibold))
-                                .opacity(0.5)
-                        }
-                        .foregroundColor(.white)
-                        .padding(16)
-                        .background(
-                            LinearGradient(
-                                colors: [Color.rusticOrange, Color.warmRed],
-                                startPoint: .leading,
-                                endPoint: .trailing
+                            .foregroundColor(.white)
+                            .padding(14)
+                            .background(
+                                LinearGradient(
+                                    colors: [Color.rusticOrange, Color.warmRed],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
                             )
-                        )
-                        .cornerRadius(12)
-                        .shadow(color: .rusticOrange.opacity(0.3), radius: 8, y: 4)
+                            .cornerRadius(12)
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.top, 12)
+                    } else {
+                        // Full explainer card for first time
+                        SaveSearchExplainerCard {
+                            showSaveSearchSheet = true
+                            UserDefaults.standard.set(true, forKey: "has_seen_save_search_explainer")
+                            hasSeenFullExplainer = true
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.top, 12)
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 12)
                 }
 
                 // Results count
@@ -381,4 +393,3 @@ struct BrowseResultsView: View {
         }
     }
 }
-
