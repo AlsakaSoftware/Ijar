@@ -21,6 +21,16 @@ struct BrowseResultsView: View {
     @State private var animateContent = false
     @State private var savedPropertyIds: Set<String> = []
 
+    private var activeFiltersCount: Int {
+        var count = 0
+        if minPrice != nil || maxPrice != nil { count += 1 }
+        if minBedrooms != nil || maxBedrooms != nil { count += 1 }
+        if minBathrooms != nil || maxBathrooms != nil { count += 1 }
+        if radius != nil { count += 1 }
+        if furnishType != nil { count += 1 }
+        return count
+    }
+
     var body: some View {
         ZStack {
             Color.warmCream.ignoresSafeArea()
@@ -42,9 +52,20 @@ struct BrowseResultsView: View {
                 Button {
                     showFilters = true
                 } label: {
-                    Image(systemName: "slider.horizontal.3")
-                        .font(.system(size: 16, weight: .medium))
-                        .foregroundColor(.rusticOrange)
+                    HStack(spacing: 6) {
+                        Image(systemName: "slider.horizontal.3")
+                            .font(.system(size: 16, weight: .medium))
+                            .foregroundColor(.rusticOrange)
+
+                        if activeFiltersCount > 0 {
+                            Text("\(activeFiltersCount)")
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundColor(.white)
+                                .frame(width: 18, height: 18)
+                                .background(Color.rusticOrange)
+                                .clipShape(Circle())
+                        }
+                    }
                 }
             }
         }

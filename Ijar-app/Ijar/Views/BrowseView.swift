@@ -18,7 +18,7 @@ struct BrowseView: View {
     @State private var maxBedrooms: Int?
     @State private var minBathrooms: Int?
     @State private var maxBathrooms: Int?
-    @State private var radius: Double?
+    @State private var radius: Double? = 1.0
     @State private var furnishType: String?
 
     @State private var showFilters = false
@@ -307,182 +307,16 @@ struct FilterSheet: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 24) {
-                    // Price
-                    FilterSection(title: "Price per month") {
-                        HStack(spacing: 12) {
-                            PriceField(title: "Min", value: $minPrice)
-                            PriceField(title: "Max", value: $maxPrice)
-                        }
-                    }
-
-                    // Bedrooms
-                    FilterSection(title: "Bedrooms") {
-                        HStack(spacing: 12) {
-                            VStack(alignment: .leading, spacing: 6) {
-                                Text("Min")
-                                    .font(.system(size: 13))
-                                    .foregroundColor(.warmBrown)
-                                Menu {
-                                    Button("Any") { minBedrooms = nil }
-                                    Button("Studio") { minBedrooms = 0 }
-                                    ForEach(1...5, id: \.self) { num in
-                                        Button("\(num)") { minBedrooms = num }
-                                    }
-                                } label: {
-                                    HStack {
-                                        Text(minBedrooms == nil ? "Any" : (minBedrooms == 0 ? "Studio" : "\(minBedrooms!)"))
-                                            .foregroundColor(.coffeeBean)
-                                        Spacer()
-                                        Image(systemName: "chevron.down")
-                                            .font(.system(size: 12))
-                                            .foregroundColor(.warmBrown)
-                                    }
-                                    .padding(12)
-                                    .background(Color.white)
-                                    .cornerRadius(10)
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 10)
-                                            .stroke(Color.warmBrown.opacity(0.2), lineWidth: 1)
-                                    )
-                                }
-                            }
-
-                            VStack(alignment: .leading, spacing: 6) {
-                                Text("Max")
-                                    .font(.system(size: 13))
-                                    .foregroundColor(.warmBrown)
-                                Menu {
-                                    Button("Any") { maxBedrooms = nil }
-                                    Button("Studio") { maxBedrooms = 0 }
-                                    ForEach(1...5, id: \.self) { num in
-                                        Button("\(num)") { maxBedrooms = num }
-                                    }
-                                } label: {
-                                    HStack {
-                                        Text(maxBedrooms == nil ? "Any" : (maxBedrooms == 0 ? "Studio" : "\(maxBedrooms!)"))
-                                            .foregroundColor(.coffeeBean)
-                                        Spacer()
-                                        Image(systemName: "chevron.down")
-                                            .font(.system(size: 12))
-                                            .foregroundColor(.warmBrown)
-                                    }
-                                    .padding(12)
-                                    .background(Color.white)
-                                    .cornerRadius(10)
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 10)
-                                            .stroke(Color.warmBrown.opacity(0.2), lineWidth: 1)
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    FilterSection(title: "Bathrooms") {
-                        HStack(spacing: 12) {
-                            VStack(alignment: .leading, spacing: 6) {
-                                Text("Min")
-                                    .font(.system(size: 13))
-                                    .foregroundColor(.warmBrown)
-                                Menu {
-                                    Button("Any") { minBathrooms = nil }
-                                    ForEach(1...4, id: \.self) { num in
-                                        Button("\(num)") { minBathrooms = num }
-                                    }
-                                } label: {
-                                    HStack {
-                                        Text(minBathrooms == nil ? "Any" : "\(minBathrooms!)")
-                                            .foregroundColor(.coffeeBean)
-                                        Spacer()
-                                        Image(systemName: "chevron.down")
-                                            .font(.system(size: 12))
-                                            .foregroundColor(.warmBrown)
-                                    }
-                                    .padding(12)
-                                    .background(Color.white)
-                                    .cornerRadius(10)
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 10)
-                                            .stroke(Color.warmBrown.opacity(0.2), lineWidth: 1)
-                                    )
-                                }
-                            }
-
-                            VStack(alignment: .leading, spacing: 6) {
-                                Text("Max")
-                                    .font(.system(size: 13))
-                                    .foregroundColor(.warmBrown)
-                                Menu {
-                                    Button("Any") { maxBathrooms = nil }
-                                    ForEach(1...4, id: \.self) { num in
-                                        Button("\(num)") { maxBathrooms = num }
-                                    }
-                                } label: {
-                                    HStack {
-                                        Text(maxBathrooms == nil ? "Any" : "\(maxBathrooms!)")
-                                            .foregroundColor(.coffeeBean)
-                                        Spacer()
-                                        Image(systemName: "chevron.down")
-                                            .font(.system(size: 12))
-                                            .foregroundColor(.warmBrown)
-                                    }
-                                    .padding(12)
-                                    .background(Color.white)
-                                    .cornerRadius(10)
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 10)
-                                            .stroke(Color.warmBrown.opacity(0.2), lineWidth: 1)
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    FilterSection(title: "Search radius") {
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: 8) {
-                                FilterOption(label: "This area", isSelected: radius == nil) {
-                                    radius = nil
-                                }
-                                FilterOption(label: "½ mile", isSelected: radius == 0.5) {
-                                    radius = 0.5
-                                }
-                                FilterOption(label: "1 mile", isSelected: radius == 1.0) {
-                                    radius = 1.0
-                                }
-                                FilterOption(label: "3 miles", isSelected: radius == 3.0) {
-                                    radius = 3.0
-                                }
-                                FilterOption(label: "5 miles", isSelected: radius == 5.0) {
-                                    radius = 5.0
-                                }
-                                FilterOption(label: "10 miles", isSelected: radius == 10.0) {
-                                    radius = 10.0
-                                }
-                            }
-                        }
-                    }
-
-                    FilterSection(title: "Furnishing") {
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: 8) {
-                                FilterOption(label: "Any", isSelected: furnishType == nil) {
-                                    furnishType = nil
-                                }
-                                FilterOption(label: "Furnished", isSelected: furnishType == "furnished") {
-                                    furnishType = "furnished"
-                                }
-                                FilterOption(label: "Part furnished", isSelected: furnishType == "partFurnished") {
-                                    furnishType = "partFurnished"
-                                }
-                                FilterOption(label: "Unfurnished", isSelected: furnishType == "unfurnished") {
-                                    furnishType = "unfurnished"
-                                }
-                            }
-                        }
-                    }
-                }
+                PropertyFiltersView(
+                    minPrice: $minPrice,
+                    maxPrice: $maxPrice,
+                    minBedrooms: $minBedrooms,
+                    maxBedrooms: $maxBedrooms,
+                    minBathrooms: $minBathrooms,
+                    maxBathrooms: $maxBathrooms,
+                    radius: $radius,
+                    furnishType: $furnishType
+                )
                 .padding(20)
             }
             .background(Color.warmCream)
@@ -583,6 +417,13 @@ struct PriceField: View {
         .onAppear {
             if let value = value {
                 text = "\(value)"
+            }
+        }
+        .onChange(of: value) { _, newValue in
+            if let newValue = newValue {
+                text = "\(newValue)"
+            } else {
+                text = ""
             }
         }
     }
