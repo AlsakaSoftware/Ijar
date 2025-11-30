@@ -4,6 +4,7 @@ struct BrowseResultsView: View {
     @EnvironmentObject private var coordinator: BrowseCoordinator
     @StateObject private var searchService = LiveSearchService()
     @StateObject private var propertyService = PropertyService()
+    @StateObject private var queryService = SearchQueryService()
 
     let params: BrowseSearchParams
 
@@ -21,6 +22,8 @@ struct BrowseResultsView: View {
     @State private var animateContent = false
     @State private var savedPropertyIds: Set<String> = []
     @State private var hasLoadedInitialData = false
+    @State private var showSaveSearchSheet = false
+    @State private var hasSavedQuery = false
 
     private var activeFiltersCount: Int {
         var count = 0
@@ -30,6 +33,26 @@ struct BrowseResultsView: View {
         if radius != nil { count += 1 }
         if furnishType != nil { count += 1 }
         return count
+    }
+
+    private var shouldShowSaveButton: Bool {
+        // Don't show if user already saved this search
+        if hasSavedQuery { return false }
+
+        // Check if a query with this exact postcode already exists
+        let existingQuery = queryService.queries.first { query in
+            query.postcode.uppercased() == params.postcode.uppercased() &&
+            query.minPrice == minPrice &&
+            query.maxPrice == maxPrice &&
+            query.minBedrooms == minBedrooms &&
+            query.maxBedrooms == maxBedrooms &&
+            query.minBathrooms == minBathrooms &&
+            query.maxBathrooms == maxBathrooms &&
+            query.radius == radius &&
+            query.furnishType == furnishType
+        }
+
+        return existingQuery == nil
     }
 
     var body: some View {
@@ -81,16 +104,35 @@ struct BrowseResultsView: View {
                 radius: $radius,
                 furnishType: $furnishType
             )
-            .presentationDetents([.medium, .large])
             .onDisappear {
                 performSearch()
+            }
+        }
+        .sheet(isPresented: $showSaveSearchSheet) {
+            CreateSearchQueryView(
+                areaName: params.areaName,
+                postcode: params.postcode,
+                minPrice: minPrice,
+                maxPrice: maxPrice,
+                minBedrooms: minBedrooms,
+                maxBedrooms: maxBedrooms,
+                minBathrooms: minBathrooms,
+                maxBathrooms: maxBathrooms,
+                radius: radius,
+                furnishType: furnishType
+            ) { query in
+                Task {
+                    await queryService.createQuery(query)
+                    hasSavedQuery = true
+                }
             }
         }
         .task(id: params.postcode) {
             guard !hasLoadedInitialData else { return }
             hasLoadedInitialData = true
 
-            // Initialize local state from params
+            await queryService.loadUserQueries()
+
             minPrice = params.minPrice
             maxPrice = params.maxPrice
             minBedrooms = params.minBedrooms
@@ -185,6 +227,45 @@ struct BrowseResultsView: View {
     private var resultsListView: some View {
         ScrollView {
             LazyVStack(spacing: 16) {
+                // Save search button (only show if not already saved)
+                if shouldShowSaveButton {
+                    Button {
+                        showSaveSearchSheet = true
+                    } label: {
+                        HStack(spacing: 10) {
+                            Image(systemName: "bell.badge.fill")
+                                .font(.system(size: 16, weight: .medium))
+
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Save this search")
+                                    .font(.system(size: 15, weight: .semibold))
+                                Text("Get notified about new properties")
+                                    .font(.system(size: 13))
+                                    .opacity(0.8)
+                            }
+
+                            Spacer()
+
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 14, weight: .semibold))
+                                .opacity(0.5)
+                        }
+                        .foregroundColor(.white)
+                        .padding(16)
+                        .background(
+                            LinearGradient(
+                                colors: [Color.rusticOrange, Color.warmRed],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .cornerRadius(12)
+                        .shadow(color: .rusticOrange.opacity(0.3), radius: 8, y: 4)
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 12)
+                }
+
                 // Results count
                 HStack {
                     Text("\(searchService.total) properties")
