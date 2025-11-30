@@ -175,8 +175,6 @@ struct BrowseView: View {
                 Spacer()
             }
         }
-        .navigationTitle("Explore")
-        .navigationBarTitleDisplayMode(.inline)
         .onTapGesture {
             isAreaFieldFocused = false
         }
