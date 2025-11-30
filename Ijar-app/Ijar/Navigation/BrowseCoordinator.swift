@@ -13,8 +13,8 @@ class BrowseCoordinator: ObservableObject, Coordinator {
         case .searchResults(let params):
             BrowseResultsView(params: params)
                 .environmentObject(self)
-        case .propertyDetail(let property):
-            PropertyDetailView(property: property, isSavedProperty: false)
+        case .propertyDetail(let property, let isSaved):
+            PropertyDetailView(property: property, isSavedProperty: isSaved)
         }
     }
 }

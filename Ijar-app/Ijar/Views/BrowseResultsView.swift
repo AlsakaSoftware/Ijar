@@ -20,6 +20,7 @@ struct BrowseResultsView: View {
     @State private var showFilters = false
     @State private var animateContent = false
     @State private var savedPropertyIds: Set<String> = []
+    @State private var hasLoadedInitialData = false
 
     private var activeFiltersCount: Int {
         var count = 0
@@ -81,12 +82,14 @@ struct BrowseResultsView: View {
                 furnishType: $furnishType
             )
             .presentationDetents([.medium, .large])
-//            .presentationDragIndicator(.visible)
             .onDisappear {
                 performSearch()
             }
         }
         .task(id: params.postcode) {
+            guard !hasLoadedInitialData else { return }
+            hasLoadedInitialData = true
+
             // Initialize local state from params
             minPrice = params.minPrice
             maxPrice = params.maxPrice
@@ -97,7 +100,6 @@ struct BrowseResultsView: View {
             radius = params.radius
             furnishType = params.furnishType
 
-            // Always search when params change
             performSearch()
         }
     }
@@ -206,7 +208,7 @@ struct BrowseResultsView: View {
                         property: property,
                         isSaved: savedPropertyIds.contains(property.id),
                         onTap: {
-                            coordinator.navigate(to: .propertyDetail(property: property))
+                            coordinator.navigate(to: .propertyDetail(property: property, isSaved: savedPropertyIds.contains(property.id)))
                         },
                         onSaveToggle: {
                             Task {

@@ -47,7 +47,7 @@ class PropertyService: ObservableObject {
             
             properties = response.map { row in
                 Property(
-                    id: row.id,
+                    id: String(row.rightmove_id),  // Use Rightmove ID for consistent PropertyMetadata lookup
                     images: row.images,
                     price: row.price,
                     bedrooms: row.bedrooms,
@@ -88,26 +88,47 @@ class PropertyService: ObservableObject {
     func trackPropertyAction(propertyId: String, action: PropertyAction) async -> Bool {
         do {
             let user = try await supabase.auth.user()
-            
+
+            // propertyId is now Rightmove ID, need to look up database UUID
+            let rightmoveId = Int(propertyId) ?? 0
+
+            struct ExistingProperty: Codable {
+                let id: String
+            }
+
+            let existing: [ExistingProperty] = try await supabase
+                .from("property")
+                .select("id")
+                .eq("rightmove_id", value: rightmoveId)
+                .execute()
+                .value
+
+            guard let existingProp = existing.first else {
+#if DEBUG
+                print("❌ PropertyService: Property not found for rightmove_id: \(rightmoveId)")
+#endif
+                return false
+            }
+
             let actionData = UserPropertyAction(
                 user_id: user.id.uuidString,
-                property_id: propertyId,
+                property_id: existingProp.id,  // Use database UUID
                 action: action.rawValue
             )
-            
+
 #if DEBUG
-            print("🔥 PropertyService: Tracking action - User: \(user.id.uuidString), Property: \(propertyId), Action: \(action.rawValue)")
+            print("🔥 PropertyService: Tracking action - User: \(user.id.uuidString), Property UUID: \(existingProp.id), Rightmove ID: \(propertyId), Action: \(action.rawValue)")
 #endif
-            
+
             try await supabase
                 .from("user_property_action")
                 .insert(actionData)
                 .execute()
-            
+
 #if DEBUG
             print("✅ PropertyService: Successfully tracked \(action.rawValue) action for property \(propertyId)")
 #endif
-            
+
             return true
         } catch {
 #if DEBUG
@@ -144,7 +165,7 @@ class PropertyService: ObservableObject {
                 
                 savedProperties = savedPropertyRows.map { row in
                     Property(
-                        id: row.id,
+                        id: String(row.rightmove_id),  // Use Rightmove ID for consistent PropertyMetadata lookup
                         images: row.images,
                         price: row.price,
                         bedrooms: row.bedrooms,
@@ -200,7 +221,7 @@ class PropertyService: ObservableObject {
                     var propertyDict: [String: Property] = [:]
                     for prop in properties {
                         propertyDict[prop.id] = Property(
-                            id: prop.id,
+                            id: String(prop.rightmove_id),  // Use Rightmove ID for consistent PropertyMetadata lookup
                             images: prop.images,
                             price: prop.price,
                             bedrooms: prop.bedrooms,
@@ -556,12 +577,33 @@ class PropertyService: ObservableObject {
         do {
             let user = try await supabase.auth.user()
 
-            // Update the existing saved action to passed
+            // property.id is now Rightmove ID, need to look up database UUID
+            let rightmoveId = Int(property.id) ?? 0
+
+            struct ExistingProperty: Codable {
+                let id: String
+            }
+
+            let existing: [ExistingProperty] = try await supabase
+                .from("property")
+                .select("id")
+                .eq("rightmove_id", value: rightmoveId)
+                .execute()
+                .value
+
+            guard let existingProp = existing.first else {
+#if DEBUG
+                print("❌ PropertyService: Property not found for rightmove_id: \(rightmoveId)")
+#endif
+                return false
+            }
+
+            // Update the existing saved action to passed using database UUID
             try await supabase
                 .from("user_property_action")
                 .update(["action": "passed"])
                 .eq("user_id", value: user.id.uuidString)
-                .eq("property_id", value: property.id)
+                .eq("property_id", value: existingProp.id)
                 .execute()
 
             // Remove from local array immediately for UI responsiveness

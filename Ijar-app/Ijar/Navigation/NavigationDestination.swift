@@ -47,13 +47,13 @@ enum ProfileDestination: NavigationDestination {
 
 enum BrowseDestination: NavigationDestination {
     case searchResults(params: BrowseSearchParams)
-    case propertyDetail(property: Property)
+    case propertyDetail(property: Property, isSaved: Bool)
 
     static func == (lhs: BrowseDestination, rhs: BrowseDestination) -> Bool {
         switch (lhs, rhs) {
         case let (.searchResults(lhsParams), .searchResults(rhsParams)):
             return lhsParams == rhsParams
-        case let (.propertyDetail(lhsProperty), .propertyDetail(rhsProperty)):
+        case let (.propertyDetail(lhsProperty, _), .propertyDetail(rhsProperty, _)):
             return lhsProperty.id == rhsProperty.id
         default:
             return false
@@ -65,7 +65,7 @@ enum BrowseDestination: NavigationDestination {
         case .searchResults(let params):
             hasher.combine("searchResults")
             hasher.combine(params)
-        case .propertyDetail(let property):
+        case .propertyDetail(let property, _):
             hasher.combine("propertyDetail")
             hasher.combine(property.id)
         }
