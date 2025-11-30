@@ -62,16 +62,44 @@ async function handleSearch(body: LiveSearchRequest): Promise<LiveSearchResponse
   };
 }
 
+// Shared scraper instance for HD image fetches
+const hdScraper = new RightmoveScraper();
+
 const server = http.createServer(async (req, res) => {
   // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   res.setHeader('Content-Type', 'application/json');
 
   if (req.method === 'OPTIONS') {
     res.writeHead(200);
     res.end();
+    return;
+  }
+
+  // GET /api/property/:id/images - Fetch HD images for a single property
+  const hdImagesMatch = req.url?.match(/^\/api\/property\/(\d+)\/images$/);
+  if (hdImagesMatch && req.method === 'GET') {
+    const propertyId = hdImagesMatch[1];
+
+    try {
+      console.log(`\n--- HD Images Request ---`);
+      console.log('Property ID:', propertyId);
+
+      const hdImages = await hdScraper.getHighQualityImages(propertyId, true);
+
+      console.log('Found:', hdImages.length, 'HD images');
+
+      res.writeHead(200);
+      res.end(JSON.stringify({ images: hdImages }));
+
+    } catch (error) {
+      console.error('Error fetching HD images:', error);
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      res.writeHead(500);
+      res.end(JSON.stringify({ error: message }));
+    }
     return;
   }
 

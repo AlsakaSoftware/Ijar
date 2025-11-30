@@ -8,6 +8,11 @@ struct PropertyDetailView: View {
     @State private var showingFullScreenImages = false
     @EnvironmentObject var appCoordinator: AppCoordinator
 
+    // HD images state - start with property's images, replace with HD when fetched
+    @State private var displayImages: [String] = []
+    @State private var isLoadingHDImages = false
+    @StateObject private var searchService = LiveSearchService()
+
     // TfL transport data
     private let tflService = TfLService()
     @State private var nearbyStations: [TubeStation] = []
@@ -186,14 +191,34 @@ struct PropertyDetailView: View {
         }
         .fullScreenCover(isPresented: $showingFullScreenImages) {
             FullScreenImageGallery(
-                images: property.images,
+                images: displayImages,
                 currentIndex: $currentImageIndex,
                 isPresented: $showingFullScreenImages
             )
         }
         .onAppear {
             if isSavedProperty {
+                // For saved properties, show images immediately (already HD)
+                if displayImages.isEmpty {
+                    displayImages = property.images
+                }
                 loadOrCreateMetadata()
+            } else {
+                // For live search properties, wait for HD images before showing anything
+                isLoadingHDImages = true
+                Task {
+                    if let hdImages = await searchService.fetchHDImages(propertyId: property.id) {
+                        displayImages = hdImages
+                        isLoadingHDImages = false
+#if DEBUG
+                        print("🖼️ HD images loaded: \(hdImages.count) images")
+#endif
+                    } else {
+                        // Fallback to thumbnails if HD fetch fails
+                        displayImages = property.images
+                        isLoadingHDImages = false
+                    }
+                }
             }
 
             // Reload locations in case new ones were added
@@ -345,84 +370,110 @@ struct PropertyDetailView: View {
 
     private var heroImageSection: some View {
         ZStack(alignment: .bottom) {
-            // Main image carousel
-            TabView(selection: $currentImageIndex) {
-                ForEach(Array(property.images.enumerated()), id: \.offset) { index, imageURL in
-                    AsyncImage(url: URL(string: imageURL)) { phase in
-                        switch phase {
-                        case .success(let image):
-                            image
-                                .resizable()
-                                .aspectRatio(contentMode: .fill)
-                                .frame(height: 400)
-                                .clipped()
-                                .onTapGesture {
-                                    showingFullScreenImages = true
-                                }
-                        case .empty:
-                            Rectangle()
-                                .fill(Color.warmBrown.opacity(0.1))
-                                .frame(height: 400)
-                                .overlay {
-                                    ProgressView()
-                                        .tint(.warmBrown)
-                                }
-                        case .failure:
-                            Rectangle()
-                                .fill(Color.warmBrown.opacity(0.1))
-                                .frame(height: 400)
-                                .overlay {
-                                    Image(systemName: "photo")
-                                        .font(.system(size: 40))
-                                        .foregroundColor(.warmBrown.opacity(0.5))
-                                }
-                        @unknown default:
-                            EmptyView()
-                        }
-                    }
-                    .tag(index)
-                }
-            }
-            .frame(height: 400)
-            .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
-            
-            // Image indicators and expand button
-            VStack(spacing: 16) {
-                Spacer()
-                
-                HStack {
-                    // Image indicators
-                    HStack(spacing: 6) {
-                        ForEach(0..<property.images.count, id: \.self) { index in
-                            Circle()
-                                .fill(index == currentImageIndex ? Color.white : Color.white.opacity(0.5))
-                                .frame(width: index == currentImageIndex ? 8 : 6, height: index == currentImageIndex ? 8 : 6)
-                                .animation(.easeInOut(duration: 0.2), value: currentImageIndex)
-                        }
-                    }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .background(
-                        Capsule()
-                            .fill(.black.opacity(0.4))
+            if isLoadingHDImages {
+                // Loading state - show nice block color with loading indicator
+                Rectangle()
+                    .fill(
+                        LinearGradient(
+                            colors: [Color.warmCream, Color.warmCream.opacity(0.95)],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
                     )
-                    
-                    Spacer()
-                    
-                    // Expand button
-                    Button(action: { showingFullScreenImages = true }) {
-                        Image(systemName: "arrow.up.left.and.arrow.down.right")
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundColor(.white)
-                            .frame(width: 36, height: 36)
-                            .background(
-                                Circle()
-                                    .fill(.black.opacity(0.4))
-                            )
+                    .frame(height: 400)
+                    .overlay {
+                        VStack(spacing: 16) {
+                            ProgressView()
+                                .scaleEffect(1.4)
+                                .tint(.rusticOrange)
+
+                            Text("Loading images...")
+                                .font(.system(size: 15, weight: .medium))
+                                .foregroundColor(.warmBrown.opacity(0.7))
+                        }
+                    }
+            } else {
+                // Main image carousel
+                TabView(selection: $currentImageIndex) {
+                    ForEach(Array(displayImages.enumerated()), id: \.offset) { index, imageURL in
+                        AsyncImage(url: URL(string: imageURL)) { phase in
+                            switch phase {
+                            case .success(let image):
+                                image
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fill)
+                                    .frame(height: 400)
+                                    .clipped()
+                                    .onTapGesture {
+                                        showingFullScreenImages = true
+                                    }
+                            case .empty:
+                                Rectangle()
+                                    .fill(Color.warmBrown.opacity(0.1))
+                                    .frame(height: 400)
+                                    .overlay {
+                                        ProgressView()
+                                            .tint(.warmBrown)
+                                    }
+                            case .failure:
+                                Rectangle()
+                                    .fill(Color.warmBrown.opacity(0.1))
+                                    .frame(height: 400)
+                                    .overlay {
+                                        Image(systemName: "photo")
+                                            .font(.system(size: 40))
+                                            .foregroundColor(.warmBrown.opacity(0.5))
+                                    }
+                            @unknown default:
+                                EmptyView()
+                            }
+                        }
+                        .tag(index)
                     }
                 }
-                .padding(.horizontal, 20)
-                .padding(.bottom, 20)
+                .frame(height: 400)
+                .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
+            }
+
+            // Image indicators and expand button (only show when not loading)
+            if !isLoadingHDImages {
+                VStack(spacing: 16) {
+                    Spacer()
+
+                    HStack {
+                        // Image indicators
+                        HStack(spacing: 6) {
+                            ForEach(0..<displayImages.count, id: \.self) { index in
+                                Circle()
+                                    .fill(index == currentImageIndex ? Color.white : Color.white.opacity(0.5))
+                                    .frame(width: index == currentImageIndex ? 8 : 6, height: index == currentImageIndex ? 8 : 6)
+                                    .animation(.easeInOut(duration: 0.2), value: currentImageIndex)
+                            }
+                        }
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .background(
+                            Capsule()
+                                .fill(.black.opacity(0.4))
+                        )
+
+                        Spacer()
+
+                        // Expand button
+                        Button(action: { showingFullScreenImages = true }) {
+                            Image(systemName: "arrow.up.left.and.arrow.down.right")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(.white)
+                                .frame(width: 36, height: 36)
+                                .background(
+                                    Circle()
+                                        .fill(.black.opacity(0.4))
+                                )
+                        }
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 20)
+                }
             }
             
             // Top gradient for better navigation visibility

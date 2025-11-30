@@ -69,7 +69,7 @@ export class SupabasePropertyClient {
 
     return {
       rightmove_id: property.id,
-      images: property.images.map(img => img.srcUrl || img.url), // Now contains HD URLs
+      images: property.images.map(img => img.srcUrl || img.url),
       price: property.price?.displayPrices?.[0]?.displayPrice || 'Price on request',
       bedrooms: property.bedrooms || 0,
       bathrooms: property.bathrooms || 0,

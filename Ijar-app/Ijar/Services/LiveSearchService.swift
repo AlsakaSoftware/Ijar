@@ -193,4 +193,43 @@ class LiveSearchService: ObservableObject {
         currentParams = nil
         error = nil
     }
+
+    // MARK: - HD Images
+
+    private struct HDImagesResponse: Decodable {
+        let images: [String]
+    }
+
+    /// Fetch HD images for a single property
+    func fetchHDImages(propertyId: String) async -> [String]? {
+        let baseURL = ConfigManager.shared.liveSearchAPIURL
+        guard let url = URL(string: "\(baseURL)/api/property/\(propertyId)/images") else {
+            return nil
+        }
+
+        do {
+#if DEBUG
+            print("📸 Fetching HD images for property \(propertyId)")
+#endif
+            let (data, response) = try await URLSession.shared.data(from: url)
+
+            guard let httpResponse = response as? HTTPURLResponse,
+                  httpResponse.statusCode == 200 else {
+                return nil
+            }
+
+            let hdResponse = try JSONDecoder().decode(HDImagesResponse.self, from: data)
+
+#if DEBUG
+            print("✅ Got \(hdResponse.images.count) HD images")
+#endif
+            return hdResponse.images.isEmpty ? nil : hdResponse.images
+
+        } catch {
+#if DEBUG
+            print("❌ Failed to fetch HD images: \(error)")
+#endif
+            return nil
+        }
+    }
 }
