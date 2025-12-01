@@ -140,7 +140,7 @@ struct BrowseView: View {
 
                     if !queryService.queries.isEmpty {
                         VStack(alignment: .leading, spacing: 12) {
-                            Text("Recent searches")
+                            Text("My monitored searches")
                                 .font(.system(size: 14, weight: .medium))
                                 .foregroundColor(.warmBrown)
                                 .padding(.horizontal, 24)
