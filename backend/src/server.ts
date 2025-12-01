@@ -78,24 +78,31 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // GET /api/property/:id/images - Fetch HD images for a single property
-  const hdImagesMatch = req.url?.match(/^\/api\/property\/(\d+)\/images$/);
-  if (hdImagesMatch && req.method === 'GET') {
-    const propertyId = hdImagesMatch[1];
+  // GET /api/property/:id/details - Fetch comprehensive property details including HD images, description, features
+  const detailsMatch = req.url?.match(/^\/api\/property\/(\d+)\/details$/);
+  if (detailsMatch && req.method === 'GET') {
+    const propertyId = detailsMatch[1];
 
     try {
-      console.log(`\n--- HD Images Request ---`);
+      console.log(`\n--- Property Details Request ---`);
       console.log('Property ID:', propertyId);
 
-      const hdImages = await hdScraper.getHighQualityImages(propertyId, true);
+      const details = await hdScraper.getFullPropertyDetails(propertyId, false);
 
-      console.log('Found:', hdImages.length, 'HD images');
+      console.log('Found:', details.hdImages.length, 'HD images');
+      console.log('Description:', details.description ? 'Yes' : 'No');
+      console.log('Key Features:', details.keyFeatures.length);
+      console.log('Property Type:', details.propertyType || 'N/A');
+      console.log('Floor Area:', details.floorArea || 'N/A');
 
       res.writeHead(200);
-      res.end(JSON.stringify({ images: hdImages }));
+      res.end(JSON.stringify(details));
+
+      // Add delay after request to avoid rate limiting
+      await new Promise(resolve => setTimeout(resolve, 2000));
 
     } catch (error) {
-      console.error('Error fetching HD images:', error);
+      console.error('Error fetching property details:', error);
       const message = error instanceof Error ? error.message : 'Unknown error';
       res.writeHead(500);
       res.end(JSON.stringify({ error: message }));
