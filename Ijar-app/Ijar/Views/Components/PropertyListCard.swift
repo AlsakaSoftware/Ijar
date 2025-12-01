@@ -34,7 +34,7 @@ struct PropertyListCard: View {
                             HStack(spacing: 4) {
                                 Image(systemName: "bed.double")
                                     .font(.system(size: 14))
-                                Text("\(property.bedrooms)")
+                                Text(property.bedroomText)
                             }
 
                             HStack(spacing: 4) {

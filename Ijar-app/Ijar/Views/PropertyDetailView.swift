@@ -8,10 +8,17 @@ struct PropertyDetailView: View {
     @State private var showingFullScreenImages = false
     @EnvironmentObject var appCoordinator: AppCoordinator
 
-    // HD images state - start with property's images, replace with HD when fetched
+    // Property details state - start with basic property, enrich with details when fetched
+    @State private var displayProperty: Property
     @State private var displayImages: [String] = []
-    @State private var isLoadingHDImages = false
+    @State private var isLoadingDetails = false
     @StateObject private var searchService = LiveSearchService()
+
+    init(property: Property, isSavedProperty: Bool) {
+        self.property = property
+        self.isSavedProperty = isSavedProperty
+        _displayProperty = State(initialValue: property)
+    }
 
     // TfL transport data
     private let tflService = TfLService()
@@ -41,6 +48,9 @@ struct PropertyDetailView: View {
     @State private var putOffer = false
     @State private var notes = ""
     @FocusState private var notesFieldFocused: Bool
+
+    // Floorplan state
+    @State private var showingFloorplan = false
 
     private func loadOrCreateMetadata() {
         // Find existing metadata for this property
@@ -108,24 +118,20 @@ struct PropertyDetailView: View {
                 heroImageSection
 
                 // Property details content
-                VStack(spacing: 24) {
+                VStack(spacing: 20) {
+                    // Floorplan button
+                    if let floorplans = displayProperty.floorplanImages, !floorplans.isEmpty {
+                        floorplanButton
+                    }
+
                     // Price and basic info
                     propertyHeaderSection
 
-                    // Features section
-                    propertyFeaturesSection
+                    // Property Details section (combines features with listing details)
+                    propertyDetailsSection
 
                     // Location section
                     locationSection
-
-                    // Map section
-                    if let coordinates = propertyCoordinates {
-                        PropertyMapView(
-                            address: property.address,
-                            latitude: coordinates.latitude,
-                            longitude: coordinates.longitude
-                        )
-                    }
 
                     // Nearby tube stations section
                     if propertyCoordinates != nil {
@@ -141,6 +147,15 @@ struct PropertyDetailView: View {
                                 appCoordinator.navigate(to: .profile(.savedLocations))
                             }
                         }
+                    }
+
+                    // Map section
+                    if let coordinates = propertyCoordinates {
+                        PropertyMapView(
+                            address: property.address,
+                            latitude: coordinates.latitude,
+                            longitude: coordinates.longitude
+                        )
                     }
 
                     // Progress section (checklist + notes combined) - only for saved properties
@@ -196,6 +211,12 @@ struct PropertyDetailView: View {
                 isPresented: $showingFullScreenImages
             )
         }
+        .sheet(isPresented: $showingFloorplan) {
+            FloorplanViewer(
+                floorplans: displayProperty.floorplanImages ?? [],
+                isPresented: $showingFloorplan
+            )
+        }
         .onAppear {
             if isSavedProperty {
                 // For saved properties, show images immediately (already HD)
@@ -204,19 +225,20 @@ struct PropertyDetailView: View {
                 }
                 loadOrCreateMetadata()
             } else {
-                // For live search properties, wait for HD images before showing anything
-                isLoadingHDImages = true
+                // For live search properties, fetch full property details (HD images + details)
+                isLoadingDetails = true
                 Task {
-                    if let hdImages = await searchService.fetchHDImages(propertyId: property.id) {
-                        displayImages = hdImages
-                        isLoadingHDImages = false
+                    if let enrichedProperty = await searchService.fetchPropertyDetails(for: property) {
+                        displayProperty = enrichedProperty
+                        displayImages = enrichedProperty.images
+                        isLoadingDetails = false
 #if DEBUG
-                        print("🖼️ HD images loaded: \(hdImages.count) images")
+                        print("📋 Property details loaded: \(enrichedProperty.images.count) HD images, description: \(enrichedProperty.description != nil)")
 #endif
                     } else {
-                        // Fallback to thumbnails if HD fetch fails
+                        // Fallback to basic property if fetch fails
                         displayImages = property.images
-                        isLoadingHDImages = false
+                        isLoadingDetails = false
                     }
                 }
             }
@@ -364,13 +386,12 @@ struct PropertyDetailView: View {
                 journeys[location] = journey
             }
         }
-
         isLoadingJourneys = false
     }
 
     private var heroImageSection: some View {
         ZStack(alignment: .bottom) {
-            if isLoadingHDImages {
+            if isLoadingDetails {
                 // Loading state - show nice block color with loading indicator
                 Rectangle()
                     .fill(
@@ -436,7 +457,7 @@ struct PropertyDetailView: View {
             }
 
             // Image indicators and expand button (only show when not loading)
-            if !isLoadingHDImages {
+            if !isLoadingDetails {
                 VStack(spacing: 16) {
                     Spacer()
 
@@ -518,24 +539,25 @@ struct PropertyDetailView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
     
-    private var propertyFeaturesSection: some View {
+    private var propertyDetailsSection: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Property Features")
+            Text("Property Details")
                 .font(.system(size: 20, weight: .semibold))
                 .foregroundColor(.coffeeBean)
-            
+
+            // First row: Bedrooms and Bathrooms (larger)
             HStack(spacing: 24) {
                 // Bedrooms
                 VStack(alignment: .center, spacing: 8) {
                     Image(systemName: "bed.double.fill")
                         .font(.system(size: 24))
                         .foregroundColor(.rusticOrange)
-                    
-                    Text("\(property.bedrooms)")
+
+                    Text(property.bedrooms == 0 ? "1" : "\(property.bedrooms)")
                         .font(.system(size: 20, weight: .bold))
                         .foregroundColor(.coffeeBean)
-                    
-                    Text("Bedroom\(property.bedrooms == 1 ? "" : "s")")
+
+                    Text(property.bedrooms == 0 ? "Studio" : "Bedroom\(property.bedrooms == 1 ? "" : "s")")
                         .font(.system(size: 14, weight: .medium))
                         .foregroundColor(.warmBrown.opacity(0.8))
                 }
@@ -546,17 +568,17 @@ struct PropertyDetailView: View {
                         .fill(Color.warmCream)
                         .shadow(color: .coffeeBean.opacity(0.05), radius: 4, y: 2)
                 )
-                
+
                 // Bathrooms
                 VStack(alignment: .center, spacing: 8) {
                     Image(systemName: "shower.fill")
                         .font(.system(size: 24))
                         .foregroundColor(.rusticOrange)
-                    
+
                     Text("\(property.bathrooms)")
                         .font(.system(size: 20, weight: .bold))
                         .foregroundColor(.coffeeBean)
-                    
+
                     Text("Bathroom\(property.bathrooms == 1 ? "" : "s")")
                         .font(.system(size: 14, weight: .medium))
                         .foregroundColor(.warmBrown.opacity(0.8))
@@ -569,8 +591,64 @@ struct PropertyDetailView: View {
                         .shadow(color: .coffeeBean.opacity(0.05), radius: 4, y: 2)
                 )
             }
+
+            // Additional details grid (smaller cards)
+            if shouldShowListingDetails {
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+                    if let propertyType = displayProperty.propertyType {
+                        smallDetailCard(icon: "house.fill", label: "Type", value: propertyType)
+                    }
+
+                    if let floorArea = displayProperty.floorArea {
+                        smallDetailCard(icon: "square.fill", label: "Size", value: floorArea)
+                    }
+
+                    if let epcRating = displayProperty.epcRating {
+                        smallDetailCard(icon: "leaf.fill", label: "EPC", value: epcRating)
+                    }
+
+                    if let councilTaxBand = displayProperty.councilTaxBand {
+                        smallDetailCard(icon: "banknote.fill", label: "Council Tax", value: "Band \(councilTaxBand)")
+                    }
+
+                    if let tenure = displayProperty.tenure {
+                        smallDetailCard(icon: "doc.text.fill", label: "Tenure", value: tenure)
+                    }
+
+                    if let availableFrom = displayProperty.availableFrom {
+                        smallDetailCard(icon: "calendar.fill", label: "Available", value: availableFrom)
+                    }
+                }
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func smallDetailCard(icon: String, label: String, value: String) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 4) {
+                Image(systemName: icon)
+                    .font(.system(size: 10))
+                    .foregroundColor(.rusticOrange)
+
+                Text(label)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundColor(.warmBrown.opacity(0.7))
+                    .textCase(.uppercase)
+            }
+
+            Text(value)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundColor(.coffeeBean)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(10)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color.warmCream)
+        )
     }
     
     private var locationSection: some View {
@@ -609,6 +687,81 @@ struct PropertyDetailView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
+
+    // MARK: - Property Details Sections
+
+    private var floorplanButton: some View {
+        Button(action: {
+            showingFloorplan = true
+        }) {
+            HStack(spacing: 12) {
+                Image(systemName: "map")
+                    .font(.system(size: 16))
+                    .foregroundColor(.rusticOrange)
+
+                Text("View Floorplan")
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(.coffeeBean)
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(.warmBrown.opacity(0.4))
+            }
+            .padding(16)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color.warmCream)
+                    .shadow(color: .coffeeBean.opacity(0.05), radius: 4, y: 2)
+            )
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+
+    private func keyFeaturesSection(features: [String]) -> some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Key Features")
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundColor(.coffeeBean)
+
+            // Compact chip-style layout - 2 columns
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
+                ForEach(features, id: \.self) { feature in
+                    HStack(spacing: 6) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 10))
+                            .foregroundColor(.rusticOrange)
+
+                        Text(feature)
+                            .font(.system(size: 13, weight: .regular))
+                            .foregroundColor(.coffeeBean)
+                            .lineLimit(2)
+                            .multilineTextAlignment(.leading)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 10)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(Color.warmCream)
+                    )
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var shouldShowListingDetails: Bool {
+        displayProperty.propertyType != nil ||
+        displayProperty.floorArea != nil ||
+        displayProperty.epcRating != nil ||
+        displayProperty.councilTaxBand != nil ||
+        displayProperty.tenure != nil ||
+        displayProperty.availableFrom != nil
+    }
+
 
     private var nearbyStationsSection: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -1304,6 +1457,114 @@ struct JourneyDetailView: View {
             return "person.2.fill"
         } else {
             return "mappin.circle.fill"
+        }
+    }
+}
+
+struct FloorplanViewer: View {
+    let floorplans: [String]
+    @Binding var isPresented: Bool
+    @State private var currentIndex = 0
+
+    var body: some View {
+        NavigationView {
+            ZStack {
+                Color.black.ignoresSafeArea()
+
+                // Floorplan content with safe padding
+                VStack {
+                    Spacer()
+                        .frame(height: 80) // Space for top controls
+
+                    TabView(selection: $currentIndex) {
+                        ForEach(Array(floorplans.enumerated()), id: \.offset) { index, floorplanURL in
+                            AsyncImage(url: URL(string: floorplanURL)) { phase in
+                                switch phase {
+                                case .success(let image):
+                                    image
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fit)
+                                        .background(Color.white)
+                                case .empty:
+                                    ProgressView()
+                                        .tint(.white)
+                                case .failure:
+                                    VStack(spacing: 16) {
+                                        Image(systemName: "doc.text")
+                                            .font(.system(size: 50))
+                                            .foregroundColor(.white.opacity(0.5))
+                                        Text("Floorplan unavailable")
+                                            .font(.system(size: 16))
+                                            .foregroundColor(.white.opacity(0.7))
+                                    }
+                                @unknown default:
+                                    EmptyView()
+                                }
+                            }
+                            .tag(index)
+                        }
+                    }
+                    .tabViewStyle(PageTabViewStyle())
+
+                    if floorplans.count > 1 {
+                        Spacer()
+                            .frame(height: 60) // Space for bottom indicators
+                    } else {
+                        Spacer()
+                            .frame(height: 20)
+                    }
+                }
+
+                // Top controls
+                VStack {
+                    HStack {
+                        Button(action: { isPresented = false }) {
+                            Image(systemName: "xmark")
+                                .font(.system(size: 18, weight: .medium))
+                                .foregroundColor(.white)
+                                .frame(width: 44, height: 44)
+                                .background(
+                                    Circle()
+                                        .fill(.black.opacity(0.5))
+                                )
+                        }
+
+                        Spacer()
+
+                        if floorplans.count > 1 {
+                            Text("\(currentIndex + 1) of \(floorplans.count)")
+                                .font(.system(size: 16, weight: .medium))
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background(
+                                    Capsule()
+                                        .fill(.black.opacity(0.5))
+                                )
+                        }
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 20)
+
+                    Spacer()
+
+                    // Bottom indicators
+                    if floorplans.count > 1 {
+                        HStack(spacing: 8) {
+                            ForEach(0..<floorplans.count, id: \.self) { index in
+                                Circle()
+                                    .fill(index == currentIndex ? Color.white : Color.white.opacity(0.5))
+                                    .frame(width: index == currentIndex ? 10 : 8, height: index == currentIndex ? 10 : 8)
+                                    .animation(.easeInOut(duration: 0.2), value: currentIndex)
+                            }
+                        }
+                        .padding(.bottom, 40)
+                    }
+                }
+            }
+            .navigationTitle("Floorplan")
+            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarHidden(true)
         }
     }
 }

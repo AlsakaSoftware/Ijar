@@ -24,8 +24,8 @@ struct PropertyFiltersView: View {
             // Bedrooms
             FilterSection(title: "Bedrooms") {
                 HStack(spacing: 12) {
-                    BedroomPicker(title: "Min", selection: $minBedrooms)
-                    BedroomPicker(title: "Max", selection: $maxBedrooms)
+                    BedroomPicker(title: "Min", selection: $minBedrooms, otherSelection: $maxBedrooms)
+                    BedroomPicker(title: "Max", selection: $maxBedrooms, otherSelection: $minBedrooms)
                 }
             }
 
@@ -91,6 +91,7 @@ struct PropertyFiltersView: View {
 struct BedroomPicker: View {
     let title: String
     @Binding var selection: Int?
+    @Binding var otherSelection: Int?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -98,10 +99,26 @@ struct BedroomPicker: View {
                 .font(.system(size: 13))
                 .foregroundColor(.warmBrown)
             Menu {
-                Button("Any") { selection = nil }
-                Button("Studio") { selection = 0 }
+                Button("Any") {
+                    selection = nil
+                    // If the other field is also 0 (studio), reset it to nil
+                    if otherSelection == 0 {
+                        otherSelection = nil
+                    }
+                }
+                Button("Studio") {
+                    // For studios, set both min and max to 0
+                    selection = 0
+                    otherSelection = 0
+                }
                 ForEach(1...5, id: \.self) { num in
-                    Button("\(num)") { selection = num }
+                    Button("\(num)") {
+                        selection = num
+                        // Clear the other field if it was set to studio (0)
+                        if otherSelection == 0 {
+                            otherSelection = nil
+                        }
+                    }
                 }
             } label: {
                 HStack {

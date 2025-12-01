@@ -194,22 +194,33 @@ class LiveSearchService: ObservableObject {
         error = nil
     }
 
-    // MARK: - HD Images
+    // MARK: - Property Details
 
-    private struct HDImagesResponse: Decodable {
-        let images: [String]
+    private struct PropertyDetailsResponse: Decodable {
+        let propertyId: String
+        let hdImages: [String]
+        let floorplanImages: [String]
+        let description: String?
+        let keyFeatures: [String]
+        let propertyType: String?
+        let floorArea: String?
+        let epcRating: String?
+        let councilTaxBand: String?
+        let tenure: String?
+        let listingDate: String?
+        let availableFrom: String?
     }
 
-    /// Fetch HD images for a single property
-    func fetchHDImages(propertyId: String) async -> [String]? {
+    /// Fetch full property details including HD images and listing information
+    func fetchPropertyDetails(for property: Property) async -> Property? {
         let baseURL = ConfigManager.shared.liveSearchAPIURL
-        guard let url = URL(string: "\(baseURL)/api/property/\(propertyId)/images") else {
+        guard let url = URL(string: "\(baseURL)/api/property/\(property.id)/details") else {
             return nil
         }
 
         do {
 #if DEBUG
-            print("📸 Fetching HD images for property \(propertyId)")
+            print("📋 Fetching property details for \(property.id)")
 #endif
             let (data, response) = try await URLSession.shared.data(from: url)
 
@@ -218,16 +229,42 @@ class LiveSearchService: ObservableObject {
                 return nil
             }
 
-            let hdResponse = try JSONDecoder().decode(HDImagesResponse.self, from: data)
+            let detailsResponse = try JSONDecoder().decode(PropertyDetailsResponse.self, from: data)
 
 #if DEBUG
-            print("✅ Got \(hdResponse.images.count) HD images")
+            print("✅ Got property details: \(detailsResponse.hdImages.count) HD images, description: \(detailsResponse.description != nil), features: \(detailsResponse.keyFeatures.count)")
 #endif
-            return hdResponse.images.isEmpty ? nil : hdResponse.images
+
+            // Create updated property with HD images, floorplans and details
+            return Property(
+                id: property.id,
+                images: detailsResponse.hdImages.isEmpty ? property.images : detailsResponse.hdImages,
+                price: property.price,
+                bedrooms: property.bedrooms,
+                bathrooms: property.bathrooms,
+                address: property.address,
+                area: property.area,
+                rightmoveUrl: property.rightmoveUrl,
+                agentPhone: property.agentPhone,
+                agentName: property.agentName,
+                branchName: property.branchName,
+                latitude: property.latitude,
+                longitude: property.longitude,
+                description: detailsResponse.description,
+                keyFeatures: detailsResponse.keyFeatures.isEmpty ? nil : detailsResponse.keyFeatures,
+                propertyType: detailsResponse.propertyType,
+                floorArea: detailsResponse.floorArea,
+                epcRating: detailsResponse.epcRating,
+                councilTaxBand: detailsResponse.councilTaxBand,
+                tenure: detailsResponse.tenure,
+                listingDate: detailsResponse.listingDate,
+                availableFrom: detailsResponse.availableFrom,
+                floorplanImages: detailsResponse.floorplanImages.isEmpty ? nil : detailsResponse.floorplanImages
+            )
 
         } catch {
 #if DEBUG
-            print("❌ Failed to fetch HD images: \(error)")
+            print("❌ Failed to fetch property details: \(error)")
 #endif
             return nil
         }

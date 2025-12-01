@@ -115,10 +115,10 @@ export class RightmoveScraper {
     // Add search parameters
     if (minPrice) params.append('minPrice', minPrice.toString());
     if (maxPrice) params.append('maxPrice', maxPrice.toString());
-    if (minBedrooms) params.append('minBedrooms', minBedrooms.toString());
-    if (maxBedrooms) params.append('maxBedrooms', maxBedrooms.toString());
-    if (minBathrooms) params.append('minBathrooms', minBathrooms.toString());
-    if (maxBathrooms) params.append('maxBathrooms', maxBathrooms.toString());
+    if (minBedrooms !== undefined) params.append('minBedrooms', minBedrooms.toString());
+    if (maxBedrooms !== undefined) params.append('maxBedrooms', maxBedrooms.toString());
+    if (minBathrooms !== undefined) params.append('minBathrooms', minBathrooms.toString());
+    if (maxBathrooms !== undefined) params.append('maxBathrooms', maxBathrooms.toString());
     if (furnishTypes) params.append('furnishTypes', furnishTypes);
     if (radius !== undefined) params.append('radius', radius.toString());
     if (propertyTypes) params.append('propertyTypes', propertyTypes);
@@ -315,6 +315,118 @@ export class RightmoveScraper {
     return enrichedProperties;
   }
 
+  // Extract comprehensive property details including HD images, floorplans, description, key features, etc.
+  async getFullPropertyDetails(propertyId: string | number, quiet = false): Promise<any> {
+    try {
+      const details = await this.getPropertyDetails(propertyId, quiet);
+
+      // Extract HD images
+      const hdImages = this.extractHDImagesFromDetails(details);
+
+      // Extract floorplan images
+      const floorplanImages = this.extractFloorplanImagesFromDetails(details);
+
+      // Extract property details from HTML
+      const propertyDetails = this.extractPropertyDetailsFromHTML(details.html);
+
+      return {
+        propertyId,
+        hdImages,
+        floorplanImages,
+        ...propertyDetails
+      };
+    } catch (error) {
+      if (!quiet) console.warn(`Failed to get full property details for ${propertyId}:`, error);
+      throw error;
+    }
+  }
+
+  // Extract property details (description, key features, listing details) from HTML
+  private extractPropertyDetailsFromHTML(html: string): any {
+    const details: any = {
+      description: null,
+      keyFeatures: [],
+      propertyType: null,
+      floorArea: null,
+      epcRating: null,
+      councilTaxBand: null,
+      tenure: null,
+      listingDate: null,
+      availableFrom: null
+    };
+
+    try {
+      // Extract description - found in <div class="STw8udCxUaBUMfOOZu0iL _3nPVwR0HZYQah5tkVJHFh5"><div>...</div></div>
+      const descMatch = html.match(/<div class="STw8udCxUaBUMfOOZu0iL _3nPVwR0HZYQah5tkVJHFh5">\s*<div>(.*?)<\/div>/is);
+      if (descMatch) {
+        details.description = descMatch[1]
+          .replace(/<br\s*\/?>/gi, '\n') // Convert <br> to newlines
+          .replace(/<[^>]+>/g, '') // Remove other HTML tags
+          .replace(/\s+/g, ' ') // Normalize whitespace
+          .replace(/\n\s+/g, '\n') // Clean up newlines
+          .trim();
+      }
+
+      // Extract key features - found in <ul class="_1uI3IvdF5sIuBtRIvKrreQ"><li class="lIhZ24u1NHMa5Y6gDH90A">...</li></ul>
+      const keyFeaturesMatch = html.match(/<ul class="_1uI3IvdF5sIuBtRIvKrreQ">(.*?)<\/ul>/is);
+      if (keyFeaturesMatch) {
+        const liMatches = keyFeaturesMatch[1].match(/<li class="lIhZ24u1NHMa5Y6gDH90A">(.*?)<\/li>/gis);
+        if (liMatches) {
+          details.keyFeatures = liMatches.map(li =>
+            li.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim()
+          ).filter(f => f.length > 0);
+        }
+      }
+
+      // Extract property type - found in <p class="_1hV1kqpVceE9m-QrX_hWDN  ">Apartment</p>
+      const propTypeMatch = html.match(/<dt class="IXkFvLy8-4DdLI1TIYLgX"><span class="ZBWaPR-rIda6ikyKpB_E2">PROPERTY TYPE<\/span><\/dt>\s*<dd[^>]*>.*?<p class="_1hV1kqpVceE9m-QrX_hWDN[^"]*">([^<]+)<\/p>/is);
+      if (propTypeMatch) {
+        details.propertyType = propTypeMatch[1].trim();
+      }
+
+      // Extract floor area - found in SIZE section <p class="_1hV1kqpVceE9m-QrX_hWDN  ">616 sq ft</p>
+      const floorAreaMatch = html.match(/<dt class="IXkFvLy8-4DdLI1TIYLgX"><span class="ZBWaPR-rIda6ikyKpB_E2">SIZE<\/span><\/dt>\s*<dd[^>]*>.*?<p class="_1hV1kqpVceE9m-QrX_hWDN[^"]*">([^<]+)<\/p>/is);
+      if (floorAreaMatch) {
+        details.floorArea = floorAreaMatch[1].trim();
+      }
+
+      // Extract EPC rating
+      const epcMatch = html.match(/EPC rating[:\s]*([A-G])/i);
+      if (epcMatch) {
+        details.epcRating = epcMatch[1].toUpperCase();
+      }
+
+      // Extract council tax band - found in <dd class="_2zXKe70Gdypr_v9MUDoVCm">Band: E</dd>
+      const councilTaxMatch = html.match(/<dt class="_17A0LehXZKxGHbPeiLQ1BI">COUNCIL TAX.*?<\/dt>\s*<dd class="_2zXKe70Gdypr_v9MUDoVCm">Band:\s*([A-H])<\/dd>/is);
+      if (councilTaxMatch) {
+        details.councilTaxBand = councilTaxMatch[1].toUpperCase();
+      }
+
+      // Extract tenure
+      const tenureMatch = html.match(/Tenure[:\s]*(Freehold|Leasehold)/i);
+      if (tenureMatch) {
+        details.tenure = tenureMatch[1];
+      }
+
+      // Extract listing date (first visible date)
+      const listingDateMatch = html.match(/added on[:\s]*(\d{1,2}(?:st|nd|rd|th)?\s+\w+\s+\d{4})/i);
+      if (listingDateMatch) {
+        details.listingDate = listingDateMatch[1];
+      }
+
+      // Extract available from date - found in <dt>Let available date: </dt><dd>15/12/2025</dd>
+      const availableMatch = html.match(/<dt>Let available date:\s*<\/dt>\s*<dd>([^<]+)<\/dd>/i);
+      if (availableMatch) {
+        details.availableFrom = availableMatch[1].trim();
+      }
+
+    } catch (error) {
+      console.warn('Error extracting property details from HTML:', error);
+    }
+
+    return details;
+  }
+
   // Extract high-definition images from property details
   async getHighQualityImages(propertyId: string | number, quiet = false): Promise<string[]> {
     try {
@@ -414,6 +526,90 @@ export class RightmoveScraper {
     
     console.log(`Extracted ${hdImages.length} unique HD images`);
     return hdImages.slice(0, 20); // Limit to 20 images max
+  }
+
+  // Extract floorplan images from property details response
+  private extractFloorplanImagesFromDetails(details: any): string[] {
+    const floorplanImages: string[] = [];
+    const seenImageIds = new Set<string>(); // Track unique floorplan IDs
+
+    // Helper function to extract floorplan ID from URL
+    const getFloorplanId = (url: string): string => {
+      // Extract the unique floorplan identifier (e.g., "FLP_00" from "229157_PRL250131_L_FLP_00_0000")
+      const match = url.match(/FLP_(\d+)/);
+      return match ? match[1] : '';
+    };
+
+    // Helper function to get the highest quality version of a floorplan URL
+    const getHighQualityUrl = (url: string): string => {
+      // Remove any size constraints and query strings
+      let cleanUrl = url
+        .replace(/_max_\d+x\d+/, '') // Remove resolution constraints
+        .replace(/\/dir\/crop\/[^/]+\//, '/dir/') // Remove crop constraints
+        .replace(/\?[^#]*/, ''); // Remove query parameters
+
+      // Prefer URLs without /dir/ prefix
+      cleanUrl = cleanUrl.replace(/\/dir\//, '/');
+
+      return cleanUrl;
+    };
+
+    try {
+      // Extract floorplans from HTML
+      if (details.html) {
+        console.log('Extracting floorplans from HTML...');
+
+        // Extract all Rightmove floorplan URLs from HTML (look for _FLP_ pattern)
+        const floorplanMatches = details.html.match(/https:\/\/media\.rightmove\.co\.uk[^"'\s]+FLP[^"'\s]+\.jpe?g/gi);
+
+        if (floorplanMatches) {
+          // Create a map to store the best version of each floorplan
+          const floorplanMap = new Map<string, string>();
+
+          // Process each URL
+          floorplanMatches.forEach((url: string) => {
+            // Only process floorplan images (contain FLP_ identifier)
+            if (url.includes('FLP_')) {
+              const floorplanId = getFloorplanId(url);
+
+              if (floorplanId) {
+                const highQualityUrl = getHighQualityUrl(url);
+
+                // Store only if we haven't seen this floorplan ID or if this is a better quality version
+                if (!floorplanMap.has(floorplanId)) {
+                  floorplanMap.set(floorplanId, highQualityUrl);
+                } else {
+                  const existingUrl = floorplanMap.get(floorplanId)!;
+                  // Prefer the URL without /dir/ path, or shorter URL if both have same path type
+                  if (!highQualityUrl.includes('/dir/') && existingUrl.includes('/dir/')) {
+                    floorplanMap.set(floorplanId, highQualityUrl);
+                  } else if (highQualityUrl.length < existingUrl.length &&
+                           highQualityUrl.includes('/dir/') === existingUrl.includes('/dir/')) {
+                    floorplanMap.set(floorplanId, highQualityUrl);
+                  }
+                }
+              }
+            }
+          });
+
+          // Convert map to array, maintaining order
+          const sortedEntries = Array.from(floorplanMap.entries()).sort((a, b) => {
+            // Sort by floorplan number (FLP_00, FLP_01, etc.)
+            return parseInt(a[0]) - parseInt(b[0]);
+          });
+
+          sortedEntries.forEach(([_, url]) => {
+            floorplanImages.push(url);
+          });
+        }
+      }
+
+    } catch (error) {
+      console.warn('Error extracting floorplan images:', error);
+    }
+
+    console.log(`Extracted ${floorplanImages.length} unique floorplan images`);
+    return floorplanImages;
   }
 
   // Get property with HD images

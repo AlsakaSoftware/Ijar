@@ -28,7 +28,7 @@ struct PropertyCard: View {
                     
                     HStack(spacing: 12) {
                         HStack(spacing: 4) {
-                            Text("\(property.bedrooms)")
+                            Text(property.bedroomText)
                             Image(systemName: "bed.double")
                         }
                         HStack(spacing: 4) {
