@@ -4,7 +4,8 @@ struct SearchQuery: Identifiable, Codable {
     let id: UUID
     let name: String
     let areaName: String // User-friendly area name (e.g., "Canary Wharf, London")
-    let postcode: String // Geocoded postcode for backend search (hidden from user)
+    let latitude: Double
+    let longitude: Double
     let minPrice: Int?
     let maxPrice: Int?
     let minBedrooms: Int?
@@ -21,7 +22,8 @@ struct SearchQuery: Identifiable, Codable {
         id: UUID = UUID(),
         name: String,
         areaName: String,
-        postcode: String,
+        latitude: Double,
+        longitude: Double,
         minPrice: Int? = nil,
         maxPrice: Int? = nil,
         minBedrooms: Int? = nil,
@@ -37,7 +39,8 @@ struct SearchQuery: Identifiable, Codable {
         self.id = id
         self.name = name
         self.areaName = areaName
-        self.postcode = postcode
+        self.latitude = latitude
+        self.longitude = longitude
         self.minPrice = minPrice
         self.maxPrice = maxPrice
         self.minBedrooms = minBedrooms

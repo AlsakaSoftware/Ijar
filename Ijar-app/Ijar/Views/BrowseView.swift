@@ -7,7 +7,8 @@ struct BrowseView: View {
     @StateObject private var queryService = SearchQueryService()
 
     @State private var areaName = ""
-    @State private var postcode = ""
+    @State private var latitude: Double? = nil
+    @State private var longitude: Double? = nil
     @State private var isGeocoding = false
     @State private var geocodingError: String?
     @State private var geocodingTask: Task<Void, Never>?
@@ -27,7 +28,7 @@ struct BrowseView: View {
     private let geocodingService = GeocodingService()
 
     private var canSearch: Bool {
-        !postcode.isEmpty && geocodingError == nil && !isGeocoding
+        latitude != nil && longitude != nil && geocodingError == nil && !isGeocoding
     }
 
     private var activeFiltersCount: Int {
@@ -75,7 +76,7 @@ struct BrowseView: View {
                             if isGeocoding {
                                 ProgressView()
                                     .scaleEffect(0.8)
-                            } else if !postcode.isEmpty && geocodingError == nil {
+                            } else if latitude != nil && longitude != nil && geocodingError == nil {
                                 Image(systemName: "checkmark.circle.fill")
                                     .foregroundColor(.green)
                             }
@@ -201,7 +202,8 @@ struct BrowseView: View {
 
     private func loadQuery(_ query: SearchQuery) {
         areaName = query.areaName
-        postcode = query.postcode
+        latitude = query.latitude
+        longitude = query.longitude
         minPrice = query.minPrice
         maxPrice = query.maxPrice
         minBedrooms = query.minBedrooms
@@ -216,9 +218,11 @@ struct BrowseView: View {
     }
 
     private func performSearch() {
+        guard let lat = latitude, let lng = longitude else { return }
         let searchParams = BrowseSearchParams(
             areaName: areaName,
-            postcode: postcode,
+            latitude: lat,
+            longitude: lng,
             minPrice: minPrice,
             maxPrice: maxPrice,
             minBedrooms: minBedrooms,
@@ -233,7 +237,8 @@ struct BrowseView: View {
 
     private func geocodeArea(_ area: String) {
         geocodingTask?.cancel()
-        postcode = ""
+        latitude = nil
+        longitude = nil
         geocodingError = nil
 
         let trimmedArea = area.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -251,21 +256,24 @@ struct BrowseView: View {
 
                 await MainActor.run {
                     isGeocoding = false
-                    postcode = result.postcode
+                    latitude = result.latitude
+                    longitude = result.longitude
                     geocodingError = nil
                 }
             } catch let error as GeocodingError {
                 guard !Task.isCancelled else { return }
                 await MainActor.run {
                     isGeocoding = false
-                    postcode = ""
+                    latitude = nil
+                    longitude = nil
                     geocodingError = error.localizedDescription
                 }
             } catch {
                 guard !Task.isCancelled else { return }
                 await MainActor.run {
                     isGeocoding = false
-                    postcode = ""
+                    latitude = nil
+                    longitude = nil
                     geocodingError = "Couldn't find this area"
                 }
             }
@@ -277,7 +285,8 @@ struct BrowseView: View {
 
 struct BrowseSearchParams: Hashable {
     let areaName: String
-    let postcode: String
+    let latitude: Double
+    let longitude: Double
     var minPrice: Int?
     var maxPrice: Int?
     var minBedrooms: Int?

@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import Kingfisher
 
 struct PropertyDetailView: View {
     let property: Property
@@ -417,18 +418,8 @@ struct PropertyDetailView: View {
                 // Main image carousel
                 TabView(selection: $currentImageIndex) {
                     ForEach(Array(displayImages.enumerated()), id: \.offset) { index, imageURL in
-                        AsyncImage(url: URL(string: imageURL)) { phase in
-                            switch phase {
-                            case .success(let image):
-                                image
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fill)
-                                    .frame(height: 400)
-                                    .clipped()
-                                    .onTapGesture {
-                                        showingFullScreenImages = true
-                                    }
-                            case .empty:
+                        KFImage(URL(string: imageURL))
+                            .placeholder {
                                 Rectangle()
                                     .fill(Color.warmBrown.opacity(0.1))
                                     .frame(height: 400)
@@ -436,20 +427,16 @@ struct PropertyDetailView: View {
                                         ProgressView()
                                             .tint(.warmBrown)
                                     }
-                            case .failure:
-                                Rectangle()
-                                    .fill(Color.warmBrown.opacity(0.1))
-                                    .frame(height: 400)
-                                    .overlay {
-                                        Image(systemName: "photo")
-                                            .font(.system(size: 40))
-                                            .foregroundColor(.warmBrown.opacity(0.5))
-                                    }
-                            @unknown default:
-                                EmptyView()
                             }
-                        }
-                        .tag(index)
+                            .onFailure { _ in }
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .frame(height: 400)
+                            .clipped()
+                            .onTapGesture {
+                                showingFullScreenImages = true
+                            }
+                            .tag(index)
                     }
                 }
                 .frame(height: 400)
@@ -462,21 +449,33 @@ struct PropertyDetailView: View {
                     Spacer()
 
                     HStack {
-                        // Image indicators
-                        HStack(spacing: 6) {
-                            ForEach(0..<displayImages.count, id: \.self) { index in
-                                Circle()
-                                    .fill(index == currentImageIndex ? Color.white : Color.white.opacity(0.5))
-                                    .frame(width: index == currentImageIndex ? 8 : 6, height: index == currentImageIndex ? 8 : 6)
-                                    .animation(.easeInOut(duration: 0.2), value: currentImageIndex)
+                        // Image indicators - show count if more than 10 images
+                        if displayImages.count > 10 {
+                            Text("\(currentImageIndex + 1) / \(displayImages.count)")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 8)
+                                .background(
+                                    Capsule()
+                                        .fill(.black.opacity(0.4))
+                                )
+                        } else {
+                            HStack(spacing: 6) {
+                                ForEach(0..<displayImages.count, id: \.self) { index in
+                                    Circle()
+                                        .fill(index == currentImageIndex ? Color.white : Color.white.opacity(0.5))
+                                        .frame(width: index == currentImageIndex ? 8 : 6, height: index == currentImageIndex ? 8 : 6)
+                                        .animation(.easeInOut(duration: 0.2), value: currentImageIndex)
+                                }
                             }
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(
+                                Capsule()
+                                    .fill(.black.opacity(0.4))
+                            )
                         }
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 8)
-                        .background(
-                            Capsule()
-                                .fill(.black.opacity(0.4))
-                        )
 
                         Spacer()
 
@@ -575,11 +574,21 @@ struct PropertyDetailView: View {
                         .font(.system(size: 24))
                         .foregroundColor(.rusticOrange)
 
-                    Text("\(property.bathrooms)")
-                        .font(.system(size: 20, weight: .bold))
-                        .foregroundColor(.coffeeBean)
+                    if isLoadingDetails {
+                        ProgressView()
+                            .scaleEffect(0.8)
+                            .frame(height: 24)
+                    } else if displayProperty.bathrooms > 0 {
+                        Text("\(displayProperty.bathrooms)")
+                            .font(.system(size: 20, weight: .bold))
+                            .foregroundColor(.coffeeBean)
+                    } else {
+                        Text("—")
+                            .font(.system(size: 20, weight: .bold))
+                            .foregroundColor(.warmBrown.opacity(0.5))
+                    }
 
-                    Text("Bathroom\(property.bathrooms == 1 ? "" : "s")")
+                    Text("Bathroom\(displayProperty.bathrooms == 1 ? "" : "s")")
                         .font(.system(size: 14, weight: .medium))
                         .foregroundColor(.warmBrown.opacity(0.8))
                 }
@@ -1112,72 +1121,60 @@ struct FullScreenImageGallery: View {
             
             TabView(selection: $currentIndex) {
                 ForEach(Array(images.enumerated()), id: \.offset) { index, imageURL in
-                    ZStack {
-                        AsyncImage(url: URL(string: imageURL)) { phase in
-                            switch phase {
-                            case .success(let image):
-                                image
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fit)
-                                    .scaleEffect(scale)
-                                    .offset(offset)
-                                    .gesture(
-                                        MagnificationGesture()
-                                            .onChanged { value in
-                                                scale = lastScale * value
-                                            }
-                                            .onEnded { _ in
-                                                withAnimation(.spring()) {
-                                                    if scale < 1 {
-                                                        scale = 1
-                                                        offset = .zero
-                                                    } else if scale > 4 {
-                                                        scale = 4
-                                                    }
-                                                    lastScale = scale
-                                                }
-                                            }
-                                    )
-                                    .gesture(
-                                        scale > 1 ? DragGesture()
-                                            .onChanged { value in
-                                                offset = value.translation
-                                            }
-                                            .onEnded { _ in
-                                                withAnimation(.spring()) {
-                                                    // Reset offset if dragged too far
-                                                    let maxOffset: CGFloat = 100
-                                                    if abs(offset.width) > maxOffset || abs(offset.height) > maxOffset {
-                                                        offset = .zero
-                                                    }
-                                                }
-                                            } : nil
-                                    )
-                                    .onTapGesture(count: 2) {
-                                        withAnimation(.spring()) {
-                                            if scale == 1 {
-                                                scale = 2
-                                                lastScale = 2
-                                            } else {
-                                                scale = 1
-                                                lastScale = 1
-                                                offset = .zero
-                                            }
+                    KFImage(URL(string: imageURL))
+                        .placeholder {
+                            ProgressView()
+                                .tint(.white)
+                        }
+                        .onFailure { _ in }
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .scaleEffect(scale)
+                        .offset(offset)
+                        .gesture(
+                            MagnificationGesture()
+                                .onChanged { value in
+                                    scale = lastScale * value
+                                }
+                                .onEnded { _ in
+                                    withAnimation(.spring()) {
+                                        if scale < 1 {
+                                            scale = 1
+                                            offset = .zero
+                                        } else if scale > 4 {
+                                            scale = 4
+                                        }
+                                        lastScale = scale
+                                    }
+                                }
+                        )
+                        .gesture(
+                            scale > 1 ? DragGesture()
+                                .onChanged { value in
+                                    offset = value.translation
+                                }
+                                .onEnded { _ in
+                                    withAnimation(.spring()) {
+                                        let maxOffset: CGFloat = 100
+                                        if abs(offset.width) > maxOffset || abs(offset.height) > maxOffset {
+                                            offset = .zero
                                         }
                                     }
-                            case .empty:
-                                ProgressView()
-                                    .tint(.white)
-                            case .failure:
-                                Image(systemName: "photo")
-                                    .font(.system(size: 50))
-                                    .foregroundColor(.white.opacity(0.5))
-                            @unknown default:
-                                EmptyView()
+                                } : nil
+                        )
+                        .onTapGesture(count: 2) {
+                            withAnimation(.spring()) {
+                                if scale == 1 {
+                                    scale = 2
+                                    lastScale = 2
+                                } else {
+                                    scale = 1
+                                    lastScale = 1
+                                    offset = .zero
+                                }
                             }
                         }
-                    }
-                    .tag(index)
+                        .tag(index)
                 }
             }
             .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
@@ -1214,8 +1211,8 @@ struct FullScreenImageGallery: View {
                 
                 Spacer()
                 
-                // Bottom indicators
-                if images.count > 1 {
+                // Bottom indicators - only show dots if 10 or fewer images
+                if images.count > 1 && images.count <= 10 {
                     HStack(spacing: 8) {
                         ForEach(0..<images.count, id: \.self) { index in
                             Circle()

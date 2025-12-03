@@ -8,7 +8,8 @@ struct EditSearchQueryView: View {
 
     @State private var name = ""
     @State private var areaName = ""
-    @State private var postcode = ""
+    @State private var latitude: Double? = nil
+    @State private var longitude: Double? = nil
     @State private var minPrice: Int? = nil
     @State private var maxPrice: Int? = nil
     @State private var minBedrooms: Int? = nil
@@ -63,7 +64,7 @@ struct EditSearchQueryView: View {
                                     if isGeocoding {
                                         ProgressView()
                                             .scaleEffect(0.8)
-                                    } else if !postcode.isEmpty && geocodingError == nil {
+                                    } else if latitude != nil && longitude != nil && geocodingError == nil {
                                         Image(systemName: "checkmark.circle.fill")
                                             .foregroundColor(.green)
                                     }
@@ -128,14 +129,15 @@ struct EditSearchQueryView: View {
     private var isValidForm: Bool {
         !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
         !areaName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
-        !postcode.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+        latitude != nil && longitude != nil &&
         geocodingError == nil
     }
 
     private func populateFields() {
         name = query.name
         areaName = query.areaName
-        postcode = query.postcode
+        latitude = query.latitude
+        longitude = query.longitude
         minPrice = query.minPrice
         maxPrice = query.maxPrice
         minBedrooms = query.minBedrooms
@@ -147,11 +149,14 @@ struct EditSearchQueryView: View {
     }
 
     private func saveQuery() {
+        guard let lat = latitude, let lng = longitude else { return }
+
         let updatedQuery = SearchQuery(
             id: query.id,
             name: name.trimmingCharacters(in: .whitespacesAndNewlines),
             areaName: areaName.trimmingCharacters(in: .whitespacesAndNewlines),
-            postcode: postcode.trimmingCharacters(in: .whitespacesAndNewlines).uppercased(),
+            latitude: lat,
+            longitude: lng,
             minPrice: minPrice,
             maxPrice: maxPrice,
             minBedrooms: minBedrooms,
@@ -171,7 +176,8 @@ struct EditSearchQueryView: View {
 
     private func geocodeArea(_ area: String) {
         geocodingTask?.cancel()
-        postcode = ""
+        latitude = nil
+        longitude = nil
         geocodingError = nil
 
         let trimmedArea = area.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -189,21 +195,24 @@ struct EditSearchQueryView: View {
 
                 await MainActor.run {
                     isGeocoding = false
-                    postcode = result.postcode
+                    latitude = result.latitude
+                    longitude = result.longitude
                     geocodingError = nil
                 }
             } catch let error as GeocodingError {
                 guard !Task.isCancelled else { return }
                 await MainActor.run {
                     isGeocoding = false
-                    postcode = ""
+                    latitude = nil
+                    longitude = nil
                     geocodingError = error.localizedDescription
                 }
             } catch {
                 guard !Task.isCancelled else { return }
                 await MainActor.run {
                     isGeocoding = false
-                    postcode = ""
+                    latitude = nil
+                    longitude = nil
                     geocodingError = "We couldn't find this area. Please check the spelling."
                 }
             }

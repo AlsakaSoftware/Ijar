@@ -1,4 +1,5 @@
 import SwiftUI
+import Kingfisher
 
 /// A unified property card used in both SavedPropertiesView and BrowseResultsView
 struct PropertyListCard: View {
@@ -30,18 +31,10 @@ struct PropertyListCard: View {
 
                         Spacer()
 
-                        HStack(spacing: 12) {
-                            HStack(spacing: 4) {
-                                Image(systemName: "bed.double")
-                                    .font(.system(size: 14))
-                                Text(property.bedroomText)
-                            }
-
-                            HStack(spacing: 4) {
-                                Image(systemName: "shower")
-                                    .font(.system(size: 14))
-                                Text("\(property.bathrooms)")
-                            }
+                        HStack(spacing: 4) {
+                            Image(systemName: "bed.double")
+                                .font(.system(size: 14))
+                            Text(property.bedroomText)
                         }
                         .font(.system(size: 14, weight: .medium))
                         .foregroundColor(.warmBrown.opacity(0.8))
@@ -99,25 +92,18 @@ struct PropertyListCard: View {
     private var propertyImage: some View {
         if let firstImage = property.images.first,
            let imageURL = URL(string: firstImage) {
-            AsyncImage(url: imageURL) { phase in
-                switch phase {
-                case .success(let image):
-                    image
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .frame(height: 200)
-                        .clipped()
-                case .empty:
+            KFImage(imageURL)
+                .placeholder {
                     Rectangle()
                         .fill(Color.warmBrown.opacity(0.1))
                         .frame(height: 200)
                         .overlay(ProgressView())
-                case .failure:
-                    imagePlaceholder
-                @unknown default:
-                    EmptyView()
                 }
-            }
+                .onFailure { _ in }
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+                .frame(height: 200)
+                .clipped()
         } else {
             imagePlaceholder
         }

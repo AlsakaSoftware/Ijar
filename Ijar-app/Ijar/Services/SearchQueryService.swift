@@ -7,22 +7,22 @@ class SearchQueryService: ObservableObject {
     @Published var queries: [SearchQuery] = []
     @Published var isLoading = false
     @Published var error: String?
-    
+
     init() {
         self.supabase = SupabaseClient(
             supabaseURL: URL(string: ConfigManager.shared.supabaseURL)!,
             supabaseKey: ConfigManager.shared.supabaseAnonKey
         )
     }
-    
+
     func loadUserQueries() async {
         isLoading = true
         error = nil
-        
+
         do {
             // Get current user
             let user = try await supabase.auth.user()
-            
+
             let response: [QueryRow] = try await supabase
                 .from("query")
                 .select()
@@ -30,13 +30,14 @@ class SearchQueryService: ObservableObject {
                 .order("created", ascending: false)
                 .execute()
                 .value
-            
+
             queries = response.map { row in
                 SearchQuery(
                     id: UUID(uuidString: row.id) ?? UUID(),
                     name: row.name,
                     areaName: row.area_name,
-                    postcode: row.postcode,
+                    latitude: row.latitude,
+                    longitude: row.longitude,
                     minPrice: row.min_price,
                     maxPrice: row.max_price,
                     minBedrooms: row.min_bedrooms,
@@ -54,28 +55,29 @@ class SearchQueryService: ObservableObject {
             self.error = error.localizedDescription
             print("Error loading queries: \(error)")
         }
-        
+
         isLoading = false
     }
-    
+
     @discardableResult
     func createQuery(_ query: SearchQuery) async -> Bool {
         isLoading = true
         error = nil
-        
+
         do {
             // Get current user
             let user = try await supabase.auth.user()
-            
+
             // Check if this is the user's first query
             let isFirstQuery = queries.isEmpty
-            
+
             let queryRow = QueryRow(
                 id: query.id.uuidString,
                 user_id: user.id.uuidString,
                 name: query.name,
                 area_name: query.areaName,
-                postcode: query.postcode,
+                latitude: query.latitude,
+                longitude: query.longitude,
                 min_price: query.minPrice,
                 max_price: query.maxPrice,
                 min_bedrooms: query.minBedrooms,
@@ -98,7 +100,7 @@ class SearchQueryService: ObservableObject {
             if isFirstQuery {
                 await triggerGitHubWorkflow()
             }
-            
+
             await loadUserQueries() // Refresh the list
             isLoading = false
             return true
@@ -109,22 +111,23 @@ class SearchQueryService: ObservableObject {
             return false
         }
     }
-    
+
     // Special method for duplicating queries that adds them at the bottom
     func createQueryAtBottom(_ query: SearchQuery) async -> Bool {
         isLoading = true
         error = nil
-        
+
         do {
             // Get current user
             let user = try await supabase.auth.user()
-            
+
             let queryRow = QueryRow(
                 id: query.id.uuidString,
                 user_id: user.id.uuidString,
                 name: query.name,
                 area_name: query.areaName,
-                postcode: query.postcode,
+                latitude: query.latitude,
+                longitude: query.longitude,
                 min_price: query.minPrice,
                 max_price: query.maxPrice,
                 min_bedrooms: query.minBedrooms,
@@ -154,48 +157,29 @@ class SearchQueryService: ObservableObject {
             return false
         }
     }
-    
+
     private func triggerGitHubWorkflow() async {
         // For production, you'd want to call your backend API that has the GitHub token
         // For now, we'll just log that we would trigger the workflow
         print("🚀 Would trigger GitHub workflow for first query")
-        
-        // In production, uncomment and update this:
-        /*
-        let url = URL(string: "https://your-backend.com/api/trigger-workflow")!
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
-        let payload = ["event_type": "user-first-query"]
-        request.httpBody = try? JSONSerialization.data(withJSONObject: payload)
-        
-        do {
-            let (_, response) = try await URLSession.shared.data(for: request)
-            if let httpResponse = response as? HTTPURLResponse {
-                print("Workflow trigger response: \(httpResponse.statusCode)")
-            }
-        } catch {
-            print("Failed to trigger workflow: \(error)")
-        }
-        */
     }
-    
+
     @discardableResult
     func updateQuery(_ query: SearchQuery) async -> Bool {
         isLoading = true
         error = nil
-        
+
         do {
             // Get current user
             let user = try await supabase.auth.user()
-            
+
             let queryRow = QueryRow(
                 id: query.id.uuidString,
                 user_id: user.id.uuidString,
                 name: query.name,
                 area_name: query.areaName,
-                postcode: query.postcode,
+                latitude: query.latitude,
+                longitude: query.longitude,
                 min_price: query.minPrice,
                 max_price: query.maxPrice,
                 min_bedrooms: query.minBedrooms,
@@ -214,7 +198,7 @@ class SearchQueryService: ObservableObject {
                 .update(queryRow)
                 .eq("id", value: query.id.uuidString)
                 .execute()
-            
+
             await loadUserQueries() // Refresh the list
             isLoading = false
             return true
@@ -225,7 +209,7 @@ class SearchQueryService: ObservableObject {
             return false
         }
     }
-    
+
     func deleteQuery(_ query: SearchQuery) async -> Bool {
         isLoading = true
         error = nil
@@ -260,7 +244,8 @@ private struct QueryRow: Codable {
     let user_id: String
     let name: String
     let area_name: String
-    let postcode: String
+    let latitude: Double
+    let longitude: Double
     let min_price: Int?
     let max_price: Int?
     let min_bedrooms: Int?

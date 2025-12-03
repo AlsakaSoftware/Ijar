@@ -9,11 +9,12 @@ class LiveSearchService: ObservableObject {
     @Published var total = 0
     @Published var error: String?
 
-    private var currentIndex = 0
+    private var currentPage = 1
     private var currentParams: SearchParams?
 
     struct SearchParams: Encodable {
-        let postcode: String
+        let latitude: Double
+        let longitude: Double
         var minPrice: Int?
         var maxPrice: Int?
         var minBedrooms: Int?
@@ -22,34 +23,52 @@ class LiveSearchService: ObservableObject {
         var maxBathrooms: Int?
         var radius: Double?
         var furnishType: String?
-        var index: Int = 0
+        var page: Int = 1
     }
 
+    // Rightmove API response types
     private struct APIResponse: Decodable {
-        let properties: [APIProperty]
+        let properties: [RightmoveProperty]
         let total: Int
         let hasMore: Bool
-        let nextIndex: Int?
+        let page: Int
     }
 
-    private struct APIProperty: Decodable {
-        let id: String
-        let images: [String]
-        let price: String
+    private struct RightmoveProperty: Decodable {
+        let identifier: Int
         let bedrooms: Int
-        let bathrooms: Int
         let address: String
-        let area: String
-        let rightmoveUrl: String
-        let agentPhone: String?
-        let agentName: String?
-        let branchName: String?
+        let propertyType: String?
+        let photoCount: Int
+        let monthlyRent: Int
+        let displayPrices: [DisplayPrice]?
+        let thumbnailPhotos: [ThumbnailPhoto]?
+        let photoLargeThumbnailUrl: String?
+        let summary: String?
         let latitude: Double?
         let longitude: Double?
+        let branch: Branch?
+        let listingUpdateReason: String?
+    }
+
+    private struct DisplayPrice: Decodable {
+        let displayPrice: String
+        let displayPriceQualifier: String?
+    }
+
+    private struct ThumbnailPhoto: Decodable {
+        let url: String
+    }
+
+    private struct Branch: Decodable {
+        let brandName: String?
+        let name: String?
+        let contactTelephoneNumber: String?
     }
 
     func search(
-        postcode: String,
+        latitude: Double,
+        longitude: Double,
         minPrice: Int? = nil,
         maxPrice: Int? = nil,
         minBedrooms: Int? = nil,
@@ -60,7 +79,8 @@ class LiveSearchService: ObservableObject {
         furnishType: String? = nil
     ) async {
         let params = SearchParams(
-            postcode: postcode,
+            latitude: latitude,
+            longitude: longitude,
             minPrice: minPrice,
             maxPrice: maxPrice,
             minBedrooms: minBedrooms,
@@ -69,11 +89,11 @@ class LiveSearchService: ObservableObject {
             maxBathrooms: maxBathrooms,
             radius: radius,
             furnishType: furnishType,
-            index: 0
+            page: 1
         )
 
         currentParams = params
-        currentIndex = 0
+        currentPage = 1
         isLoading = true
         error = nil
         properties = []
@@ -84,7 +104,8 @@ class LiveSearchService: ObservableObject {
 
     func searchFromQuery(_ query: SearchQuery) async {
         await search(
-            postcode: query.postcode,
+            latitude: query.latitude,
+            longitude: query.longitude,
             minPrice: query.minPrice,
             maxPrice: query.maxPrice,
             minBedrooms: query.minBedrooms,
@@ -100,8 +121,8 @@ class LiveSearchService: ObservableObject {
         guard hasMore, var params = currentParams else { return }
 
         isLoadingMore = true
-        currentIndex += 24
-        params.index = currentIndex
+        currentPage += 1
+        params.page = currentPage
 
         await performSearch(params: params, append: true)
         isLoadingMore = false
@@ -124,7 +145,7 @@ class LiveSearchService: ObservableObject {
             request.httpBody = try encoder.encode(params)
 
 #if DEBUG
-            print("🔍 LiveSearch: Searching for \(params.postcode) at index \(params.index)")
+            print("🔍 LiveSearch: Searching at (\(params.latitude), \(params.longitude)) page \(params.page)")
 #endif
 
             let (data, response) = try await URLSession.shared.data(for: request)
@@ -146,21 +167,32 @@ class LiveSearchService: ObservableObject {
 
             let apiResponse = try JSONDecoder().decode(APIResponse.self, from: data)
 
-            let newProperties = apiResponse.properties.map { apiProp in
-                Property(
-                    id: apiProp.id,
-                    images: apiProp.images,
-                    price: apiProp.price,
-                    bedrooms: apiProp.bedrooms,
-                    bathrooms: apiProp.bathrooms,
-                    address: apiProp.address,
-                    area: apiProp.area,
-                    rightmoveUrl: apiProp.rightmoveUrl,
-                    agentPhone: apiProp.agentPhone,
-                    agentName: apiProp.agentName,
-                    branchName: apiProp.branchName,
-                    latitude: apiProp.latitude,
-                    longitude: apiProp.longitude
+            let newProperties = apiResponse.properties.map { prop -> Property in
+                // Get price display
+                let price = prop.displayPrices?.first?.displayPrice ?? "£\(prop.monthlyRent) pcm"
+
+                // Get images - use original URLs
+                let images = prop.thumbnailPhotos?.map { $0.url } ?? []
+
+                // Extract area from address
+                let addressParts = prop.address.split(separator: ",")
+                let area = addressParts.count > 1 ? String(addressParts.last!).trimmingCharacters(in: .whitespaces) : ""
+
+                return Property(
+                    id: String(prop.identifier),
+                    images: images,
+                    price: price,
+                    bedrooms: prop.bedrooms,
+                    bathrooms: 0, // Will get from details
+                    address: prop.address.trimmingCharacters(in: .whitespaces),
+                    area: area,
+                    rightmoveUrl: "https://www.rightmove.co.uk/properties/\(prop.identifier)",
+                    agentPhone: prop.branch?.contactTelephoneNumber,
+                    agentName: prop.branch?.brandName,
+                    branchName: prop.branch?.name,
+                    latitude: prop.latitude,
+                    longitude: prop.longitude,
+                    propertyType: prop.propertyType
                 )
             }
 
@@ -189,26 +221,43 @@ class LiveSearchService: ObservableObject {
         properties = []
         total = 0
         hasMore = false
-        currentIndex = 0
+        currentPage = 1
         currentParams = nil
         error = nil
     }
 
     // MARK: - Property Details
 
+    // Clean property details response from server
     private struct PropertyDetailsResponse: Decodable {
-        let propertyId: String
-        let hdImages: [String]
-        let floorplanImages: [String]
+        let id: Int
+        let bedrooms: Int
+        let bathrooms: Int
+        let address: String
+        let price: String
         let description: String?
-        let keyFeatures: [String]
         let propertyType: String?
-        let floorArea: String?
-        let epcRating: String?
-        let councilTaxBand: String?
-        let tenure: String?
-        let listingDate: String?
+        let furnishType: String?
         let availableFrom: String?
+        let latitude: Double?
+        let longitude: Double?
+        let photos: [String]
+        let floorplans: [String]
+        let features: [String]
+        let stations: [Station]
+        let agent: Agent
+    }
+
+    private struct Station: Decodable {
+        let name: String
+        let distance: Double
+    }
+
+    private struct Agent: Decodable {
+        let name: String?
+        let branch: String?
+        let phone: String?
+        let address: String?
     }
 
     /// Fetch full property details including HD images and listing information
@@ -229,37 +278,32 @@ class LiveSearchService: ObservableObject {
                 return nil
             }
 
-            let detailsResponse = try JSONDecoder().decode(PropertyDetailsResponse.self, from: data)
+            let details = try JSONDecoder().decode(PropertyDetailsResponse.self, from: data)
 
 #if DEBUG
-            print("✅ Got property details: \(detailsResponse.hdImages.count) HD images, description: \(detailsResponse.description != nil), features: \(detailsResponse.keyFeatures.count)")
+            print("✅ Got property details: \(details.photos.count) HD images, \(details.features.count) features, \(details.bathrooms) bathrooms")
 #endif
 
-            // Create updated property with HD images, floorplans and details
+            // Create updated property with details
             return Property(
                 id: property.id,
-                images: detailsResponse.hdImages.isEmpty ? property.images : detailsResponse.hdImages,
-                price: property.price,
-                bedrooms: property.bedrooms,
-                bathrooms: property.bathrooms,
-                address: property.address,
+                images: details.photos.isEmpty ? property.images : details.photos,
+                price: details.price,
+                bedrooms: details.bedrooms,
+                bathrooms: details.bathrooms,
+                address: details.address,
                 area: property.area,
                 rightmoveUrl: property.rightmoveUrl,
-                agentPhone: property.agentPhone,
-                agentName: property.agentName,
-                branchName: property.branchName,
-                latitude: property.latitude,
-                longitude: property.longitude,
-                description: detailsResponse.description,
-                keyFeatures: detailsResponse.keyFeatures.isEmpty ? nil : detailsResponse.keyFeatures,
-                propertyType: detailsResponse.propertyType,
-                floorArea: detailsResponse.floorArea,
-                epcRating: detailsResponse.epcRating,
-                councilTaxBand: detailsResponse.councilTaxBand,
-                tenure: detailsResponse.tenure,
-                listingDate: detailsResponse.listingDate,
-                availableFrom: detailsResponse.availableFrom,
-                floorplanImages: detailsResponse.floorplanImages.isEmpty ? nil : detailsResponse.floorplanImages
+                agentPhone: details.agent.phone ?? property.agentPhone,
+                agentName: details.agent.name ?? property.agentName,
+                branchName: details.agent.branch ?? property.branchName,
+                latitude: details.latitude ?? property.latitude,
+                longitude: details.longitude ?? property.longitude,
+                description: details.description,
+                keyFeatures: details.features.isEmpty ? nil : details.features,
+                propertyType: details.propertyType,
+                availableFrom: details.availableFrom,
+                floorplanImages: details.floorplans.isEmpty ? nil : details.floorplans
             )
 
         } catch {

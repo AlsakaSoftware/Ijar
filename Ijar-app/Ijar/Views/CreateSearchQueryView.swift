@@ -37,7 +37,8 @@ struct CreateSearchQueryView: View {
 
     // Optional pre-filled values (from browse results)
     let prefillAreaName: String?
-    let prefillPostcode: String?
+    let prefillLatitude: Double?
+    let prefillLongitude: Double?
     let prefillMinPrice: Int?
     let prefillMaxPrice: Int?
     let prefillMinBedrooms: Int?
@@ -49,7 +50,8 @@ struct CreateSearchQueryView: View {
 
     @State private var name = ""
     @State private var areaName = ""
-    @State private var postcode = ""
+    @State private var latitude: Double? = nil
+    @State private var longitude: Double? = nil
     @State private var minPrice: Int? = nil
     @State private var maxPrice: Int? = nil
     @State private var minBedrooms: Int? = nil
@@ -75,7 +77,8 @@ struct CreateSearchQueryView: View {
     init(onSave: @escaping (SearchQuery) -> Void) {
         self.onSave = onSave
         self.prefillAreaName = nil
-        self.prefillPostcode = nil
+        self.prefillLatitude = nil
+        self.prefillLongitude = nil
         self.prefillMinPrice = nil
         self.prefillMaxPrice = nil
         self.prefillMinBedrooms = nil
@@ -89,7 +92,8 @@ struct CreateSearchQueryView: View {
     // Prefilled initializer (from browse results)
     init(
         areaName: String,
-        postcode: String,
+        latitude: Double,
+        longitude: Double,
         minPrice: Int? = nil,
         maxPrice: Int? = nil,
         minBedrooms: Int? = nil,
@@ -102,7 +106,8 @@ struct CreateSearchQueryView: View {
     ) {
         self.onSave = onSave
         self.prefillAreaName = areaName
-        self.prefillPostcode = postcode
+        self.prefillLatitude = latitude
+        self.prefillLongitude = longitude
         self.prefillMinPrice = minPrice
         self.prefillMaxPrice = maxPrice
         self.prefillMinBedrooms = minBedrooms
@@ -236,7 +241,7 @@ struct CreateSearchQueryView: View {
                 if isGeocoding {
                     ProgressView()
                         .scaleEffect(0.8)
-                } else if !postcode.isEmpty && geocodingError == nil {
+                } else if latitude != nil && longitude != nil && geocodingError == nil {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundColor(.green)
                 }
@@ -270,8 +275,11 @@ struct CreateSearchQueryView: View {
         if let prefillAreaName = prefillAreaName {
             areaName = prefillAreaName
         }
-        if let prefillPostcode = prefillPostcode {
-            postcode = prefillPostcode
+        if let prefillLatitude = prefillLatitude {
+            latitude = prefillLatitude
+        }
+        if let prefillLongitude = prefillLongitude {
+            longitude = prefillLongitude
         }
         if let prefillMinPrice = prefillMinPrice {
             minPrice = prefillMinPrice
@@ -302,7 +310,7 @@ struct CreateSearchQueryView: View {
     private var isValidForm: Bool {
         !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
         !areaName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
-        !postcode.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+        latitude != nil && longitude != nil &&
         geocodingError == nil
     }
 
@@ -319,8 +327,8 @@ struct CreateSearchQueryView: View {
             hasErrors = true
         }
 
-        // Check area
-        if trimmedArea.isEmpty || postcode.isEmpty {
+        // Check area and coordinates
+        if trimmedArea.isEmpty || latitude == nil || longitude == nil {
             showAreaRequiredError = true
             hasErrors = true
         }
@@ -342,7 +350,8 @@ struct CreateSearchQueryView: View {
         let query = SearchQuery(
             name: name.trimmingCharacters(in: .whitespacesAndNewlines),
             areaName: areaName.trimmingCharacters(in: .whitespacesAndNewlines),
-            postcode: postcode.trimmingCharacters(in: .whitespacesAndNewlines).uppercased(),
+            latitude: latitude!,
+            longitude: longitude!,
             minPrice: minPrice,
             maxPrice: maxPrice,
             minBedrooms: minBedrooms,
@@ -359,7 +368,8 @@ struct CreateSearchQueryView: View {
 
     private func geocodeArea(_ area: String) {
         geocodingTask?.cancel()
-        postcode = ""
+        latitude = nil
+        longitude = nil
         geocodingError = nil
 
         let trimmedArea = area.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -377,21 +387,24 @@ struct CreateSearchQueryView: View {
 
                 await MainActor.run {
                     isGeocoding = false
-                    postcode = result.postcode
+                    latitude = result.latitude
+                    longitude = result.longitude
                     geocodingError = nil
                 }
             } catch let error as GeocodingError {
                 guard !Task.isCancelled else { return }
                 await MainActor.run {
                     isGeocoding = false
-                    postcode = ""
+                    latitude = nil
+                    longitude = nil
                     geocodingError = error.localizedDescription
                 }
             } catch {
                 guard !Task.isCancelled else { return }
                 await MainActor.run {
                     isGeocoding = false
-                    postcode = ""
+                    latitude = nil
+                    longitude = nil
                     geocodingError = "We couldn't find this area. Please check the spelling."
                 }
             }

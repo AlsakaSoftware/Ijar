@@ -1,11 +1,11 @@
 import * as http from 'http';
-import { RightmoveScraper } from './rightmove-scraper';
-import { LiveSearchProperty, transformProperty } from './models/property';
+import { RightmoveAPI } from './rightmove-api';
 
 const PORT = process.env.PORT || 3001;
 
-interface LiveSearchRequest {
-  postcode: string;
+interface SearchRequest {
+  latitude: number;
+  longitude: number;
   minPrice?: number;
   maxPrice?: number;
   minBedrooms?: number;
@@ -14,29 +14,22 @@ interface LiveSearchRequest {
   maxBathrooms?: number;
   radius?: number;
   furnishType?: string;
-  index?: number;
+  page?: number;
 }
 
-interface LiveSearchResponse {
-  properties: LiveSearchProperty[];
-  total: number;
-  hasMore: boolean;
-  nextIndex: number | null;
-}
+const api = new RightmoveAPI();
 
-async function handleSearch(body: LiveSearchRequest): Promise<LiveSearchResponse> {
-  const scraper = new RightmoveScraper();
-
-  let furnishTypes: 'furnished' | 'unfurnished' | 'furnished_or_unfurnished' | undefined;
+async function handleSearch(body: SearchRequest) {
+  let furnishType: 'furnished' | 'unfurnished' | undefined;
   if (body.furnishType === 'furnished') {
-    furnishTypes = 'furnished';
+    furnishType = 'furnished';
   } else if (body.furnishType === 'unfurnished') {
-    furnishTypes = 'unfurnished';
+    furnishType = 'unfurnished';
   }
 
-  const results = await scraper.searchProperties({
-    searchType: 'RENT',
-    postcode: body.postcode,
+  const results = await api.searchProperties({
+    latitude: body.latitude,
+    longitude: body.longitude,
     minPrice: body.minPrice,
     maxPrice: body.maxPrice,
     minBedrooms: body.minBedrooms,
@@ -44,26 +37,19 @@ async function handleSearch(body: LiveSearchRequest): Promise<LiveSearchResponse
     minBathrooms: body.minBathrooms,
     maxBathrooms: body.maxBathrooms,
     radius: body.radius,
-    furnishTypes,
-    getAllPages: false,
-    quiet: false
+    furnishType,
+    page: body.page || 1,
+    pageSize: 25
   });
 
-  const properties = results.properties.map(transformProperty);
-  const currentIndex = body.index || 0;
-  const hasMore = currentIndex + properties.length < results.total;
-  const nextIndex = hasMore ? currentIndex + 24 : null;
-
+  // Return the API response directly
   return {
-    properties,
+    properties: results.properties,
     total: results.total,
-    hasMore,
-    nextIndex
+    hasMore: results.hasMore,
+    page: results.page
   };
 }
-
-// Shared scraper instance for HD image fetches
-const hdScraper = new RightmoveScraper();
 
 const server = http.createServer(async (req, res) => {
   // CORS headers
@@ -78,7 +64,7 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // GET /api/property/:id/details - Fetch comprehensive property details including HD images, description, features
+  // GET /api/property/:id/details - Fetch comprehensive property details
   const detailsMatch = req.url?.match(/^\/api\/property\/(\d+)\/details$/);
   if (detailsMatch && req.method === 'GET') {
     const propertyId = detailsMatch[1];
@@ -87,19 +73,39 @@ const server = http.createServer(async (req, res) => {
       console.log(`\n--- Property Details Request ---`);
       console.log('Property ID:', propertyId);
 
-      const details = await hdScraper.getFullPropertyDetails(propertyId, false);
+      const response = await api.getPropertyDetails(propertyId);
+      const p = response.property;
 
-      console.log('Found:', details.hdImages.length, 'HD images');
-      console.log('Description:', details.description ? 'Yes' : 'No');
-      console.log('Key Features:', details.keyFeatures.length);
-      console.log('Property Type:', details.propertyType || 'N/A');
-      console.log('Floor Area:', details.floorArea || 'N/A');
+      // Clean response - only send what the app needs
+      const cleanResponse = {
+        id: p.identifier,
+        bedrooms: p.bedrooms,
+        bathrooms: parseInt(p.analyticsInfo?.bathrooms || '0', 10),
+        address: p.address,
+        price: p.displayPrices?.[0]?.displayPrice || `£${p.price} pcm`,
+        description: p.fullDescription || p.summary,
+        propertyType: p.propertySubtype || p.analyticsInfo?.propertySubType,
+        furnishType: p.letFurnishType,
+        availableFrom: p.letDateAvailable,
+        latitude: p.latitude,
+        longitude: p.longitude,
+        photos: p.photos?.map((photo: any) => photo.maxSizeUrl) || [],
+        floorplans: p.floorplans?.map((fp: any) => fp.url) || [],
+        features: p.features?.map((f: any) => f.featureDescription) || [],
+        stations: p.stations?.map((s: any) => ({ name: s.station, distance: s.distance })) || [],
+        agent: {
+          name: p.branch?.brandName,
+          branch: p.branch?.name,
+          phone: p.telephoneNumber,
+          address: p.branch?.address
+        }
+      };
+
+      console.log('Bathrooms:', cleanResponse.bathrooms);
+      console.log('Photos:', cleanResponse.photos.length);
 
       res.writeHead(200);
-      res.end(JSON.stringify(details));
-
-      // Add delay after request to avoid rate limiting
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      res.end(JSON.stringify(cleanResponse));
 
     } catch (error) {
       console.error('Error fetching property details:', error);
@@ -119,26 +125,31 @@ const server = http.createServer(async (req, res) => {
 
     req.on('end', async () => {
       try {
-        const data = JSON.parse(body) as LiveSearchRequest;
+        const data = JSON.parse(body) as SearchRequest;
 
-        if (!data.postcode || data.postcode.trim() === '') {
+        if (data.latitude === undefined || data.longitude === undefined) {
           res.writeHead(400);
-          res.end(JSON.stringify({ error: 'postcode is required' }));
+          res.end(JSON.stringify({ error: 'latitude and longitude are required' }));
           return;
         }
 
         console.log('\n--- Search Request ---');
-        console.log('Postcode:', data.postcode);
+        console.log('Location:', data.latitude, data.longitude);
         console.log('Price:', data.minPrice || 'any', '-', data.maxPrice || 'any');
         console.log('Beds:', data.minBedrooms || 'any', '-', data.maxBedrooms || 'any');
-        console.log('Index:', data.index || 0);
+        console.log('Page:', data.page || 1);
 
         const result = await handleSearch(data);
 
-        console.log('\n--- Results ---');
+        console.log('\n--- Rightmove API Response (Search) ---');
         console.log('Total:', result.total);
         console.log('Returned:', result.properties.length);
         console.log('Has more:', result.hasMore);
+        console.log('\nFirst property:');
+        if (result.properties.length > 0) {
+          console.log(JSON.stringify(result.properties[0], null, 2));
+        }
+        console.log('--- End Response ---\n');
 
         res.writeHead(200);
         res.end(JSON.stringify(result));
@@ -159,10 +170,13 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(PORT, () => {
   console.log(`\n🚀 Live Search API running at http://localhost:${PORT}`);
-  console.log(`\nEndpoint: POST /api/search`);
+  console.log(`   Using Rightmove API (no scraping)`);
+  console.log(`\nEndpoints:`);
+  console.log(`  POST /api/search - Search properties`);
+  console.log(`  GET  /api/property/:id/details - Get property details`);
   console.log(`\nTest with:`);
   console.log(`curl -X POST http://localhost:${PORT}/api/search \\`);
   console.log(`  -H "Content-Type: application/json" \\`);
-  console.log(`  -d '{"postcode": "SW6 1BA", "maxPrice": 3000, "minBedrooms": 2}'`);
+  console.log(`  -d '{"latitude": 51.5027, "longitude": -0.0254, "maxPrice": 3000, "minBedrooms": 2}'`);
   console.log(`\nPress Ctrl+C to stop\n`);
 });

@@ -40,9 +40,10 @@ struct BrowseResultsView: View {
         // Don't show if user already saved this search
         if hasSavedQuery { return false }
 
-        // Check if a query with this exact postcode already exists
+        // Check if a query with these exact coordinates already exists
         let existingQuery = queryService.queries.first { query in
-            query.postcode.uppercased() == params.postcode.uppercased() &&
+            abs(query.latitude - params.latitude) < 0.001 &&
+            abs(query.longitude - params.longitude) < 0.001 &&
             query.minPrice == minPrice &&
             query.maxPrice == maxPrice &&
             query.minBedrooms == minBedrooms &&
@@ -112,7 +113,8 @@ struct BrowseResultsView: View {
         .sheet(isPresented: $showSaveSearchSheet) {
             CreateSearchQueryView(
                 areaName: params.areaName,
-                postcode: params.postcode,
+                latitude: params.latitude,
+                longitude: params.longitude,
                 minPrice: minPrice,
                 maxPrice: maxPrice,
                 minBedrooms: minBedrooms,
@@ -128,7 +130,7 @@ struct BrowseResultsView: View {
                 }
             }
         }
-        .task(id: params.postcode) {
+        .task(id: "\(params.latitude),\(params.longitude)") {
             guard !hasLoadedInitialData else { return }
             hasLoadedInitialData = true
 
@@ -372,7 +374,8 @@ struct BrowseResultsView: View {
         animateContent = false
         Task {
             await searchService.search(
-                postcode: params.postcode,
+                latitude: params.latitude,
+                longitude: params.longitude,
                 minPrice: minPrice,
                 maxPrice: maxPrice,
                 minBedrooms: minBedrooms,
