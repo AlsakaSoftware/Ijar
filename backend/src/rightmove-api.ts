@@ -235,22 +235,22 @@ export class RightmoveAPI {
       apiApplication: 'IPHONE',
       radius: String(params.radius ?? 1)
     });
-    if (params.minPrice !== undefined) {
+    if (params.minPrice != null) {
       queryParams.set('minPrice', String(params.minPrice));
     }
-    if (params.maxPrice !== undefined) {
+    if (params.maxPrice != null) {
       queryParams.set('maxPrice', String(params.maxPrice));
     }
-    if (params.minBedrooms !== undefined) {
+    if (params.minBedrooms != null) {
       queryParams.set('minBedrooms', String(params.minBedrooms));
     }
-    if (params.maxBedrooms !== undefined) {
+    if (params.maxBedrooms != null) {
       queryParams.set('maxBedrooms', String(params.maxBedrooms));
     }
-    if (params.minBathrooms !== undefined) {
+    if (params.minBathrooms != null) {
       queryParams.set('minBathrooms', String(params.minBathrooms));
     }
-    if (params.maxBathrooms !== undefined) {
+    if (params.maxBathrooms != null) {
       queryParams.set('maxBathrooms', String(params.maxBathrooms));
     }
     if (params.furnishType) {

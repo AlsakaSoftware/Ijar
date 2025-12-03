@@ -1,60 +1,59 @@
 #!/usr/bin/env tsx
 
 import 'dotenv/config';
-import RightmoveScraper from './rightmove-scraper';
+import { RightmoveAPI, RightmoveAPIProperty, RightmoveAPIPropertyDetails } from './rightmove-api';
 import { SupabasePropertyClient, UserQuery } from './supabase-client';
-import { SearchOptions } from './scraper-types';
+
+// Extended property type with HD images from details API
+interface PropertyWithDetails extends RightmoveAPIProperty {
+  hdImages?: string[];
+  bathrooms?: number;
+}
 import config from './config';
 import { PushNotificationService } from './push-notification-service';
 import { createClient } from '@supabase/supabase-js';
 
 class PropertyMonitor {
-  private scraper: RightmoveScraper;
+  private api: RightmoveAPI;
   private supabase: SupabasePropertyClient;
   private notificationService: PushNotificationService;
 
   constructor() {
-    this.scraper = new RightmoveScraper();
+    this.api = new RightmoveAPI();
     this.supabase = new SupabasePropertyClient();
-    
+
     const supabaseClient = createClient(
       process.env.SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
-    
+
     this.notificationService = new PushNotificationService(supabaseClient);
   }
 
   // Log data quality metrics for properties
-  private logDataQuality(properties: any[], queryName: string): void {
+  private logDataQuality(properties: RightmoveAPIProperty[], queryName: string): void {
     if (properties.length === 0) return;
 
     let missingAgentPhone = 0;
     let missingAgentName = 0;
     let missingBranchName = 0;
-    let missingRightmoveUrl = 0;
 
     properties.forEach((property, index) => {
-      const hasPhone = property.customer?.contactTelephone;
-      const hasAgentName = property.customer?.brandTradingName;
-      const hasBranchName = property.customer?.branchDisplayName;
-      const hasPropertyUrl = property.propertyUrl;
+      const hasPhone = property.branch?.contactTelephoneNumber;
+      const hasAgentName = property.branch?.brandName;
+      const hasBranchName = property.branch?.name;
 
       if (!hasPhone) {
         missingAgentPhone++;
-        console.log(`    ⚠️  Property ${index + 1} (${property.displayAddress}) missing agent phone`);
+        console.log(`    ⚠️  Property ${index + 1} (${property.address}) missing agent phone`);
       }
       if (!hasAgentName) {
         missingAgentName++;
-        console.log(`    ⚠️  Property ${index + 1} (${property.displayAddress}) missing agent name`);
+        console.log(`    ⚠️  Property ${index + 1} (${property.address}) missing agent name`);
       }
       if (!hasBranchName) {
         missingBranchName++;
-        console.log(`    ⚠️  Property ${index + 1} (${property.displayAddress}) missing branch name`);
-      }
-      if (!hasPropertyUrl) {
-        missingRightmoveUrl++;
-        console.log(`    ⚠️  Property ${index + 1} (${property.displayAddress}) missing Rightmove URL`);
+        console.log(`    ⚠️  Property ${index + 1} (${property.address}) missing branch name`);
       }
     });
 
@@ -64,7 +63,6 @@ class PropertyMonitor {
     console.log(`      📞 Agent Phone: ${total - missingAgentPhone}/${total} (${Math.round((total - missingAgentPhone) / total * 100)}%)`);
     console.log(`      👤 Agent Name: ${total - missingAgentName}/${total} (${Math.round((total - missingAgentName) / total * 100)}%)`);
     console.log(`      🏢 Branch Name: ${total - missingBranchName}/${total} (${Math.round((total - missingBranchName) / total * 100)}%)`);
-    console.log(`      🔗 Rightmove URL: ${total - missingRightmoveUrl}/${total} (${Math.round((total - missingRightmoveUrl) / total * 100)}%)`);
 
     // Alert if data quality is poor
     const phoneSuccessRate = (total - missingAgentPhone) / total;
@@ -81,16 +79,16 @@ class PropertyMonitor {
   // Helper function to group queries by user_id
   private groupQueriesByUser(queries: UserQuery[]): Map<string, UserQuery[]> {
     const grouped = new Map<string, UserQuery[]>();
-    
+
     for (const query of queries) {
       if (!query.user_id) continue; // Skip queries without user_id
-      
+
       if (!grouped.has(query.user_id)) {
         grouped.set(query.user_id, []);
       }
       grouped.get(query.user_id)!.push(query);
     }
-    
+
     return grouped;
   }
 
@@ -125,51 +123,51 @@ class PropertyMonitor {
       // Group queries by user_id
       const queriesByUser = this.groupQueriesByUser(filteredQueries);
       console.log(`👥 Processing queries for ${queriesByUser.size} users`);
-      
+
       let totalNewProperties = 0;
-      
+
       // Process each user's queries
       for (const [userId, queries] of queriesByUser) {
         console.log(`\n👤 Processing ${queries.length} queries for user: ${userId}`);
         let userNewProperties = 0;
-        
+
         // Process all queries for this user
         for (const query of queries) {
           console.log(`  🔍 Processing query: ${query.name}`);
-          
+
           try {
             const processResult = await this.processQuery(query);
             userNewProperties += processResult.newCount;
-            
+
             if (processResult.newCount > 0) {
               console.log(`    🎉 Added ${processResult.newCount} new properties for query: ${query.name}`);
             } else {
               console.log(`    📭 No new properties for query: ${query.name}`);
             }
-            
+
             if (processResult.errors.length > 0) {
               console.warn(`    ⚠️ Some errors occurred:`, processResult.errors.slice(0, 3));
             }
-            
+
           } catch (error) {
             console.error(`    ❌ Error processing query ${query.name}:`, error);
           }
         }
-        
+
         if (userNewProperties > 0 && this.notificationService) {
           console.log(`  🔔 Sending notification to user ${userId}: ${userNewProperties} new properties across ${queries.length} queries`);
-          
+
           try {
             // Include query name for single query notifications
             const queryName = queries.length === 1 ? queries[0].name : undefined;
-            
+
             const notificationResult = await this.notificationService.sendPropertyNotification(
               userId,
               userNewProperties,
               queries.length,
               queryName
             );
-            
+
             if (notificationResult.success) {
               console.log(`  ✅ Notification sent successfully to user ${userId}`);
             } else {
@@ -181,12 +179,12 @@ class PropertyMonitor {
         } else {
           console.log(`  📭 No new properties for user ${userId}, skipping notification`);
         }
-        
+
         totalNewProperties += userNewProperties;
       }
-      
+
       console.log(`\n✅ Completed processing all queries. Total new properties: ${totalNewProperties}`);
-      
+
     } catch (error) {
       console.error('❌ Error processing user queries:', error);
     }
@@ -194,31 +192,26 @@ class PropertyMonitor {
 
   private async processQuery(query: UserQuery): Promise<{ newCount: number; errors: string[] }> {
     try {
-      // Build search options, only including non-null parameters
-      const searchOptions: SearchOptions = {
-        searchType: 'RENT', // Default to rent for now
-        postcode: query.postcode, // Using postcode directly
-        getAllPages: false,
-        maxPages: config.maxPagesToScrape,
-        quiet: false // Show URL being scraped
-      };
+      // Search using API with coordinates
+      const results = await this.api.searchProperties({
+        latitude: query.latitude,
+        longitude: query.longitude,
+        minPrice: query.min_price,
+        maxPrice: query.max_price,
+        minBedrooms: query.min_bedrooms,
+        maxBedrooms: query.max_bedrooms,
+        minBathrooms: query.min_bathrooms,
+        maxBathrooms: query.max_bathrooms,
+        radius: query.radius,
+        furnishType: query.furnish_type as 'furnished' | 'unfurnished' | undefined,
+        page: 1,
+        pageSize: 25
+      });
 
-      // Only add parameters that have values
-      if (query.min_price) searchOptions.minPrice = query.min_price;
-      if (query.max_price) searchOptions.maxPrice = query.max_price;
-      if (query.min_bedrooms) searchOptions.minBedrooms = query.min_bedrooms;
-      if (query.max_bedrooms) searchOptions.maxBedrooms = query.max_bedrooms;
-      if (query.min_bathrooms) searchOptions.minBathrooms = query.min_bathrooms;
-      if (query.max_bathrooms) searchOptions.maxBathrooms = query.max_bathrooms;
-      if (query.furnish_type) searchOptions.furnishTypes = query.furnish_type as any;
-      if (query.radius) searchOptions.radius = query.radius;
-      
-      // Fetch first N pages (thumbnails only - fast!)
-      const results = await this.scraper.searchProperties(searchOptions);
-      console.log(`    📊 Scraped ${results.properties.length} properties from ${config.maxPagesToScrape} page(s)`);
+      console.log(`    📊 API returned ${results.properties.length} properties (total: ${results.total})`);
 
       // Filter for properties that are NEW for this specific query
-      const newPropertiesForQuery = await this.supabase.getNewPropertiesForQuery(query, results.properties);
+      const newPropertiesForQuery = await this.supabase.getNewAPIPropertiesForQuery(query, results.properties);
       console.log(`    🔍 ${newPropertiesForQuery.length} are new (${results.properties.length - newPropertiesForQuery.length} already seen)`);
 
       if (newPropertiesForQuery.length === 0) {
@@ -233,22 +226,18 @@ class PropertyMonitor {
       // Log data quality metrics for the properties we're about to process
       this.logDataQuality(topNewProperties, query.name);
 
-      // NOW enhance with HD images (only for the new properties we're saving)
-      let finalProperties = topNewProperties;
-      if (config.enableHDImages) {
-        console.log(`    📸 Fetching HD images for ${topNewProperties.length} new properties...`);
-        const propertiesWithHD = await this.scraper.getPropertiesWithHDImages(topNewProperties, true);
-        finalProperties = propertiesWithHD;
-      }
+      // Fetch HD images for each property
+      console.log(`    📸 Fetching HD images for ${topNewProperties.length} properties...`);
+      const propertiesWithDetails = await this.fetchPropertyDetails(topNewProperties);
 
       // Process properties for this specific query
-      const processResult = await this.supabase.processPropertiesForQuery(query, finalProperties);
-      
+      const processResult = await this.supabase.processAPIPropertiesForQuery(query, propertiesWithDetails);
+
       return {
         newCount: processResult.newCount,
         errors: processResult.errors
       };
-      
+
     } catch (error) {
       console.error(`    ❌ Error processing query ${query.name}:`, error);
       return {
@@ -256,6 +245,36 @@ class PropertyMonitor {
         errors: [error instanceof Error ? error.message : 'Unknown error']
       };
     }
+  }
+
+  // Fetch property details to get HD images
+  private async fetchPropertyDetails(properties: RightmoveAPIProperty[]): Promise<PropertyWithDetails[]> {
+    const results: PropertyWithDetails[] = [];
+
+    for (const property of properties) {
+      try {
+        const details = await this.api.getPropertyDetails(property.identifier);
+        const p = details.property;
+
+        // Extract HD images from details
+        const hdImages = p.photos?.map((photo: any) => photo.maxSizeUrl) || [];
+        const bathrooms = parseInt(p.analyticsInfo?.bathrooms || '0', 10);
+
+        console.log(`      📷 ${property.identifier}: ${hdImages.length} HD images, ${bathrooms} bathrooms`);
+
+        results.push({
+          ...property,
+          hdImages,
+          bathrooms
+        });
+      } catch (error) {
+        console.warn(`      ⚠️ Failed to fetch details for ${property.identifier}, using thumbnails`);
+        // Fall back to thumbnail images
+        results.push(property);
+      }
+    }
+
+    return results;
   }
 
   // Cleanup method to properly close connections
