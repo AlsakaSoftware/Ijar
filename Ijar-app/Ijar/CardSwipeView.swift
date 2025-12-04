@@ -38,18 +38,16 @@ struct CardSwipeView: View {
                     propertyCounter
                         .padding(.top, 25)
                         .opacity(showContent ? 1 : 0)
-                        .offset(y: showContent ? 0 : 10)
 
                     Spacer()
 
                     cardStackSection
                         .padding(.vertical, 15)
                         .opacity(showContent ? 1 : 0)
-                        .offset(y: showContent ? 0 : 20)
+                        .scaleEffect(showContent ? 1 : 0.95)
 
                     actionButtons
                         .opacity(showContent ? 1 : 0)
-                        .offset(y: showContent ? 0 : 15)
 
                     Spacer()
 
@@ -77,10 +75,10 @@ struct CardSwipeView: View {
             await searchService.loadUserQueries()
             prefetchTopProperties()
 
-            // Single clean animation - slight delay for first-time entrance
-            let delay = isFirstTimeEntrance ? 0.15 : 0.0
+            // Clean spring animation
+            let delay = isFirstTimeEntrance ? 0.1 : 0.0
             DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
-                withAnimation(.easeOut(duration: 0.4)) {
+                withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
                     showContent = true
                 }
                 ambientAnimation = true
