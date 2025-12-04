@@ -97,23 +97,6 @@ struct OnboardingPlacesStep: View {
                     .animation(.easeInOut(duration: 0.2), value: error)
                     .animation(.easeInOut(duration: 0.2), value: focusedField)
 
-                    // Add Place button
-                    Button {
-                        Task { await addPlace() }
-                    } label: {
-                        Text("Add Place")
-                            .font(.system(size: 17, weight: .semibold))
-                            .foregroundColor(canAdd ? .rusticOrange : .warmBrown.opacity(0.4))
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 16)
-                            .background(
-                                RoundedRectangle(cornerRadius: 30)
-                                    .stroke(canAdd ? Color.rusticOrange : Color.warmBrown.opacity(0.3), lineWidth: 1.5)
-                            )
-                    }
-                    .disabled(!canAdd || isSaving)
-                    .padding(.horizontal, 24)
-
                     // Added places
                     if !locationsManager.locations.isEmpty {
                         VStack(spacing: 0) {
@@ -174,21 +157,55 @@ struct OnboardingPlacesStep: View {
         }
     }
 
+    private var isTyping: Bool {
+        !placeName.trimmingCharacters(in: .whitespaces).isEmpty ||
+        !postcode.trimmingCharacters(in: .whitespaces).isEmpty
+    }
+
+    private var buttonText: String {
+        if isTyping {
+            return "Add Place"
+        } else if locationsManager.locations.isEmpty {
+            return "Add later"
+        } else {
+            return "Continue"
+        }
+    }
+
+    private var buttonEnabled: Bool {
+        if isTyping {
+            return canAdd
+        }
+        return true
+    }
+
     private var continueButton: some View {
         VStack(spacing: 0) {
             Button {
-                viewModel.goToNextStep()
+                if isTyping && canAdd {
+                    Task { await addPlace() }
+                } else if !isTyping {
+                    viewModel.goToNextStep()
+                }
             } label: {
-                Text(locationsManager.locations.isEmpty ? "Add later" : "Continue")
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
-                    .background(
-                        RoundedRectangle(cornerRadius: 30)
-                            .fill(Color.rusticOrange)
-                    )
+                HStack {
+                    if isSaving {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            .scaleEffect(0.85)
+                    }
+                    Text(isSaving ? "Adding..." : buttonText)
+                }
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 16)
+                .background(
+                    RoundedRectangle(cornerRadius: 30)
+                        .fill(buttonEnabled ? Color.rusticOrange : Color.warmBrown.opacity(0.3))
+                )
             }
+            .disabled(!buttonEnabled || isSaving)
             .padding(.horizontal, 24)
             .padding(.vertical, 16)
             .background(Color.warmCream)

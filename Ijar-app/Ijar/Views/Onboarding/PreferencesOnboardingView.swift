@@ -10,43 +10,42 @@ struct PreferencesOnboardingView: View {
         ZStack {
             Color.warmCream.ignoresSafeArea()
 
-            if viewModel.currentStep == .complete {
-                OnboardingCompleteStep {
-                    onComplete(fetchedProperties)
-                }
-            } else {
-                VStack(spacing: 0) {
-                    // Header with back button and progress
+            VStack(spacing: 0) {
+                // Header - hide on complete step
+                if viewModel.currentStep != .complete {
                     headerView
-
-                    // Step content
-                    TabView(selection: $viewModel.currentStep) {
-                        OnboardingLocationStep(viewModel: viewModel)
-                            .tag(OnboardingStep.location)
-
-                        OnboardingRoomsStep(viewModel: viewModel)
-                            .tag(OnboardingStep.rooms)
-
-                        OnboardingBudgetStep(viewModel: viewModel)
-                            .tag(OnboardingStep.budget)
-
-                        OnboardingFurnishingStep(viewModel: viewModel)
-                            .tag(OnboardingStep.furnishing)
-
-                        OnboardingPlacesStep(viewModel: viewModel, locationsManager: locationsManager)
-                            .tag(OnboardingStep.places)
-
-                        OnboardingSummaryStep(viewModel: viewModel, locationsManager: locationsManager) { properties in
-                            fetchedProperties = properties
-                            withAnimation(.easeInOut(duration: 0.3)) {
-                                viewModel.currentStep = .complete
-                            }
-                        }
-                        .tag(OnboardingStep.summary)
-                    }
-                    .tabViewStyle(.page(indexDisplayMode: .never))
-                    .animation(.easeInOut(duration: 0.3), value: viewModel.currentStep)
                 }
+
+                // Step content
+                TabView(selection: $viewModel.currentStep) {
+                    OnboardingLocationStep(viewModel: viewModel)
+                        .tag(OnboardingStep.location)
+
+                    OnboardingRoomsStep(viewModel: viewModel)
+                        .tag(OnboardingStep.rooms)
+
+                    OnboardingBudgetStep(viewModel: viewModel)
+                        .tag(OnboardingStep.budget)
+
+                    OnboardingFurnishingStep(viewModel: viewModel)
+                        .tag(OnboardingStep.furnishing)
+
+                    OnboardingPlacesStep(viewModel: viewModel, locationsManager: locationsManager)
+                        .tag(OnboardingStep.places)
+
+                    OnboardingSummaryStep(viewModel: viewModel, locationsManager: locationsManager) { properties in
+                        fetchedProperties = properties
+                        viewModel.goToNextStep()
+                    }
+                    .tag(OnboardingStep.summary)
+
+                    OnboardingCompleteStep {
+                        onComplete(fetchedProperties)
+                    }
+                    .tag(OnboardingStep.complete)
+                }
+                .tabViewStyle(.page(indexDisplayMode: .never))
+                .animation(.easeInOut(duration: 0.3), value: viewModel.currentStep)
             }
         }
     }
