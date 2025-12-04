@@ -10,42 +10,42 @@ struct PreferencesOnboardingView: View {
         ZStack {
             Color.warmCream.ignoresSafeArea()
 
-            VStack(spacing: 0) {
-                // Header - hide on complete step
-                if viewModel.currentStep != .complete {
+            if viewModel.currentStep == .complete {
+                // Complete step shown separately (not swipeable)
+                OnboardingCompleteStep {
+                    onComplete(fetchedProperties)
+                }
+            } else {
+                VStack(spacing: 0) {
+                    // Header
                     headerView
-                }
 
-                // Step content
-                TabView(selection: $viewModel.currentStep) {
-                    OnboardingLocationStep(viewModel: viewModel)
-                        .tag(OnboardingStep.location)
+                    // Step content (swipeable steps only)
+                    TabView(selection: $viewModel.currentStep) {
+                        OnboardingLocationStep(viewModel: viewModel)
+                            .tag(OnboardingStep.location)
 
-                    OnboardingRoomsStep(viewModel: viewModel)
-                        .tag(OnboardingStep.rooms)
+                        OnboardingRoomsStep(viewModel: viewModel)
+                            .tag(OnboardingStep.rooms)
 
-                    OnboardingBudgetStep(viewModel: viewModel)
-                        .tag(OnboardingStep.budget)
+                        OnboardingBudgetStep(viewModel: viewModel)
+                            .tag(OnboardingStep.budget)
 
-                    OnboardingFurnishingStep(viewModel: viewModel)
-                        .tag(OnboardingStep.furnishing)
+                        OnboardingFurnishingStep(viewModel: viewModel)
+                            .tag(OnboardingStep.furnishing)
 
-                    OnboardingPlacesStep(viewModel: viewModel, locationsManager: locationsManager)
-                        .tag(OnboardingStep.places)
+                        OnboardingPlacesStep(viewModel: viewModel, locationsManager: locationsManager)
+                            .tag(OnboardingStep.places)
 
-                    OnboardingSummaryStep(viewModel: viewModel, locationsManager: locationsManager) { properties in
-                        fetchedProperties = properties
-                        viewModel.goToNextStep()
+                        OnboardingSummaryStep(viewModel: viewModel, locationsManager: locationsManager) { properties in
+                            fetchedProperties = properties
+                            viewModel.goToNextStep()
+                        }
+                        .tag(OnboardingStep.summary)
                     }
-                    .tag(OnboardingStep.summary)
-
-                    OnboardingCompleteStep {
-                        onComplete(fetchedProperties)
-                    }
-                    .tag(OnboardingStep.complete)
+                    .tabViewStyle(.page(indexDisplayMode: .never))
+                    .animation(.easeInOut(duration: 0.3), value: viewModel.currentStep)
                 }
-                .tabViewStyle(.page(indexDisplayMode: .never))
-                .animation(.easeInOut(duration: 0.3), value: viewModel.currentStep)
             }
         }
     }
