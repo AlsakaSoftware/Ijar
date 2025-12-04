@@ -8,6 +8,12 @@ class SearchQueryService: ObservableObject {
     @Published var isLoading = false
     @Published var error: String?
 
+    private let dateFormatter: ISO8601DateFormatter = {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return formatter
+    }()
+
     init() {
         self.supabase = SupabaseClient(
             supabaseURL: URL(string: ConfigManager.shared.supabaseURL)!,
@@ -47,10 +53,10 @@ class SearchQueryService: ObservableObject {
                     radius: row.radius,
                     furnishType: row.furnish_type,
                     active: row.active ?? true,
-                    created: ISO8601DateFormatter().date(from: row.created) ?? Date(),
-                    updated: ISO8601DateFormatter().date(from: row.updated) ?? Date()
+                    created: dateFormatter.date(from: row.created) ?? Date(),
+                    updated: dateFormatter.date(from: row.updated) ?? Date()
                 )
-            }
+            }.sorted { $0.created > $1.created }
         } catch {
             self.error = error.localizedDescription
             print("Error loading queries: \(error)")
@@ -87,8 +93,8 @@ class SearchQueryService: ObservableObject {
                 radius: query.radius,
                 furnish_type: query.furnishType,
                 active: query.active,
-                created: ISO8601DateFormatter().string(from: query.created),
-                updated: ISO8601DateFormatter().string(from: query.updated)
+                created: dateFormatter.string(from: query.created),
+                updated: dateFormatter.string(from: query.updated)
             )
 
             try await supabase
@@ -137,8 +143,8 @@ class SearchQueryService: ObservableObject {
                 radius: query.radius,
                 furnish_type: query.furnishType,
                 active: query.active,
-                created: ISO8601DateFormatter().string(from: query.created),
-                updated: ISO8601DateFormatter().string(from: query.updated)
+                created: dateFormatter.string(from: query.created),
+                updated: dateFormatter.string(from: query.updated)
             )
 
             try await supabase
@@ -170,12 +176,9 @@ class SearchQueryService: ObservableObject {
         error = nil
 
         do {
-            // Get current user
-            let user = try await supabase.auth.user()
-
-            let queryRow = QueryRow(
-                id: query.id.uuidString,
-                user_id: user.id.uuidString,
+            // Use QueryUpdateRow which excludes 'created' field
+            // This prevents overwriting the original created timestamp
+            let updateRow = QueryUpdateRow(
                 name: query.name,
                 area_name: query.areaName,
                 latitude: query.latitude,
@@ -189,17 +192,16 @@ class SearchQueryService: ObservableObject {
                 radius: query.radius,
                 furnish_type: query.furnishType,
                 active: query.active,
-                created: ISO8601DateFormatter().string(from: query.created),
-                updated: ISO8601DateFormatter().string(from: Date())
+                updated: dateFormatter.string(from: Date())
             )
 
             try await supabase
                 .from("query")
-                .update(queryRow)
+                .update(updateRow)
                 .eq("id", value: query.id.uuidString)
                 .execute()
 
-            await loadUserQueries() // Refresh the list
+            await loadUserQueries()
             isLoading = false
             return true
         } catch {
@@ -256,5 +258,23 @@ private struct QueryRow: Codable {
     let furnish_type: String?
     let active: Bool?
     let created: String
+    let updated: String
+}
+
+// Update row - excludes created field so it doesn't get modified
+private struct QueryUpdateRow: Codable {
+    let name: String
+    let area_name: String
+    let latitude: Double
+    let longitude: Double
+    let min_price: Int?
+    let max_price: Int?
+    let min_bedrooms: Int?
+    let max_bedrooms: Int?
+    let min_bathrooms: Int?
+    let max_bathrooms: Int?
+    let radius: Double?
+    let furnish_type: String?
+    let active: Bool?
     let updated: String
 }
