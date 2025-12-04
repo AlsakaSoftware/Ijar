@@ -5,7 +5,6 @@ import Supabase
 class SearchQueryService: ObservableObject {
     private let supabase: SupabaseClient
     @Published var queries: [SearchQuery] = []
-    @Published var isLoading = false
     @Published var error: String?
 
     private let dateFormatter: ISO8601DateFormatter = {
@@ -22,7 +21,6 @@ class SearchQueryService: ObservableObject {
     }
 
     func loadUserQueries() async {
-        isLoading = true
         error = nil
 
         do {
@@ -61,13 +59,10 @@ class SearchQueryService: ObservableObject {
             self.error = error.localizedDescription
             print("Error loading queries: \(error)")
         }
-
-        isLoading = false
     }
 
     @discardableResult
     func createQuery(_ query: SearchQuery) async -> Bool {
-        isLoading = true
         error = nil
 
         do {
@@ -108,19 +103,16 @@ class SearchQueryService: ObservableObject {
             }
 
             await loadUserQueries() // Refresh the list
-            isLoading = false
             return true
         } catch {
             self.error = error.localizedDescription
             print("Error creating query: \(error)")
-            isLoading = false
             return false
         }
     }
 
     // Special method for duplicating queries that adds them at the bottom
     func createQueryAtBottom(_ query: SearchQuery) async -> Bool {
-        isLoading = true
         error = nil
 
         do {
@@ -154,12 +146,10 @@ class SearchQueryService: ObservableObject {
 
             // Add to bottom of local list instead of reloading
             queries.append(query)
-            isLoading = false
             return true
         } catch {
             self.error = error.localizedDescription
             print("Error creating query: \(error)")
-            isLoading = false
             return false
         }
     }
@@ -172,7 +162,6 @@ class SearchQueryService: ObservableObject {
 
     @discardableResult
     func updateQuery(_ query: SearchQuery) async -> Bool {
-        isLoading = true
         error = nil
 
         do {
@@ -202,18 +191,15 @@ class SearchQueryService: ObservableObject {
                 .execute()
 
             await loadUserQueries()
-            isLoading = false
             return true
         } catch {
             self.error = error.localizedDescription
             print("Error updating query: \(error)")
-            isLoading = false
             return false
         }
     }
 
     func deleteQuery(_ query: SearchQuery) async -> Bool {
-        isLoading = true
         error = nil
 
         do {
@@ -224,12 +210,10 @@ class SearchQueryService: ObservableObject {
                 .execute()
 
             await loadUserQueries() // Refresh the list
-            isLoading = false
             return true
         } catch {
             self.error = error.localizedDescription
             print("Error deleting query: \(error)")
-            isLoading = false
             return false
         }
     }

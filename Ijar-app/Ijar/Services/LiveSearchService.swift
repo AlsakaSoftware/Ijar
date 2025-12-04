@@ -3,7 +3,6 @@ import Foundation
 @MainActor
 class LiveSearchService: ObservableObject {
     @Published var properties: [Property] = []
-    @Published var isLoading = false
     @Published var isLoadingMore = false
     @Published var hasMore = false
     @Published var total = 0
@@ -94,12 +93,10 @@ class LiveSearchService: ObservableObject {
 
         currentParams = params
         currentPage = 1
-        isLoading = true
         error = nil
         properties = []
 
         await performSearch(params: params)
-        isLoading = false
     }
 
     func searchFromQuery(_ query: SearchQuery) async {
@@ -171,14 +168,12 @@ class LiveSearchService: ObservableObject {
             furnishType: query.furnishType
         )
 
-        isLoading = true
         error = nil
         properties = []
 
         let baseURL = ConfigManager.shared.liveSearchAPIURL
         guard let url = URL(string: "\(baseURL)/api/onboarding-search") else {
             error = "Invalid API URL"
-            isLoading = false
             return
         }
 
@@ -199,7 +194,6 @@ class LiveSearchService: ObservableObject {
 
             guard let httpResponse = response as? HTTPURLResponse else {
                 error = "Invalid response"
-                isLoading = false
                 return
             }
 
@@ -210,7 +204,6 @@ class LiveSearchService: ObservableObject {
                 } else {
                     error = "Server error (\(httpResponse.statusCode))"
                 }
-                isLoading = false
                 return
             }
 
@@ -247,8 +240,6 @@ class LiveSearchService: ObservableObject {
             print("❌ OnboardingSearch: Error - \(error)")
 #endif
         }
-
-        isLoading = false
     }
 
     func loadMore() async {

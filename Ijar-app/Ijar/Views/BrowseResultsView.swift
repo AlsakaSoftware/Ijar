@@ -21,7 +21,7 @@ struct BrowseResultsView: View {
     @State private var showFilters = false
     @State private var animateContent = false
     @State private var savedPropertyIds: Set<String> = []
-    @State private var hasLoadedInitialData = false
+    @State private var isLoading = true
     @State private var showSaveSearchSheet = false
     @State private var hasSavedQuery = false
     @State private var hasSeenFullExplainer = UserDefaults.standard.bool(forKey: "has_seen_save_search_explainer")
@@ -61,7 +61,7 @@ struct BrowseResultsView: View {
         ZStack {
             Color.warmCream.ignoresSafeArea()
 
-            if searchService.isLoading && searchService.properties.isEmpty {
+            if isLoading {
                 loadingView
             } else if searchService.properties.isEmpty && searchService.error == nil {
                 emptyView
@@ -131,9 +131,6 @@ struct BrowseResultsView: View {
             }
         }
         .task(id: "\(params.latitude),\(params.longitude)") {
-            guard !hasLoadedInitialData else { return }
-            hasLoadedInitialData = true
-
             await queryService.loadUserQueries()
 
             minPrice = params.minPrice
@@ -371,6 +368,7 @@ struct BrowseResultsView: View {
     // MARK: - Actions
 
     private func performSearch() {
+        isLoading = true
         animateContent = false
         Task {
             await searchService.search(
@@ -390,6 +388,7 @@ struct BrowseResultsView: View {
             let saved = await propertyService.getSavedPropertyIds(from: searchService.properties)
             savedPropertyIds = saved
 
+            isLoading = false
             withAnimation {
                 animateContent = true
             }

@@ -10,10 +10,11 @@ struct SearchQueriesView: View {
     @State private var editingQuery: SearchQuery? = nil
     @State private var limitMessage: String?
     @State private var showingSearchStartedAlert = false
-    
+    @State private var isLoading = true
+
     var body: some View {
         Group {
-            if searchService.isLoading && searchService.queries.isEmpty {
+            if isLoading {
                 ProgressView()
                     .tint(.rusticOrange)
             } else if searchService.queries.isEmpty {
@@ -74,6 +75,7 @@ struct SearchQueriesView: View {
             }
             .task {
                 await searchService.loadUserQueries()
+                isLoading = false
             }
             .refreshable {
                 await searchService.loadUserQueries()
