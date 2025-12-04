@@ -18,7 +18,8 @@ struct CardSwipeView: View {
     @State private var hasUsedInitialProperties = false
 
     // Entrance animation states
-    @State private var contentOpacity: Double = 0
+    @State private var showContent = false
+    @State private var isFirstTimeEntrance = false
 
     private let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
     private let selectionFeedback = UISelectionFeedbackGenerator()
@@ -36,16 +37,19 @@ struct CardSwipeView: View {
                 } else {
                     propertyCounter
                         .padding(.top, 25)
-                        .opacity(contentOpacity)
+                        .opacity(showContent ? 1 : 0)
+                        .offset(y: showContent ? 0 : 10)
 
                     Spacer()
 
                     cardStackSection
                         .padding(.vertical, 15)
-                        .opacity(contentOpacity)
+                        .opacity(showContent ? 1 : 0)
+                        .offset(y: showContent ? 0 : 20)
 
                     actionButtons
-                        .opacity(contentOpacity)
+                        .opacity(showContent ? 1 : 0)
+                        .offset(y: showContent ? 0 : 15)
 
                     Spacer()
 
@@ -58,21 +62,28 @@ struct CardSwipeView: View {
         }
         .background(Color.warmCream)
         .task {
+            // Check if coming from onboarding (have initial properties)
+            let comingFromOnboarding = !initialPropertiesStore.properties.isEmpty
+
             // Use initial properties from onboarding if available
-            if !hasUsedInitialProperties && !initialPropertiesStore.properties.isEmpty {
+            if !hasUsedInitialProperties && comingFromOnboarding {
                 propertyService.setProperties(initialPropertiesStore.properties)
                 initialPropertiesStore.clear()
                 hasUsedInitialProperties = true
+                isFirstTimeEntrance = true
             } else {
                 await propertyService.loadPropertiesForUser()
             }
             await searchService.loadUserQueries()
             prefetchTopProperties()
-            ambientAnimation = true
 
-            // Fade in content
-            withAnimation(.easeOut(duration: 0.4)) {
-                contentOpacity = 1
+            // Single clean animation - slight delay for first-time entrance
+            let delay = isFirstTimeEntrance ? 0.15 : 0.0
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                withAnimation(.easeOut(duration: 0.4)) {
+                    showContent = true
+                }
+                ambientAnimation = true
             }
         }
         .refreshable {

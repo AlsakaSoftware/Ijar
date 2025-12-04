@@ -49,7 +49,7 @@ struct RootContentView: View {
     }
 
     var body: some View {
-        Group {
+        ZStack {
             if authService.isLoading {
                 AppLogoLoadingView()
             } else if authService.isAuthenticated {
@@ -58,7 +58,9 @@ struct RootContentView: View {
                 } else {
                     PreferencesOnboardingView { properties in
                         initialPropertiesStore.properties = properties
-                        hasCompletedPreferencesOnboarding = true
+                        withAnimation(.easeOut(duration: 0.3)) {
+                            hasCompletedPreferencesOnboarding = true
+                        }
                     }
                 }
             } else {

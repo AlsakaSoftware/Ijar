@@ -3,7 +3,7 @@ import SwiftUI
 struct OnboardingCompleteStep: View {
     let onComplete: () -> Void
 
-    @State private var contentOpacity: Double = 0
+    @State private var showContent = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -16,11 +16,15 @@ struct OnboardingCompleteStep: View {
                 .multilineTextAlignment(.leading)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 24)
+                .opacity(showContent ? 1 : 0)
+                .offset(y: showContent ? 0 : 15)
 
             Spacer()
 
             // Button
             Button {
+                let impact = UIImpactFeedbackGenerator(style: .medium)
+                impact.impactOccurred()
                 onComplete()
             } label: {
                 Text("Start browsing")
@@ -33,13 +37,14 @@ struct OnboardingCompleteStep: View {
                             .fill(Color.rusticOrange)
                     )
             }
+            .opacity(showContent ? 1 : 0)
+            .offset(y: showContent ? 0 : 15)
             .padding(.horizontal, 24)
             .padding(.bottom, 16)
         }
-        .opacity(contentOpacity)
         .onAppear {
-            withAnimation(.easeOut(duration: 0.4)) {
-                contentOpacity = 1
+            withAnimation(.easeOut(duration: 0.35)) {
+                showContent = true
             }
         }
     }
