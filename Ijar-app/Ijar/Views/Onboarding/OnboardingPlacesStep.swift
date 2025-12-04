@@ -15,6 +15,8 @@ struct OnboardingPlacesStep: View {
         case name, postcode
     }
 
+    private let placePresets = ["Office", "Gym", "Partner's", "Family"]
+
     var body: some View {
         VStack(spacing: 0) {
             ScrollView {
@@ -33,10 +35,20 @@ struct OnboardingPlacesStep: View {
                     }
                     .padding(.horizontal, 24)
 
+                    // Preset chips
+                    ChipSelector(
+                        options: placePresets,
+                        selection: Binding(
+                            get: { placePresets.contains(placeName) ? placeName : nil },
+                            set: { if let value = $0 { placeName = value } }
+                        ),
+                        onSelect: { _ in focusedField = .postcode }
+                    )
+
                     // Name input
                     VStack(alignment: .leading, spacing: 8) {
                         HStack(spacing: 0) {
-                            TextField("e.g., Work, Gym, Partner's", text: $placeName)
+                            TextField("e.g. Office", text: $placeName)
                                 .font(.system(size: 17))
                                 .textInputAutocapitalization(.words)
                                 .focused($focusedField, equals: .name)

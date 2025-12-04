@@ -74,16 +74,16 @@ struct OnboardingLocationStep: View {
                                 .foregroundColor(.coffeeBean)
                                 .padding(.horizontal, 24)
 
-                            ScrollView(.horizontal, showsIndicators: false) {
-                                HStack(spacing: 10) {
-                                    radiusOption(label: "½ mile", value: 0.5)
-                                    radiusOption(label: "1 mile", value: 1.0)
-                                    radiusOption(label: "3 miles", value: 3.0)
-                                    radiusOption(label: "5 miles", value: 5.0)
-                                    radiusOption(label: "10 miles", value: 10.0)
-                                }
-                                .padding(.horizontal, 24)
-                            }
+                            ChipSelectorTyped(
+                                options: [
+                                    ("½ mile", 0.5),
+                                    ("1 mile", 1.0),
+                                    ("3 miles", 3.0),
+                                    ("5 miles", 5.0),
+                                    ("10 miles", 10.0)
+                                ],
+                                selection: $viewModel.radius
+                            )
                         }
                         .id("radiusSection")
 
@@ -107,26 +107,6 @@ struct OnboardingLocationStep: View {
         .contentShape(Rectangle())
         .onTapGesture {
             isAreaFieldFocused = false
-        }
-    }
-
-    private func radiusOption(label: String, value: Double) -> some View {
-        Button {
-            withAnimation(.easeInOut(duration: 0.2)) {
-                viewModel.radius = value
-            }
-        } label: {
-            Text(label)
-                .font(.system(size: 15, weight: .medium))
-                .foregroundColor(viewModel.radius == value ? .white : .coffeeBean)
-                .padding(.horizontal, 20)
-                .padding(.vertical, 12)
-                .background(viewModel.radius == value ? Color.rusticOrange : Color.white)
-                .cornerRadius(24)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 24)
-                        .stroke(viewModel.radius == value ? Color.clear : Color.warmBrown.opacity(0.2), lineWidth: 1)
-                )
         }
     }
 
