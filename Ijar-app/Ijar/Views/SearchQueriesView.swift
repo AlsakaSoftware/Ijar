@@ -25,14 +25,19 @@ struct SearchQueriesView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.warmCream)
         .safeAreaInset(edge: .top) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("We scan these areas multiple times a day and send matching properties to your For You feed.")
-                    .font(.system(size: 14))
-                    .foregroundColor(.warmBrown.opacity(0.8))
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Your search areas")
+                    .font(.system(size: 28, weight: .bold))
+                    .foregroundColor(.coffeeBean)
+
+                Text("We scan these areas daily and send matches to your feed")
+                    .font(.system(size: 15))
+                    .foregroundColor(.warmBrown.opacity(0.7))
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
+            .padding(.horizontal, 24)
+            .padding(.top, 16)
+            .padding(.bottom, 12)
             .background(Color.warmCream)
         }
         .toolbar {
@@ -219,7 +224,7 @@ struct SearchQueriesView: View {
                 )
                 .listRowBackground(Color.clear)
                 .listRowSeparator(.hidden)
-                .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                .listRowInsets(EdgeInsets(top: 6, leading: 24, bottom: 6, trailing: 24))
             }
             }
             .listStyle(PlainListStyle())
