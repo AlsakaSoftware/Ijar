@@ -6,8 +6,9 @@ enum OnboardingStep: Int, CaseIterable {
     case rooms = 1
     case budget = 2
     case furnishing = 3
-    case summary = 4
-    case complete = 5
+    case places = 4
+    case summary = 5
+    case complete = 6
 
     var title: String {
         switch self {
@@ -15,6 +16,7 @@ enum OnboardingStep: Int, CaseIterable {
         case .rooms: return "Rooms"
         case .budget: return "Budget"
         case .furnishing: return "Furnishing"
+        case .places: return "Places"
         case .summary: return "Summary"
         case .complete: return "Complete"
         }
@@ -74,12 +76,17 @@ class OnboardingViewModel: ObservableObject {
         true // All fields optional
     }
 
+    var canProceedFromPlaces: Bool {
+        true // Optional step
+    }
+
     var canProceed: Bool {
         switch currentStep {
         case .location: return canProceedFromLocation
         case .rooms: return canProceedFromRooms
         case .budget: return canProceedFromBudget
         case .furnishing: return canProceedFromFurnishing
+        case .places: return canProceedFromPlaces
         case .summary, .complete: return true
         }
     }

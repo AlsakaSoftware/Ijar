@@ -2,6 +2,7 @@ import SwiftUI
 
 struct OnboardingSummaryStep: View {
     @ObservedObject var viewModel: OnboardingViewModel
+    @ObservedObject var locationsManager: SavedLocationsManager
     let onComplete: ([Property]) -> Void
 
     var body: some View {
@@ -50,6 +51,13 @@ struct OnboardingSummaryStep: View {
                             title: "Furnishing",
                             value: viewModel.furnishingSummary,
                             step: .furnishing,
+                            showDivider: true
+                        )
+
+                        summaryRow(
+                            title: "Commute",
+                            value: placesSummary,
+                            step: .places,
                             showDivider: false
                         )
                     }
@@ -80,10 +88,24 @@ struct OnboardingSummaryStep: View {
                 }
             }
 
-            // Find properties button
             findPropertiesButton
         }
         .animation(.easeInOut(duration: 0.2), value: viewModel.submissionError)
+    }
+
+    private var placesSummary: String {
+        if locationsManager.locations.isEmpty {
+            return "No places added"
+        } else if locationsManager.locations.count == 1 {
+            return locationsManager.locations[0].name
+        } else {
+            let names = locationsManager.locations.prefix(2).map { $0.name }
+            let remaining = locationsManager.locations.count - 2
+            if remaining > 0 {
+                return "\(names.joined(separator: ", ")) +\(remaining)"
+            }
+            return names.joined(separator: ", ")
+        }
     }
 
     private func infoRow(text: String) -> some View {
@@ -192,7 +214,7 @@ struct OnboardingSummaryStep: View {
     vm.maxPrice = 3500
     vm.furnishType = nil
 
-    return OnboardingSummaryStep(viewModel: vm) { properties in
+    return OnboardingSummaryStep(viewModel: vm, locationsManager: SavedLocationsManager()) { properties in
         print("Completed with \(properties.count) properties")
     }
     .background(Color.warmCream)

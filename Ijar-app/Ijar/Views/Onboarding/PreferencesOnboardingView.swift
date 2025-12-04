@@ -2,6 +2,7 @@ import SwiftUI
 
 struct PreferencesOnboardingView: View {
     @StateObject private var viewModel = OnboardingViewModel()
+    @StateObject private var locationsManager = SavedLocationsManager()
     @State private var fetchedProperties: [Property] = []
     let onComplete: ([Property]) -> Void
 
@@ -10,7 +11,6 @@ struct PreferencesOnboardingView: View {
             Color.warmCream.ignoresSafeArea()
 
             if viewModel.currentStep == .complete {
-                // Final screen - no header
                 OnboardingCompleteStep {
                     onComplete(fetchedProperties)
                 }
@@ -33,7 +33,10 @@ struct PreferencesOnboardingView: View {
                         OnboardingFurnishingStep(viewModel: viewModel)
                             .tag(OnboardingStep.furnishing)
 
-                        OnboardingSummaryStep(viewModel: viewModel) { properties in
+                        OnboardingPlacesStep(viewModel: viewModel, locationsManager: locationsManager)
+                            .tag(OnboardingStep.places)
+
+                        OnboardingSummaryStep(viewModel: viewModel, locationsManager: locationsManager) { properties in
                             fetchedProperties = properties
                             withAnimation(.easeInOut(duration: 0.3)) {
                                 viewModel.currentStep = .complete
