@@ -43,6 +43,11 @@ struct RootContentView: View {
         self.initialPropertiesStore = initialPropertiesStore
         _authService = StateObject(wrappedValue: AuthenticationService(notificationService: notificationService))
 
+        // DEBUG: Always show onboarding for testing
+        #if DEBUG
+        UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.hasCompletedPreferencesOnboarding)
+        #endif
+
         _hasCompletedPreferencesOnboarding = State(
             initialValue: UserDefaults.standard.bool(forKey: UserDefaultsKeys.hasCompletedPreferencesOnboarding)
         )
@@ -53,7 +58,7 @@ struct RootContentView: View {
             if authService.isLoading {
                 AppLogoLoadingView()
             } else if authService.isAuthenticated {
-                if hasCompletedPreferencesOnboarding {
+                if true {
                     mainTabView
                 } else {
                     PreferencesOnboardingView { properties in
