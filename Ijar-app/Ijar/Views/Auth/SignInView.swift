@@ -3,54 +3,68 @@ import AuthenticationServices
 
 struct SignInView: View {
     @EnvironmentObject var authService: AuthenticationService
-    
+    @State private var showContent = false
+
     var body: some View {
         ZStack {
-            // Simple background
+            // Background
             Color.warmCream
                 .ignoresSafeArea()
 
+            // Subtle gradient wash
+            LinearGradient(
+                colors: [
+                    Color.warmCream,
+                    Color.rusticOrange.opacity(0.25)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
+
             VStack(spacing: 0) {
                 Spacer()
-                    .frame(minHeight: 60)
+                    .frame(height: 60)
 
-                // Logo
-                Image("logo")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 110, height: 110)
+                // Logo + Name at top
+                HStack(spacing: 0) {
+                    Image("logo")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 52, height: 52)
+
+                    Text("SupHomey")
+                        .font(.system(size: 30, weight: .bold))
+                        .foregroundColor(.coffeeBean)
+                }
+                .opacity(showContent ? 1 : 0)
 
                 Spacer()
-                    .frame(height: 15)
 
-                // Branding
-                VStack(spacing: 5) {
-                    Text("SupHomey")
-                        .font(.system(size: 45, weight: .black, design: .rounded))
+                // Slogan slightly above center
+                VStack(spacing: 8) {
+                    Text("We fixed Rightmove.")
+                        .font(.system(size: 34, weight: .bold))
                         .foregroundColor(.coffeeBean)
 
-                    Text("Rightmove went to therapy")
-                        .font(.system(size: 20, weight: .bold))
+                    Text("You're welcome.")
+                        .font(.system(size: 34, weight: .regular))
                         .foregroundColor(.warmBrown)
                 }
+                .opacity(showContent ? 1 : 0)
+                .offset(y: showContent ? 0 : 10)
 
                 Spacer()
-                    .frame(height: 48)
-
-                // Features list
-                VStack(alignment: .leading, spacing: 14) {
-                        FeatureBullet(text: "Swipe your way to your perfect home")
-                        FeatureBullet(text: "See your commute to work, gym, or family at a glance")
-                        FeatureBullet(text: "Keep track of where you are with each place")
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 40)
-
                 Spacer()
-                    .frame(minHeight: 40)
 
-                // Sign in button
+                // Bottom section
                 VStack(spacing: 16) {
+                    Text("By tapping 'Sign in with Apple', you agree to our Terms of Service and Privacy Policy.")
+                        .font(.system(size: 14))
+                        .foregroundColor(.warmBrown.opacity(0.7))
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 16)
+
                     SignInWithAppleButton(
                         onRequest: { request in
                             request.requestedScopes = [.fullName, .email]
@@ -62,18 +76,23 @@ struct SignInView: View {
                         }
                     )
                     .signInWithAppleButtonStyle(.black)
-                    .frame(height: 54)
-                    .cornerRadius(14)
-                    .padding(.horizontal, 40)
+                    .frame(height: 56)
+                    .cornerRadius(28)
 
                     if authService.isLoading {
                         ProgressView()
                             .tint(.rusticOrange)
                     }
                 }
-
-                Spacer()
-                    .frame(height: 50)
+                .padding(.horizontal, 24)
+                .padding(.bottom, 50)
+                .opacity(showContent ? 1 : 0)
+                .offset(y: showContent ? 0 : 20)
+            }
+        }
+        .onAppear {
+            withAnimation(.easeOut(duration: 0.4)) {
+                showContent = true
             }
         }
         .alert("Sign In Error", isPresented: .constant(authService.error != nil)) {
@@ -84,7 +103,7 @@ struct SignInView: View {
             Text(authService.error ?? "")
         }
     }
-    
+
     private func handleSignInWithApple(result: Result<ASAuthorization, Error>) async {
         switch result {
         case .success(let authorization):
@@ -92,11 +111,9 @@ struct SignInView: View {
                 await authService.signInWithApple(credential: appleIDCredential)
             }
         case .failure(let error):
-            // Don't show error if user canceled or dismissed
             if let authError = error as? ASAuthorizationError {
                 switch authError.code {
                 case .canceled, .unknown:
-                    // User canceled or dismissed - do nothing
                     return
                 default:
                     authService.error = error.localizedDescription
@@ -104,25 +121,6 @@ struct SignInView: View {
             } else {
                 authService.error = error.localizedDescription
             }
-        }
-    }
-}
-
-// Feature bullet component
-struct FeatureBullet: View {
-    let text: String
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 10) {
-            Circle()
-                .fill(Color.rusticOrange)
-                .frame(width: 6, height: 6)
-                .padding(.top, 6)
-
-            Text(text)
-                .font(.system(size: 16, weight: .regular))
-                .foregroundColor(.coffeeBean.opacity(0.9))
-                .fixedSize(horizontal: false, vertical: true)
         }
     }
 }
