@@ -77,6 +77,18 @@ struct ProfileView: View {
                         .font(.system(size: 14, weight: .medium))
                         .foregroundColor(.warmBrown.opacity(0.6))
                 }
+
+                #if DEBUG
+                // Debug: Reset onboarding
+                Button(action: {
+                    UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.hasCompletedPreferencesOnboarding)
+                    UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.hasTriggeredFirstQuerySearch)
+                }) {
+                    Text("Reset Onboarding (Debug)")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(.warmBrown.opacity(0.4))
+                }
+                #endif
             }
             .padding(.bottom, 30)
 

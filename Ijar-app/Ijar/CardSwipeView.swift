@@ -4,6 +4,7 @@ import Kingfisher
 struct CardSwipeView: View {
     @EnvironmentObject var coordinator: HomeFeedCoordinator
     @EnvironmentObject var appCoordinator: AppCoordinator
+    @EnvironmentObject var initialPropertiesStore: InitialPropertiesStore
     @StateObject private var propertyService = PropertyService()
     @StateObject private var searchService = SearchQueryService()
     @StateObject private var monitorService = MonitorService()
@@ -14,6 +15,7 @@ struct CardSwipeView: View {
     @State private var showingCreateQuery = false
     @State private var showingSearchStartedAlert = false
     @State private var showingAreasSheet = false
+    @State private var hasUsedInitialProperties = false
 
     private let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
     private let selectionFeedback = UISelectionFeedbackGenerator()
@@ -48,7 +50,14 @@ struct CardSwipeView: View {
 
         .background(Color.warmCream)
         .task {
-            await propertyService.loadPropertiesForUser()
+            // Use initial properties from onboarding if available
+            if !hasUsedInitialProperties && !initialPropertiesStore.properties.isEmpty {
+                propertyService.setProperties(initialPropertiesStore.properties)
+                initialPropertiesStore.clear()
+                hasUsedInitialProperties = true
+            } else {
+                await propertyService.loadPropertiesForUser()
+            }
             await searchService.loadUserQueries()
             prefetchTopProperties()
             ambientAnimation = true
@@ -379,6 +388,7 @@ struct CardSwipeView: View {
         CardSwipeView()
             .environmentObject(HomeFeedCoordinator())
             .environmentObject(AppCoordinator())
+            .environmentObject(InitialPropertiesStore())
     }
     .previewDevice("iPhone 15 Pro")
 }
@@ -388,6 +398,7 @@ struct CardSwipeView: View {
         CardSwipeView()
             .environmentObject(HomeFeedCoordinator())
             .environmentObject(AppCoordinator())
+            .environmentObject(InitialPropertiesStore())
     }
     .previewDevice("iPhone SE (3rd generation)")
 }
@@ -397,6 +408,7 @@ struct CardSwipeView: View {
         CardSwipeView()
             .environmentObject(HomeFeedCoordinator())
             .environmentObject(AppCoordinator())
+            .environmentObject(InitialPropertiesStore())
     }
     .previewDevice("iPhone 15 Pro Max")
 }

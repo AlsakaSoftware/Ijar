@@ -143,6 +143,11 @@ class PropertyService: ObservableObject {
             properties.removeFirst()
         }
     }
+
+    /// Set properties directly (used for initial properties from onboarding)
+    func setProperties(_ newProperties: [Property]) {
+        properties = newProperties
+    }
     
     func loadSavedProperties() async {
         isLoading = true

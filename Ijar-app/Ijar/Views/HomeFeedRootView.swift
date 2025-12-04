@@ -4,7 +4,6 @@ import RevenueCatUI
 struct HomeFeedRootView: View {
     @StateObject private var coordinator = HomeFeedCoordinator()
     @ObservedObject private var subscriptionManager = SubscriptionManager.shared
-    @State private var showOnboarding = !UserDefaults.standard.bool(forKey: "has_completed_onboarding")
 
     var body: some View {
         NavigationStack(path: $coordinator.navigationPath) {
@@ -15,9 +14,6 @@ struct HomeFeedRootView: View {
                 }
                 .onceTask {
                     await subscriptionManager.checkSubscriptionStatus()
-                }
-                .fullScreenCover(isPresented: $showOnboarding) {
-                    OnboardingView(isPresented: $showOnboarding)
                 }
         }
     }

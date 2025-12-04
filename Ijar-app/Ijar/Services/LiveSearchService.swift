@@ -117,6 +117,140 @@ class LiveSearchService: ObservableObject {
         )
     }
 
+    // MARK: - Onboarding Search (saves to Supabase)
+
+    struct OnboardingSearchParams: Encodable {
+        let queryId: String
+        let latitude: Double
+        let longitude: Double
+        var minPrice: Int?
+        var maxPrice: Int?
+        var minBedrooms: Int?
+        var maxBedrooms: Int?
+        var minBathrooms: Int?
+        var maxBathrooms: Int?
+        var radius: Double?
+        var furnishType: String?
+    }
+
+    private struct OnboardingAPIResponse: Decodable {
+        let properties: [OnboardingProperty]
+        let total: Int
+        let saved: Int
+    }
+
+    private struct OnboardingProperty: Decodable {
+        let id: String
+        let images: [String]
+        let price: String
+        let bedrooms: Int
+        let bathrooms: Int
+        let address: String
+        let area: String
+        let rightmoveUrl: String
+        let agentPhone: String?
+        let agentName: String?
+        let branchName: String?
+        let latitude: Double?
+        let longitude: Double?
+    }
+
+    /// Perform onboarding search - fetches properties, gets HD images, saves to Supabase
+    func onboardingSearch(queryId: String, query: SearchQuery) async {
+        let params = OnboardingSearchParams(
+            queryId: queryId,
+            latitude: query.latitude,
+            longitude: query.longitude,
+            minPrice: query.minPrice,
+            maxPrice: query.maxPrice,
+            minBedrooms: query.minBedrooms,
+            maxBedrooms: query.maxBedrooms,
+            minBathrooms: query.minBathrooms,
+            maxBathrooms: query.maxBathrooms,
+            radius: query.radius,
+            furnishType: query.furnishType
+        )
+
+        isLoading = true
+        error = nil
+        properties = []
+
+        let baseURL = ConfigManager.shared.liveSearchAPIURL
+        guard let url = URL(string: "\(baseURL)/api/onboarding-search") else {
+            error = "Invalid API URL"
+            isLoading = false
+            return
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.timeoutInterval = 60 // Longer timeout for HD image fetching
+
+        do {
+            let encoder = JSONEncoder()
+            request.httpBody = try encoder.encode(params)
+
+#if DEBUG
+            print("🔍 OnboardingSearch: Fetching properties for query \(queryId)")
+#endif
+
+            let (data, response) = try await URLSession.shared.data(for: request)
+
+            guard let httpResponse = response as? HTTPURLResponse else {
+                error = "Invalid response"
+                isLoading = false
+                return
+            }
+
+            if httpResponse.statusCode != 200 {
+                if let errorData = try? JSONDecoder().decode([String: String].self, from: data),
+                   let errorMessage = errorData["error"] {
+                    error = errorMessage
+                } else {
+                    error = "Server error (\(httpResponse.statusCode))"
+                }
+                isLoading = false
+                return
+            }
+
+            let apiResponse = try JSONDecoder().decode(OnboardingAPIResponse.self, from: data)
+
+            properties = apiResponse.properties.map { prop in
+                Property(
+                    id: prop.id,
+                    images: prop.images,
+                    price: prop.price,
+                    bedrooms: prop.bedrooms,
+                    bathrooms: prop.bathrooms,
+                    address: prop.address,
+                    area: prop.area,
+                    rightmoveUrl: prop.rightmoveUrl,
+                    agentPhone: prop.agentPhone,
+                    agentName: prop.agentName,
+                    branchName: prop.branchName,
+                    latitude: prop.latitude,
+                    longitude: prop.longitude
+                )
+            }
+
+            total = apiResponse.total
+            hasMore = false // Onboarding only returns first batch
+
+#if DEBUG
+            print("✅ OnboardingSearch: Got \(properties.count) properties, \(apiResponse.saved) saved to DB")
+#endif
+
+        } catch {
+            self.error = "Search failed: \(error.localizedDescription)"
+#if DEBUG
+            print("❌ OnboardingSearch: Error - \(error)")
+#endif
+        }
+
+        isLoading = false
+    }
+
     func loadMore() async {
         guard hasMore, var params = currentParams else { return }
 
