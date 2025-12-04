@@ -1,7 +1,22 @@
+/**
+ * Rightmove API Client
+ * Handles communication with Rightmove's mobile API
+ */
+
 import * as https from 'https';
 import * as zlib from 'zlib';
+import {
+  PropertySearchParams,
+  PropertySearchResult,
+  PropertyListItem,
+  PropertyDetails,
+  PropertySearchAPIResponse,
+  PropertyDetailsAPIResponse
+} from '../types';
 
 const API_BASE = 'api.rightmove.co.uk';
+
+// Headers that mimic the official Rightmove iOS app
 const API_HEADERS = {
   'Host': 'api.rightmove.co.uk',
   'Content-Type': 'application/json',
@@ -13,146 +28,9 @@ const API_HEADERS = {
   'Connection': 'keep-alive'
 };
 
-// API response types
-export interface RightmoveAPIProperty {
-  identifier: number;
-  bedrooms: number;
-  address: string;
-  propertyType: string;
-  status: string | null;
-  transactionTypeId: number;
-  photoCount: number;
-  floorplanCount: number;
-  price: number;
-  monthlyRent: number;
-  priceQualifier: string;
-  photoThumbnailUrl: string;
-  photoLargeThumbnailUrl: string;
-  displayPrices: Array<{
-    displayPrice: string;
-    displayPriceQualifier: string;
-  }>;
-  thumbnailPhotos: Array<{ url: string }>;
-  summary: string;
-  latitude: number;
-  longitude: number;
-  branch: {
-    identifier: number;
-    branchLogo: string;
-    brandName: string;
-    name: string;
-    contactTelephoneNumber: string;
-  };
-  listingUpdateReason: string;
-  development: boolean;
-  buildToRent: boolean;
-}
-
-export interface RightmoveAPISearchResponse {
-  properties: RightmoveAPIProperty[];
-  featuredProperties: RightmoveAPIProperty[];
-  totalAvailableResults: number;
-  numReturnedResults: number;
-  radius: number;
-  channel: string;
-  locationInfo: {
-    locationIdentifier: string;
-    name: string;
-    centreLatitude: number;
-    centreLongitude: number;
-  };
-}
-
-export interface RightmoveAPIPropertyDetails {
-  property: {
-    identifier: number;
-    bedrooms: number;
-    address: string;
-    summary: string;
-    fullDescription: string;
-    propertySubtype: string;
-    price: number;
-    latitude: number;
-    longitude: number;
-    letFurnishType: string;
-    letType: string;
-    letDateAvailable: string;
-    letBond: number;
-    telephoneNumber: string;
-    publicsiteUrl: string;
-    branch: {
-      identifier: number;
-      name: string;
-      brandName: string;
-      branchLogo: string;
-      address: string;
-    };
-    displayPrices: Array<{
-      displayPrice: string;
-      displayPriceQualifier: string;
-    }>;
-    stations: Array<{
-      station: string;
-      distance: number;
-      type: string;
-    }>;
-    features: Array<{
-      featureDescription: string;
-    }>;
-    photos: Array<{
-      url: string;
-      thumbnailUrl: string;
-      maxSizeUrl: string;
-      caption: string | null;
-      order: number;
-    }>;
-    floorplans: Array<{
-      url: string;
-      caption: string | null;
-    }>;
-    virtualTours: Array<{
-      url: string;
-      caption: string | null;
-    }>;
-    analyticsInfo: {
-      bathrooms: string;
-      propertyType: string;
-      propertySubType: string;
-    };
-    lettingsInfo: {
-      content: Array<{
-        type: string;
-        title: string;
-        value: string;
-      }>;
-    };
-    propertyDetailsInfo: {
-      content: Array<{
-        type: string;
-        title: string;
-        value: string;
-      }>;
-    };
-  };
-}
-
-export interface SearchParams {
-  latitude: number;
-  longitude: number;
-  minPrice?: number;
-  maxPrice?: number;
-  minBedrooms?: number;
-  maxBedrooms?: number;
-  minBathrooms?: number;
-  maxBathrooms?: number;
-  radius?: number;
-  furnishType?: 'furnished' | 'unfurnished';
-  propertyTypes?: string[];
-  page?: number;
-  pageSize?: number;
-  sortBy?: 'newestListed' | 'highestPrice' | 'lowestPrice' | 'oldestListed';
-}
-
+/**
+ * Make an HTTPS request to the Rightmove API
+ */
 function makeRequest<T>(path: string): Promise<T> {
   return new Promise((resolve, reject) => {
     const options = {
@@ -203,11 +81,12 @@ function makeRequest<T>(path: string): Promise<T> {
   });
 }
 
-// Create LAT_LONG_BOX from coordinates
-// Format: LAT_LONG_BOX^westLong,eastLong,southLat,northLat
+/**
+ * Create LAT_LONG_BOX location identifier from coordinates
+ * Format: LAT_LONG_BOX^westLong,eastLong,southLat,northLat
+ */
 function createLocationBox(lat: number, lng: number): string {
-  // Create a small bounding box around the point (roughly ~50m)
-  const delta = 0.0005;
+  const delta = 0.0005; // ~50m bounding box
   const westLong = lng - delta;
   const eastLong = lng + delta;
   const southLat = lat - delta;
@@ -215,13 +94,14 @@ function createLocationBox(lat: number, lng: number): string {
   return `LAT_LONG_BOX^${westLong},${eastLong},${southLat},${northLat}`;
 }
 
+/**
+ * Rightmove API Client
+ */
 export class RightmoveAPI {
-  async searchProperties(params: SearchParams): Promise<{
-    properties: RightmoveAPIProperty[];
-    total: number;
-    page: number;
-    hasMore: boolean;
-  }> {
+  /**
+   * Search for rental properties
+   */
+  async searchProperties(params: PropertySearchParams): Promise<PropertySearchResult> {
     const locationId = createLocationBox(params.latitude, params.longitude);
 
     const queryParams = new URLSearchParams({
@@ -235,6 +115,8 @@ export class RightmoveAPI {
       apiApplication: 'IPHONE',
       radius: String(params.radius ?? 1)
     });
+
+    // Only add optional params if they have values (not null/undefined)
     if (params.minPrice != null) {
       queryParams.set('minPrice', String(params.minPrice));
     }
@@ -263,7 +145,7 @@ export class RightmoveAPI {
     const path = `/api/property-listing?${queryParams.toString()}`;
     console.log('API Request:', path);
 
-    const response = await makeRequest<RightmoveAPISearchResponse>(path);
+    const response = await makeRequest<PropertySearchAPIResponse>(path);
 
     const page = params.page || 1;
     const pageSize = params.pageSize || 25;
@@ -277,8 +159,12 @@ export class RightmoveAPI {
     };
   }
 
-  async getPropertyDetails(propertyId: string | number): Promise<RightmoveAPIPropertyDetails> {
+  /**
+   * Get detailed information for a specific property
+   * Includes HD images, bathrooms, full description, etc.
+   */
+  async getPropertyDetails(propertyId: string | number): Promise<PropertyDetailsAPIResponse> {
     const path = `/api/property/${propertyId}?appVersion=10.31&apiApplication=IPHONE`;
-    return makeRequest<RightmoveAPIPropertyDetails>(path);
+    return makeRequest<PropertyDetailsAPIResponse>(path);
   }
 }

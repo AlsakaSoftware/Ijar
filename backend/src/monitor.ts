@@ -1,26 +1,20 @@
 #!/usr/bin/env tsx
 
 import 'dotenv/config';
-import { RightmoveAPI, RightmoveAPIProperty, RightmoveAPIPropertyDetails } from './rightmove-api';
-import { SupabasePropertyClient, UserQuery } from './supabase-client';
-
-// Extended property type with HD images from details API
-interface PropertyWithDetails extends RightmoveAPIProperty {
-  hdImages?: string[];
-  bathrooms?: number;
-}
+import { RightmoveAPI } from './api';
+import { SupabaseService, PushNotificationService } from './services';
+import { DbQuery, PropertyListItem, PropertyWithDetails } from './types';
 import config from './config';
-import { PushNotificationService } from './push-notification-service';
 import { createClient } from '@supabase/supabase-js';
 
 class PropertyMonitor {
   private api: RightmoveAPI;
-  private supabase: SupabasePropertyClient;
+  private supabase: SupabaseService;
   private notificationService: PushNotificationService;
 
   constructor() {
     this.api = new RightmoveAPI();
-    this.supabase = new SupabasePropertyClient();
+    this.supabase = new SupabaseService();
 
     const supabaseClient = createClient(
       process.env.SUPABASE_URL!,
@@ -31,7 +25,7 @@ class PropertyMonitor {
   }
 
   // Log data quality metrics for properties
-  private logDataQuality(properties: RightmoveAPIProperty[], queryName: string): void {
+  private logDataQuality(properties: PropertyListItem[], queryName: string): void {
     if (properties.length === 0) return;
 
     let missingAgentPhone = 0;
@@ -77,8 +71,8 @@ class PropertyMonitor {
   }
 
   // Helper function to group queries by user_id
-  private groupQueriesByUser(queries: UserQuery[]): Map<string, UserQuery[]> {
-    const grouped = new Map<string, UserQuery[]>();
+  private groupQueriesByUser(queries: DbQuery[]): Map<string, DbQuery[]> {
+    const grouped = new Map<string, DbQuery[]>();
 
     for (const query of queries) {
       if (!query.user_id) continue; // Skip queries without user_id
@@ -190,7 +184,7 @@ class PropertyMonitor {
     }
   }
 
-  private async processQuery(query: UserQuery): Promise<{ newCount: number; errors: string[] }> {
+  private async processQuery(query: DbQuery): Promise<{ newCount: number; errors: string[] }> {
     try {
       // Search using API with coordinates
       const results = await this.api.searchProperties({
@@ -211,7 +205,7 @@ class PropertyMonitor {
       console.log(`    📊 API returned ${results.properties.length} properties (total: ${results.total})`);
 
       // Filter for properties that are NEW for this specific query
-      const newPropertiesForQuery = await this.supabase.getNewAPIPropertiesForQuery(query, results.properties);
+      const newPropertiesForQuery = await this.supabase.getNewPropertiesForQuery(query, results.properties);
       console.log(`    🔍 ${newPropertiesForQuery.length} are new (${results.properties.length - newPropertiesForQuery.length} already seen)`);
 
       if (newPropertiesForQuery.length === 0) {
@@ -231,7 +225,7 @@ class PropertyMonitor {
       const propertiesWithDetails = await this.fetchPropertyDetails(topNewProperties);
 
       // Process properties for this specific query
-      const processResult = await this.supabase.processAPIPropertiesForQuery(query, propertiesWithDetails);
+      const processResult = await this.supabase.processPropertiesWithDetails(query, propertiesWithDetails);
 
       return {
         newCount: processResult.newCount,
@@ -248,7 +242,7 @@ class PropertyMonitor {
   }
 
   // Fetch property details to get HD images
-  private async fetchPropertyDetails(properties: RightmoveAPIProperty[]): Promise<PropertyWithDetails[]> {
+  private async fetchPropertyDetails(properties: PropertyListItem[]): Promise<PropertyWithDetails[]> {
     const results: PropertyWithDetails[] = [];
 
     for (const property of properties) {
@@ -257,7 +251,7 @@ class PropertyMonitor {
         const p = details.property;
 
         // Extract HD images from details
-        const hdImages = p.photos?.map((photo: any) => photo.maxSizeUrl) || [];
+        const hdImages = p.photos?.map((photo) => photo.maxSizeUrl) || [];
         const bathrooms = parseInt(p.analyticsInfo?.bathrooms || '0', 10);
 
         console.log(`      📷 ${property.identifier}: ${hdImages.length} HD images, ${bathrooms} bathrooms`);

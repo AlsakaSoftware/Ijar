@@ -1,7 +1,19 @@
+/**
+ * Live Search API Server
+ * HTTP server for property search and details endpoints
+ */
+
 import * as http from 'http';
-import { RightmoveAPI } from './rightmove-api';
+import { RightmoveAPI } from './api';
+import { PropertySearchParams } from './types';
 
 const PORT = process.env.PORT || 3001;
+
+const api = new RightmoveAPI();
+
+// ===========================================
+// Request Handlers
+// ===========================================
 
 interface SearchRequest {
   latitude: number;
@@ -17,8 +29,6 @@ interface SearchRequest {
   page?: number;
 }
 
-const api = new RightmoveAPI();
-
 async function handleSearch(body: SearchRequest) {
   let furnishType: 'furnished' | 'unfurnished' | undefined;
   if (body.furnishType === 'furnished') {
@@ -27,7 +37,7 @@ async function handleSearch(body: SearchRequest) {
     furnishType = 'unfurnished';
   }
 
-  const results = await api.searchProperties({
+  const params: PropertySearchParams = {
     latitude: body.latitude,
     longitude: body.longitude,
     minPrice: body.minPrice,
@@ -40,9 +50,10 @@ async function handleSearch(body: SearchRequest) {
     furnishType,
     page: body.page || 1,
     pageSize: 25
-  });
+  };
 
-  // Return the API response directly
+  const results = await api.searchProperties(params);
+
   return {
     properties: results.properties,
     total: results.total,
@@ -50,6 +61,40 @@ async function handleSearch(body: SearchRequest) {
     page: results.page
   };
 }
+
+async function handlePropertyDetails(propertyId: string) {
+  const response = await api.getPropertyDetails(propertyId);
+  const p = response.property;
+
+  // Clean response - only send what the app needs
+  return {
+    id: p.identifier,
+    bedrooms: p.bedrooms,
+    bathrooms: parseInt(p.analyticsInfo?.bathrooms || '0', 10),
+    address: p.address,
+    price: p.displayPrices?.[0]?.displayPrice || `£${p.price} pcm`,
+    description: p.fullDescription || p.summary,
+    propertyType: p.propertySubtype || p.analyticsInfo?.propertySubType,
+    furnishType: p.letFurnishType,
+    availableFrom: p.letDateAvailable,
+    latitude: p.latitude,
+    longitude: p.longitude,
+    photos: p.photos?.map((photo) => photo.maxSizeUrl) || [],
+    floorplans: p.floorplans?.map((fp) => fp.url) || [],
+    features: p.features?.map((f) => f.featureDescription) || [],
+    stations: p.stations?.map((s) => ({ name: s.station, distance: s.distance })) || [],
+    agent: {
+      name: p.branch?.brandName,
+      branch: p.branch?.name,
+      phone: p.telephoneNumber,
+      address: p.branch?.address
+    }
+  };
+}
+
+// ===========================================
+// HTTP Server
+// ===========================================
 
 const server = http.createServer(async (req, res) => {
   // CORS headers
@@ -64,7 +109,7 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // GET /api/property/:id/details - Fetch comprehensive property details
+  // GET /api/property/:id/details - Fetch property details
   const detailsMatch = req.url?.match(/^\/api\/property\/(\d+)\/details$/);
   if (detailsMatch && req.method === 'GET') {
     const propertyId = detailsMatch[1];
@@ -73,33 +118,7 @@ const server = http.createServer(async (req, res) => {
       console.log(`\n--- Property Details Request ---`);
       console.log('Property ID:', propertyId);
 
-      const response = await api.getPropertyDetails(propertyId);
-      const p = response.property;
-
-      // Clean response - only send what the app needs
-      const cleanResponse = {
-        id: p.identifier,
-        bedrooms: p.bedrooms,
-        bathrooms: parseInt(p.analyticsInfo?.bathrooms || '0', 10),
-        address: p.address,
-        price: p.displayPrices?.[0]?.displayPrice || `£${p.price} pcm`,
-        description: p.fullDescription || p.summary,
-        propertyType: p.propertySubtype || p.analyticsInfo?.propertySubType,
-        furnishType: p.letFurnishType,
-        availableFrom: p.letDateAvailable,
-        latitude: p.latitude,
-        longitude: p.longitude,
-        photos: p.photos?.map((photo: any) => photo.maxSizeUrl) || [],
-        floorplans: p.floorplans?.map((fp: any) => fp.url) || [],
-        features: p.features?.map((f: any) => f.featureDescription) || [],
-        stations: p.stations?.map((s: any) => ({ name: s.station, distance: s.distance })) || [],
-        agent: {
-          name: p.branch?.brandName,
-          branch: p.branch?.name,
-          phone: p.telephoneNumber,
-          address: p.branch?.address
-        }
-      };
+      const cleanResponse = await handlePropertyDetails(propertyId);
 
       console.log('Bathrooms:', cleanResponse.bathrooms);
       console.log('Photos:', cleanResponse.photos.length);
@@ -116,6 +135,7 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // POST /api/search - Search for properties
   if (req.url === '/api/search' && req.method === 'POST') {
     let body = '';
 
@@ -141,15 +161,10 @@ const server = http.createServer(async (req, res) => {
 
         const result = await handleSearch(data);
 
-        console.log('\n--- Rightmove API Response (Search) ---');
+        console.log('\n--- Response ---');
         console.log('Total:', result.total);
         console.log('Returned:', result.properties.length);
         console.log('Has more:', result.hasMore);
-        console.log('\nFirst property:');
-        if (result.properties.length > 0) {
-          console.log(JSON.stringify(result.properties[0], null, 2));
-        }
-        console.log('--- End Response ---\n');
 
         res.writeHead(200);
         res.end(JSON.stringify(result));
@@ -164,19 +179,15 @@ const server = http.createServer(async (req, res) => {
 
   } else {
     res.writeHead(404);
-    res.end(JSON.stringify({ error: 'Not found. Use POST /api/search' }));
+    res.end(JSON.stringify({ error: 'Not found. Use POST /api/search or GET /api/property/:id/details' }));
   }
 });
 
 server.listen(PORT, () => {
   console.log(`\n🚀 Live Search API running at http://localhost:${PORT}`);
-  console.log(`   Using Rightmove API (no scraping)`);
+  console.log(`   Using Rightmove API`);
   console.log(`\nEndpoints:`);
   console.log(`  POST /api/search - Search properties`);
   console.log(`  GET  /api/property/:id/details - Get property details`);
-  console.log(`\nTest with:`);
-  console.log(`curl -X POST http://localhost:${PORT}/api/search \\`);
-  console.log(`  -H "Content-Type: application/json" \\`);
-  console.log(`  -d '{"latitude": 51.5027, "longitude": -0.0254, "maxPrice": 3000, "minBedrooms": 2}'`);
   console.log(`\nPress Ctrl+C to stop\n`);
 });
