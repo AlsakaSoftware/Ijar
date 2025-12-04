@@ -23,6 +23,7 @@ struct OnboardingLocationStep: View {
                                 .foregroundColor(.warmBrown.opacity(0.7))
                         }
                         .padding(.horizontal, 24)
+                        .id("titleSection")
 
                         // Location input
                         VStack(alignment: .leading, spacing: 8) {
@@ -85,17 +86,18 @@ struct OnboardingLocationStep: View {
                                 selection: $viewModel.radius
                             )
                         }
-                        .id("radiusSection")
 
                         Spacer()
-                            .frame(height: 120)
+                            .frame(height: 300)
                     }
                 }
                 .scrollDismissesKeyboard(.interactively)
                 .onChange(of: isAreaFieldFocused) { _, focused in
                     if focused {
-                        withAnimation {
-                            proxy.scrollTo("radiusSection", anchor: .bottom)
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                            withAnimation {
+                                proxy.scrollTo("titleSection", anchor: .top)
+                            }
                         }
                     }
                 }
