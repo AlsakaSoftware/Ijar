@@ -5,6 +5,7 @@ import Kingfisher
 struct PropertyDetailView: View {
     let property: Property
     let isSavedProperty: Bool
+    let showLikeButton: Bool
     @State private var currentImageIndex = 0
     @State private var showingFullScreenImages = false
     @EnvironmentObject var appCoordinator: AppCoordinator
@@ -15,9 +16,10 @@ struct PropertyDetailView: View {
     @State private var isLoadingDetails = false
     @StateObject private var searchService = LiveSearchService()
 
-    init(property: Property, isSavedProperty: Bool) {
+    init(property: Property, isSavedProperty: Bool, showLikeButton: Bool = true) {
         self.property = property
         self.isSavedProperty = isSavedProperty
+        self.showLikeButton = showLikeButton
         _displayProperty = State(initialValue: property)
     }
 
@@ -52,6 +54,12 @@ struct PropertyDetailView: View {
 
     // Floorplan state
     @State private var showingFloorplan = false
+
+    // Like/Save state
+    @StateObject private var propertyService = PropertyService()
+    @State private var isLiked: Bool = false
+    @State private var isLikeLoading = false
+    @State private var showingUnlikeConfirmation = false
 
     private func loadOrCreateMetadata() {
         // Find existing metadata for this property
@@ -218,14 +226,28 @@ struct PropertyDetailView: View {
                 isPresented: $showingFloorplan
             )
         }
+        .alert("Remove from favorites?", isPresented: $showingUnlikeConfirmation) {
+            Button("Cancel", role: .cancel) { }
+            Button("Remove", role: .destructive) {
+                confirmUnlike()
+            }
+        } message: {
+            Text("This property will be removed from your saved list")
+        }
         .onAppear {
+            // Set initial like state
             if isSavedProperty {
+                isLiked = true
                 // For saved properties, show images immediately (already HD)
                 if displayImages.isEmpty {
                     displayImages = property.images
                 }
                 loadOrCreateMetadata()
             } else {
+                // Check if this live search property is saved
+                Task {
+                    isLiked = await propertyService.isLiveSearchPropertySaved(property)
+                }
                 // For live search properties, fetch full property details (HD images + details)
                 isLoadingDetails = true
                 Task {
@@ -508,26 +530,74 @@ struct PropertyDetailView: View {
                     endPoint: .bottom
                 )
                 .frame(height: 300)
-                
+
                 Spacer()
             }
             .allowsHitTesting(false)
+
         }
     }
-    
+
+    private var likeButton: some View {
+        LikeButton(isLiked: isLiked, isLoading: isLikeLoading, action: handleLikeToggle)
+    }
+
+    private func handleLikeToggle() {
+        if isLiked {
+            showingUnlikeConfirmation = true
+        } else {
+            Task {
+                isLikeLoading = true
+                let success = await propertyService.saveLiveSearchProperty(property)
+                if success {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                        isLiked = true
+                    }
+                }
+                isLikeLoading = false
+            }
+        }
+    }
+
+    private func confirmUnlike() {
+        Task {
+            isLikeLoading = true
+            let success: Bool
+            if isSavedProperty {
+                success = await propertyService.unsaveProperty(property)
+            } else {
+                success = await propertyService.unsaveLiveSearchProperty(property)
+            }
+            if success {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                    isLiked = false
+                }
+            }
+            isLikeLoading = false
+        }
+    }
+
     private var propertyHeaderSection: some View {
         VStack(alignment: .leading, spacing: 16) {
-            // Price
-            Text(property.price)
-                .font(.system(size: 32, weight: .bold, design: .rounded))
-                .foregroundColor(.coffeeBean)
-            
+            // Price with like button (if shown)
+            HStack(alignment: .center) {
+                Text(property.price)
+                    .font(.system(size: 32, weight: .bold, design: .rounded))
+                    .foregroundColor(.coffeeBean)
+
+                Spacer()
+
+                if showLikeButton {
+                    likeButton
+                }
+            }
+
             // Address
             VStack(alignment: .leading, spacing: 4) {
                 Text(property.address)
                     .font(.system(size: 18, weight: .medium))
                     .foregroundColor(.warmBrown)
-                
+
                 if !property.area.isEmpty {
                     Text(property.area)
                         .font(.system(size: 16, weight: .regular))

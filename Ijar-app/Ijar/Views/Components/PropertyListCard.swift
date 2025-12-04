@@ -126,31 +126,9 @@ struct PropertyListCard: View {
             }
     }
 
-    @ViewBuilder
     private var saveButton: some View {
-        Group {
-            if isLoading {
-                ProgressView()
-                    .scaleEffect(1.5)
-                    .shadow(color: .white, radius: 6, y: 3)
-                    .frame(width: 30, height: 30)
-            } else {
-                Button(action: handleSaveToggle) {
-                    ZStack {
-                        Image(systemName: "heart.fill")
-                            .font(.system(size: 30))
-                            .foregroundColor(.white)
-
-                        Image(systemName: isSaved ? "heart.fill" : "heart")
-                            .font(.system(size: 25))
-                            .foregroundColor(isSaved ? .rusticOrange : .white.opacity(0.9))
-                    }
-                    .shadow(color: .black.opacity(0.3), radius: 4, y: 2)
-                }
-                .buttonStyle(PlainButtonStyle())
-            }
-        }
-        .padding(12)
+        LikeButton(isLiked: isSaved, isLoading: isLoading, action: handleSaveToggle)
+            .padding(12)
     }
 
     private func handleSaveToggle() {
