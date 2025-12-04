@@ -7,18 +7,18 @@ struct OnboardingSummaryStep: View {
     var body: some View {
         VStack(spacing: 0) {
             ScrollView {
-                VStack(alignment: .leading, spacing: 32) {
+                VStack(alignment: .leading, spacing: 24) {
                     Spacer()
-                        .frame(height: 60)
+                        .frame(height: 20)
 
                     // Title and subtitle
-                    VStack(alignment: .leading, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 8) {
                         Text("Ready to find your home?")
-                            .font(.system(size: 32, weight: .bold))
+                            .font(.system(size: 28, weight: .bold))
                             .foregroundColor(.coffeeBean)
 
                         Text("Review your search preferences")
-                            .font(.system(size: 17))
+                            .font(.system(size: 16))
                             .foregroundColor(.warmBrown.opacity(0.7))
                     }
                     .padding(.horizontal, 24)
@@ -55,26 +55,16 @@ struct OnboardingSummaryStep: View {
                     }
                     .padding(.horizontal, 24)
 
-                    // Info text
-                    VStack(alignment: .leading, spacing: 16) {
-                        Text("What happens next?")
-                            .font(.system(size: 15, weight: .semibold))
-                            .foregroundColor(.coffeeBean)
-
-                        VStack(alignment: .leading, spacing: 12) {
-                            infoRow(
-                                text: "We'll create a saved search based on your preferences"
-                            )
-                            infoRow(
-                                text: "New matching properties will be sent to your feed regularly"
-                            )
-                            infoRow(
-                                text: "You can edit this search or add more areas anytime in Settings"
-                            )
-                        }
+                    // Info text - condensed
+                    HStack(spacing: 8) {
+                        Image(systemName: "sparkles")
+                            .font(.system(size: 14))
+                            .foregroundColor(.rusticOrange)
+                        Text("We'll send matching properties to your feed")
+                            .font(.system(size: 14))
+                            .foregroundColor(.warmBrown.opacity(0.7))
                     }
                     .padding(.horizontal, 24)
-                    .padding(.top, 8)
 
                     // Error message
                     if let error = viewModel.submissionError {
@@ -86,7 +76,7 @@ struct OnboardingSummaryStep: View {
                     }
 
                     Spacer()
-                        .frame(height: 120)
+                        .frame(height: 20)
                 }
             }
 
