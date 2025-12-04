@@ -8,30 +8,29 @@ struct LikeButton: View {
 
     var body: some View {
         Button(action: action) {
-            if isLoading {
-                ProgressView()
-                    .scaleEffect(0.8)
-                    .frame(width: 28, height: 28)
-            } else {
-                ZStack {
-                    // White filled heart as background
-                    Image(systemName: "heart.fill")
-                        .font(.system(size: 32))
-                        .foregroundColor(.white)
-
-                    // Border heart (always visible)
-                    Image(systemName: "heart")
-                        .font(.system(size: 32))
-                        .foregroundColor(.coffeeBean.opacity(0.3))
-
-                    // Orange fill when liked
-                    if isLiked {
+            Group {
+                if isLoading {
+                    ProgressView()
+                        .tint(.white)
+                } else {
+                    ZStack {
                         Image(systemName: "heart.fill")
-                            .font(.system(size: 30))
-                            .foregroundColor(.rusticOrange)
+                            .font(.system(size: 32))
+                            .foregroundColor(.white)
+
+                        Image(systemName: "heart")
+                            .font(.system(size: 32))
+                            .foregroundColor(.coffeeBean.opacity(0.3))
+
+                        if isLiked {
+                            Image(systemName: "heart.fill")
+                                .font(.system(size: 30))
+                                .foregroundColor(.rusticOrange)
+                        }
                     }
                 }
             }
+            .frame(width: 32, height: 32)
         }
         .buttonStyle(PlainButtonStyle())
     }
