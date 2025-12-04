@@ -51,7 +51,6 @@ struct RootContentView: View {
     var body: some View {
         Group {
             if authService.isLoading {
-                // Show loading state while checking authentication
                 AppLogoLoadingView()
             } else if authService.isAuthenticated {
                 if hasCompletedPreferencesOnboarding {

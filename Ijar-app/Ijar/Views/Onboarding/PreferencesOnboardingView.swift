@@ -2,35 +2,48 @@ import SwiftUI
 
 struct PreferencesOnboardingView: View {
     @StateObject private var viewModel = OnboardingViewModel()
+    @State private var fetchedProperties: [Property] = []
     let onComplete: ([Property]) -> Void
 
     var body: some View {
         ZStack {
             Color.warmCream.ignoresSafeArea()
 
-            VStack(spacing: 0) {
-                // Header with back button and progress
-                headerView
-
-                // Step content
-                TabView(selection: $viewModel.currentStep) {
-                    OnboardingLocationStep(viewModel: viewModel)
-                        .tag(OnboardingStep.location)
-
-                    OnboardingRoomsStep(viewModel: viewModel)
-                        .tag(OnboardingStep.rooms)
-
-                    OnboardingBudgetStep(viewModel: viewModel)
-                        .tag(OnboardingStep.budget)
-
-                    OnboardingFurnishingStep(viewModel: viewModel)
-                        .tag(OnboardingStep.furnishing)
-
-                    OnboardingSummaryStep(viewModel: viewModel, onComplete: onComplete)
-                        .tag(OnboardingStep.summary)
+            if viewModel.currentStep == .complete {
+                // Final screen - no header
+                OnboardingCompleteStep {
+                    onComplete(fetchedProperties)
                 }
-                .tabViewStyle(.page(indexDisplayMode: .never))
-                .animation(.easeInOut(duration: 0.3), value: viewModel.currentStep)
+            } else {
+                VStack(spacing: 0) {
+                    // Header with back button and progress
+                    headerView
+
+                    // Step content
+                    TabView(selection: $viewModel.currentStep) {
+                        OnboardingLocationStep(viewModel: viewModel)
+                            .tag(OnboardingStep.location)
+
+                        OnboardingRoomsStep(viewModel: viewModel)
+                            .tag(OnboardingStep.rooms)
+
+                        OnboardingBudgetStep(viewModel: viewModel)
+                            .tag(OnboardingStep.budget)
+
+                        OnboardingFurnishingStep(viewModel: viewModel)
+                            .tag(OnboardingStep.furnishing)
+
+                        OnboardingSummaryStep(viewModel: viewModel) { properties in
+                            fetchedProperties = properties
+                            withAnimation(.easeInOut(duration: 0.3)) {
+                                viewModel.currentStep = .complete
+                            }
+                        }
+                        .tag(OnboardingStep.summary)
+                    }
+                    .tabViewStyle(.page(indexDisplayMode: .never))
+                    .animation(.easeInOut(duration: 0.3), value: viewModel.currentStep)
+                }
             }
         }
     }

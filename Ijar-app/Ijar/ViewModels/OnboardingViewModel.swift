@@ -7,6 +7,7 @@ enum OnboardingStep: Int, CaseIterable {
     case budget = 2
     case furnishing = 3
     case summary = 4
+    case complete = 5
 
     var title: String {
         switch self {
@@ -15,6 +16,7 @@ enum OnboardingStep: Int, CaseIterable {
         case .budget: return "Budget"
         case .furnishing: return "Furnishing"
         case .summary: return "Summary"
+        case .complete: return "Complete"
         }
     }
 }
@@ -78,7 +80,7 @@ class OnboardingViewModel: ObservableObject {
         case .rooms: return canProceedFromRooms
         case .budget: return canProceedFromBudget
         case .furnishing: return canProceedFromFurnishing
-        case .summary: return true
+        case .summary, .complete: return true
         }
     }
 

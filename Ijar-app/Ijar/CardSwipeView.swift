@@ -17,11 +17,15 @@ struct CardSwipeView: View {
     @State private var showingAreasSheet = false
     @State private var hasUsedInitialProperties = false
 
+    // Entrance animation states
+    @State private var contentOpacity: Double = 0
+
     private let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
     private let selectionFeedback = UISelectionFeedbackGenerator()
     
     
     var body: some View {
+        ZStack {
             VStack {
                 if propertyService.properties.isEmpty {
                     if propertyService.isLoading {
@@ -32,13 +36,16 @@ struct CardSwipeView: View {
                 } else {
                     propertyCounter
                         .padding(.top, 25)
+                        .opacity(contentOpacity)
 
                     Spacer()
 
                     cardStackSection
                         .padding(.vertical, 15)
+                        .opacity(contentOpacity)
 
                     actionButtons
+                        .opacity(contentOpacity)
 
                     Spacer()
 
@@ -48,6 +55,7 @@ struct CardSwipeView: View {
             .padding(.horizontal, 15)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
 
+        }
         .background(Color.warmCream)
         .task {
             // Use initial properties from onboarding if available
@@ -61,6 +69,11 @@ struct CardSwipeView: View {
             await searchService.loadUserQueries()
             prefetchTopProperties()
             ambientAnimation = true
+
+            // Fade in content
+            withAnimation(.easeOut(duration: 0.4)) {
+                contentOpacity = 1
+            }
         }
         .refreshable {
             await propertyService.loadPropertiesForUser()

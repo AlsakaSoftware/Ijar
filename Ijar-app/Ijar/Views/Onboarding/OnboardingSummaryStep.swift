@@ -146,12 +146,11 @@ struct OnboardingSummaryStep: View {
 
     private var findPropertiesButton: some View {
         VStack(spacing: 0) {
-            // Subtle loading message
             if viewModel.isSubmitting {
                 Text("Setting up your feed...")
                     .font(.system(size: 14))
                     .foregroundColor(.warmBrown.opacity(0.6))
-                    .padding(.bottom, 12)
+                    .padding(.bottom, 5)
                     .transition(.opacity)
             }
 
@@ -183,7 +182,7 @@ struct OnboardingSummaryStep: View {
             }
             .disabled(viewModel.isSubmitting)
             .padding(.horizontal, 24)
-            .padding(.vertical, 16)
+            .padding(.bottom, 16)
             .background(Color.warmCream)
         }
         .animation(.easeInOut(duration: 0.2), value: viewModel.isSubmitting)
