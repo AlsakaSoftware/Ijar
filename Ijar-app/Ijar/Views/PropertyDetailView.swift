@@ -235,35 +235,35 @@ struct PropertyDetailView: View {
             Text("This property will be removed from your saved list")
         }
         .onAppear {
-            // Set initial like state
+            // Set initial like state and load metadata for saved properties
             if isSavedProperty {
                 isLiked = true
-                // For saved properties, show images immediately (already HD)
-                if displayImages.isEmpty {
-                    displayImages = property.images
-                }
                 loadOrCreateMetadata()
             } else {
                 // Check if this live search property is saved
                 Task {
                     isLiked = await propertyService.isLiveSearchPropertySaved(property)
                 }
-                // For live search properties, fetch full property details (HD images + details)
-                isLoadingDetails = true
-                Task {
-                    if let enrichedProperty = await searchService.fetchPropertyDetails(for: property) {
-                        displayProperty = enrichedProperty
-                        displayImages = enrichedProperty.images
-                        isLoadingDetails = false
+            }
+
+            // Always show existing images immediately while loading details
+            if displayImages.isEmpty {
+                displayImages = property.images
+            }
+
+            // Fetch full property details from Rightmove API (via our server)
+            // This gets HD images, description, floorplans, etc.
+            isLoadingDetails = true
+            Task {
+                if let enrichedProperty = await searchService.fetchPropertyDetails(for: property) {
+                    displayProperty = enrichedProperty
+                    displayImages = enrichedProperty.images
 #if DEBUG
-                        print("📋 Property details loaded: \(enrichedProperty.images.count) HD images, description: \(enrichedProperty.description != nil)")
+                    print("📋 Property details loaded: \(enrichedProperty.images.count) HD images, description: \(enrichedProperty.description != nil)")
 #endif
-                    } else {
-                        // Fallback to basic property if fetch fails
-                        displayImages = property.images
-                        isLoadingDetails = false
-                    }
                 }
+                // Keep existing images if fetch fails
+                isLoadingDetails = false
             }
 
             // Reload locations in case new ones were added
