@@ -20,6 +20,8 @@ struct CardSwipeView: View {
     // Entrance animation states
     @State private var showContent = false
     @State private var isFirstTimeEntrance = false
+    @State private var showSwipeTutorial = false
+    @AppStorage(UserDefaultsKeys.hasSeenSwipeTutorial) private var hasSeenSwipeTutorial = false
 
     private let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
     private let selectionFeedback = UISelectionFeedbackGenerator()
@@ -42,19 +44,17 @@ struct CardSwipeView: View {
                     Spacer()
 
                     cardStackSection
-                        .padding(.vertical, 15)
+                        .padding(.horizontal, 15)
+                        .padding(.bottom, 40)
                         .opacity(showContent ? 1 : 0)
                         .scaleEffect(showContent ? 1 : 0.95)
-
-                    actionButtons
-                        .opacity(showContent ? 1 : 0)
 
                     Spacer()
 
                 }
             }
-            .padding(.bottom, 32)
-            .padding(.horizontal, 15)
+            .padding(.bottom, 16)
+            .padding(.horizontal, 12)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
 
         }
@@ -75,13 +75,20 @@ struct CardSwipeView: View {
             await searchService.loadUserQueries()
             prefetchTopProperties()
 
-            // Clean spring animation
             let delay = isFirstTimeEntrance ? 0.1 : 0.0
             DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
                 withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
                     showContent = true
                 }
                 ambientAnimation = true
+
+                // Show tutorial only once ever
+                if !hasSeenSwipeTutorial {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        showSwipeTutorial = true
+                        hasSeenSwipeTutorial = true
+                    }
+                }
             }
         }
         .refreshable {
@@ -199,8 +206,8 @@ struct CardSwipeView: View {
                     coordinator.navigate(to: .propertyDetail(property: property))
                 }
             },
-            leftOverlay: { EmptyView() },
-            rightOverlay: { EmptyView() },
+            leftOverlay: { PassOverlay() },
+            rightOverlay: { SaveOverlay() },
             onSwipeLeft: { property in
                 Task {
                     await MainActor.run {
@@ -231,7 +238,8 @@ struct CardSwipeView: View {
             onSwipeUp: { property in
                 coordinator.navigate(to: .propertyDetail(property: property))
             },
-            dragDirection: $dragDirection
+            dragDirection: $dragDirection,
+            showTutorial: showSwipeTutorial
         )
     }
     
