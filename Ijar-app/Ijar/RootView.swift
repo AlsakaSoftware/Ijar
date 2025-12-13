@@ -70,6 +70,9 @@ struct RootContentView: View {
                     PreferencesOnboardingView(isGuestMode: true) { properties in
                         initialPropertiesStore.properties = properties
                         GuestPreferencesStore.shared.properties = properties
+                        if properties.isEmpty {
+                            coordinator.selectedTab = .browse
+                        }
                         withAnimation(.easeOut(duration: 0.3)) {
                             hasCompletedPreferencesOnboarding = true
                         }
