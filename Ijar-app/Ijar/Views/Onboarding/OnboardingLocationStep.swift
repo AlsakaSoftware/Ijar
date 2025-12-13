@@ -14,11 +14,11 @@ struct OnboardingLocationStep: View {
 
                         // Title and subtitle
                         VStack(alignment: .leading, spacing: 12) {
-                            Text("Where do you want to live?")
+                            Text("Where would you like to live?")
                                 .font(.system(size: 32, weight: .bold))
                                 .foregroundColor(.coffeeBean)
 
-                            Text("Enter a city, area, or postcode")
+                            Text("Enter a city, area, or postcode in the United Kingdom")
                                 .font(.system(size: 17))
                                 .foregroundColor(.warmBrown.opacity(0.7))
                         }
