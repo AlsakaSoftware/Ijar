@@ -3,7 +3,15 @@ import SwiftUI
 struct OnboardingSummaryStep: View {
     @ObservedObject var viewModel: OnboardingViewModel
     @ObservedObject var locationsManager: SavedLocationsManager
+    let isGuestMode: Bool
     let onComplete: ([Property]) -> Void
+
+    init(viewModel: OnboardingViewModel, locationsManager: SavedLocationsManager, isGuestMode: Bool = false, onComplete: @escaping ([Property]) -> Void) {
+        self.viewModel = viewModel
+        self.locationsManager = locationsManager
+        self.isGuestMode = isGuestMode
+        self.onComplete = onComplete
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -202,7 +210,7 @@ struct OnboardingSummaryStep: View {
 }
 
 #Preview {
-    let vm = OnboardingViewModel()
+    let vm = OnboardingViewModel(isGuestMode: false)
     vm.areaName = "Canary Wharf, London"
     vm.latitude = 51.5054
     vm.longitude = -0.0235
@@ -214,7 +222,7 @@ struct OnboardingSummaryStep: View {
     vm.maxPrice = 3500
     vm.furnishType = nil
 
-    return OnboardingSummaryStep(viewModel: vm, locationsManager: SavedLocationsManager()) { properties in
+    return OnboardingSummaryStep(viewModel: vm, locationsManager: SavedLocationsManager(), isGuestMode: false) { properties in
         print("Completed with \(properties.count) properties")
     }
     .background(Color.warmCream)

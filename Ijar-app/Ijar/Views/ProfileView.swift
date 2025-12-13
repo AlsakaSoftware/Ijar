@@ -9,7 +9,104 @@ struct ProfileView: View {
     @State private var showingDeleteConfirmation = false
     @State private var showingPaywall = false
 
+
     var body: some View {
+        VStack(spacing: 30) {
+            if authService.isInGuestMode {
+                guestModeContent
+            } else {
+                authenticatedContent
+            }
+        }
+        .overlay {
+            if authService.isLoading {
+                LoadingOverlay()
+            }
+        }
+        .sheet(isPresented: $showingPaywall) {
+            PaywallView(displayCloseButton: true)
+                .onPurchaseCompleted { customerInfo in
+                    subscriptionManager.updateSubscriptionStatus(from: customerInfo)
+                    showingPaywall = false
+                }
+        }
+        .alert("Delete Account", isPresented: $showingDeleteConfirmation) {
+            Button("Cancel", role: .cancel) { }
+            Button("Delete", role: .destructive) {
+                Task {
+                    do {
+                        try await authService.deleteAccount()
+                    } catch {
+                        // Error is already set in authService
+                    }
+                }
+            }
+        } message: {
+            Text("Are you sure you want to delete your account? This will permanently delete all your searches, saved properties, and account data. This action cannot be undone.")
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.warmCream)
+        .navigationTitle("Settings")
+        .navigationBarTitleDisplayMode(.large)
+    }
+
+    private var guestModeContent: some View {
+        VStack(spacing: 0) {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 32) {
+                    Spacer()
+                        .frame(height: 40)
+
+                    // Title and subtitle - Hinge style
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Create your free account")
+                            .font(.system(size: 32, weight: .bold))
+                            .foregroundColor(.coffeeBean)
+
+                        Text("You're currently browsing as a guest. Sign up to unlock all features.")
+                            .font(.system(size: 17))
+                            .foregroundColor(.warmBrown.opacity(0.7))
+                    }
+                    .padding(.horizontal, 24)
+
+                    // Benefits section
+                    VStack(alignment: .leading, spacing: 20) {
+                        GuestBenefitRow(icon: "heart.fill", text: "Save properties", subtitle: "Keep track of your favorites")
+                        GuestBenefitRow(icon: "bell.fill", text: "Get notified", subtitle: "New matches sent to your phone")
+                        GuestBenefitRow(icon: "sparkles", text: "Personalized feed", subtitle: "Properties tailored to you")
+                        GuestBenefitRow(icon: "magnifyingglass", text: "Multiple searches", subtitle: "Monitor different areas")
+                    }
+                    .padding(.horizontal, 24)
+
+                    Spacer()
+                        .frame(height: 100)
+                }
+            }
+
+            // Bottom button section
+            VStack(spacing: 12) {
+                SignInWithAppleButtonView()
+                    .padding(.horizontal, 24)
+
+                #if DEBUG
+                Button(action: {
+                    UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.hasCompletedPreferencesOnboarding)
+                    UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.hasTriggeredFirstQuerySearch)
+                    UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.isGuestMode)
+                }) {
+                    Text("Reset (Debug)")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(.warmBrown.opacity(0.4))
+                }
+                #endif
+            }
+            .padding(.vertical, 16)
+            .background(Color.warmCream)
+        }
+    }
+
+
+    private var authenticatedContent: some View {
         VStack(spacing: 30) {
             // Premium upgrade banner (only show if not subscribed)
             if !subscriptionManager.isSubscribed {
@@ -91,38 +188,7 @@ struct ProfileView: View {
                 #endif
             }
             .padding(.bottom, 30)
-
         }
-        .overlay {
-            if authService.isLoading {
-                LoadingOverlay()
-            }
-        }
-        .sheet(isPresented: $showingPaywall) {
-            PaywallView(displayCloseButton: true)
-                .onPurchaseCompleted { customerInfo in
-                    subscriptionManager.updateSubscriptionStatus(from: customerInfo)
-                    showingPaywall = false
-                }
-        }
-        .alert("Delete Account", isPresented: $showingDeleteConfirmation) {
-            Button("Cancel", role: .cancel) { }
-            Button("Delete", role: .destructive) {
-                Task {
-                    do {
-                        try await authService.deleteAccount()
-                    } catch {
-                        // Error is already set in authService
-                    }
-                }
-            }
-        } message: {
-            Text("Are you sure you want to delete your account? This will permanently delete all your searches, saved properties, and account data. This action cannot be undone.")
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.warmCream)
-        .navigationTitle("Settings")
-        .navigationBarTitleDisplayMode(.large)
     }
 }
 

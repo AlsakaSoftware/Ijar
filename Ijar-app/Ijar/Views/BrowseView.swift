@@ -4,7 +4,12 @@ import SwiftUI
 
 struct BrowseView: View {
     @EnvironmentObject private var coordinator: BrowseCoordinator
+    @EnvironmentObject private var authService: AuthenticationService
     @StateObject private var queryService = SearchQueryService()
+
+    private var isGuestMode: Bool {
+        authService.isGuestMode && !authService.isAuthenticated
+    }
 
     @State private var areaName = ""
     @State private var latitude: Double? = nil
@@ -193,7 +198,9 @@ struct BrowseView: View {
             .presentationDragIndicator(.visible)
         }
         .task {
-            await queryService.loadUserQueries()
+            if !isGuestMode {
+                await queryService.loadUserQueries()
+            }
         }
         .onDisappear {
             isAreaFieldFocused = false

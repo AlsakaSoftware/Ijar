@@ -9,6 +9,9 @@ struct PropertyDetailView: View {
     @State private var currentImageIndex = 0
     @State private var showingFullScreenImages = false
     @EnvironmentObject var appCoordinator: AppCoordinator
+    @EnvironmentObject var authService: AuthenticationService
+
+    @State private var showingGuestSignUpPrompt = false
 
     // Property details state - start with basic property, enrich with details when fetched
     @State private var displayProperty: Property
@@ -233,6 +236,17 @@ struct PropertyDetailView: View {
             }
         } message: {
             Text("This property will be removed from your saved list")
+        }
+        .sheet(isPresented: $showingGuestSignUpPrompt) {
+            GuestSignUpPromptSheet(
+                action: .save,
+                onDismiss: {
+                    showingGuestSignUpPrompt = false
+                }
+            )
+            .environmentObject(authService)
+            .presentationDetents([.medium])
+            .presentationDragIndicator(.visible)
         }
         .onAppear {
             // Set initial like state and load metadata for saved properties
@@ -543,6 +557,12 @@ struct PropertyDetailView: View {
     }
 
     private func handleLikeToggle() {
+        // Guest mode: show sign-up prompt instead of saving
+        if authService.isInGuestMode {
+            showingGuestSignUpPrompt = true
+            return
+        }
+
         if isLiked {
             showingUnlikeConfirmation = true
         } else {

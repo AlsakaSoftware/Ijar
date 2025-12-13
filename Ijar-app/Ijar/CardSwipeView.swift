@@ -4,6 +4,7 @@ import Kingfisher
 struct CardSwipeView: View {
     @EnvironmentObject var coordinator: HomeFeedCoordinator
     @EnvironmentObject var appCoordinator: AppCoordinator
+    @EnvironmentObject var authService: AuthenticationService
     @EnvironmentObject var initialPropertiesStore: InitialPropertiesStore
     @StateObject private var propertyService = PropertyService()
     @StateObject private var searchService = SearchQueryService()
@@ -16,6 +17,8 @@ struct CardSwipeView: View {
     @State private var showingSearchStartedAlert = false
     @State private var showingAreasSheet = false
     @State private var hasUsedInitialProperties = false
+    @State private var showingGuestSignUpPrompt = false
+    @State private var guestSignUpAction: GuestSignUpAction = .pass
 
     // Entrance animation states
     @State private var showContent = false
@@ -25,6 +28,7 @@ struct CardSwipeView: View {
 
     private let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
     private let selectionFeedback = UISelectionFeedbackGenerator()
+
     
     
     var body: some View {
@@ -64,15 +68,27 @@ struct CardSwipeView: View {
             let comingFromOnboarding = !initialPropertiesStore.properties.isEmpty
 
             // Use initial properties from onboarding if available
-            if !hasUsedInitialProperties && comingFromOnboarding {
+            if comingFromOnboarding {
                 propertyService.setProperties(initialPropertiesStore.properties)
                 initialPropertiesStore.clear()
                 hasUsedInitialProperties = true
                 isFirstTimeEntrance = true
+            } else if authService.isInGuestMode {
+                // Guest mode: Use properties from GuestPreferencesStore
+                let guestProperties = GuestPreferencesStore.shared.properties
+                if !guestProperties.isEmpty && propertyService.properties.isEmpty {
+                    propertyService.setProperties(guestProperties)
+                    isFirstTimeEntrance = !hasUsedInitialProperties
+                    hasUsedInitialProperties = true
+                }
+                // Don't load from database for guests
             } else {
                 await propertyService.loadPropertiesForUser()
             }
-            await searchService.loadUserQueries()
+
+            if !authService.isInGuestMode {
+                await searchService.loadUserQueries()
+            }
             prefetchTopProperties()
 
             let delay = isFirstTimeEntrance ? 0.1 : 0.0
@@ -92,11 +108,13 @@ struct CardSwipeView: View {
             }
         }
         .refreshable {
-            await propertyService.loadPropertiesForUser()
-            prefetchTopProperties()
+            if !authService.isInGuestMode {
+                await propertyService.loadPropertiesForUser()
+                prefetchTopProperties()
+            }
         }
         .onChange(of: scenePhase) { oldPhase, newPhase in
-            if newPhase == .active && oldPhase == .background {
+            if newPhase == .active && oldPhase == .background && !authService.isInGuestMode {
                 Task {
                     await propertyService.loadPropertiesForUser()
                     prefetchTopProperties()
@@ -127,6 +145,17 @@ struct CardSwipeView: View {
             Button("Got it!") { }
         } message: {
             Text("We'll send you some properties in a few minutes. We'll keep sending suitable matches for your area as we find them.")
+        }
+        .sheet(isPresented: $showingGuestSignUpPrompt) {
+            GuestSignUpPromptSheet(
+                action: guestSignUpAction,
+                onDismiss: {
+                    showingGuestSignUpPrompt = false
+                }
+            )
+            .environmentObject(authService)
+            .presentationDetents([.medium])
+            .presentationDragIndicator(.visible)
         }
     }
     
@@ -209,6 +238,11 @@ struct CardSwipeView: View {
             leftOverlay: { PassOverlay() },
             rightOverlay: { SaveOverlay() },
             onSwipeLeft: { property in
+                if authService.isInGuestMode {
+                    guestSignUpAction = .pass
+                    showingGuestSignUpPrompt = true
+                    return
+                }
                 Task {
                     await MainActor.run {
                         withAnimation(.none) {
@@ -219,6 +253,11 @@ struct CardSwipeView: View {
                 }
             },
             onSwipeRight: { property in
+                if authService.isInGuestMode {
+                    guestSignUpAction = .save
+                    showingGuestSignUpPrompt = true
+                    return
+                }
                 Task {
                     await MainActor.run {
                         withAnimation(.none) {
@@ -239,7 +278,7 @@ struct CardSwipeView: View {
                 coordinator.navigate(to: .propertyDetail(property: property))
             },
             dragDirection: $dragDirection,
-            showTutorial: showSwipeTutorial
+            showTutorial: $showSwipeTutorial
         )
     }
     
@@ -314,7 +353,12 @@ struct CardSwipeView: View {
     
     private var propertyCounter: some View {
         Button {
-            showingAreasSheet = true
+            if authService.isInGuestMode {
+                guestSignUpAction = .areas
+                showingGuestSignUpPrompt = true
+            } else {
+                showingAreasSheet = true
+            }
         } label: {
             HStack(spacing: 6) {
                 Circle()

@@ -24,6 +24,7 @@ struct OnboardingProgressIndicator: View {
         OnboardingProgressIndicator(currentStep: .budget)
         OnboardingProgressIndicator(currentStep: .furnishing)
         OnboardingProgressIndicator(currentStep: .summary)
+        OnboardingProgressIndicator(currentStep: .notifications)
     }
     .padding()
     .background(Color.warmCream)

@@ -16,7 +16,7 @@ struct CardStackView<Content: View, LeftOverlay: View, RightOverlay: View>: View
     let onSwipeRight: (Property) -> Void
     var onSwipeUp: ((Property) -> Void)? = nil
     @Binding var dragDirection: SwipeDirection
-    var showTutorial: Bool = false
+    @Binding var showTutorial: Bool
 
     @State private var dragAmount = CGSize.zero
     @State private var dragStartingLocation: CGPoint? = nil
@@ -115,6 +115,7 @@ struct CardStackView<Content: View, LeftOverlay: View, RightOverlay: View>: View
         }
 
         isTutorialAnimating = false
+        showTutorial = false
     }
 
     // MARK: - Overlay Opacity (only show when past action threshold, not when swiping up)
@@ -173,11 +174,7 @@ struct CardStackView<Content: View, LeftOverlay: View, RightOverlay: View>: View
             let dragProportion = Double(dragAmount.width / threshold)
             let clampedProportion = max(-1, min(1, dragProportion))
 
-            // If dragging from bottom half, invert rotation for natural feel
-            let halfHeight = cardSize.height / 2
-            let isDraggingBottom = (dragStartingLocation?.y ?? halfHeight) > halfHeight
-
-            return .degrees((isDraggingBottom ? -1 : 1) * clampedProportion * maxAngle)
+            return .degrees(clampedProportion * maxAngle)
         } else {
             let randomTilt = cardRotations[propertyId] ?? 0
             return .degrees(randomTilt)

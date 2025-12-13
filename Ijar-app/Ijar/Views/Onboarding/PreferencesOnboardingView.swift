@@ -1,10 +1,18 @@
 import SwiftUI
 
 struct PreferencesOnboardingView: View {
-    @StateObject private var viewModel = OnboardingViewModel()
+    @StateObject private var viewModel: OnboardingViewModel
     @StateObject private var locationsManager = SavedLocationsManager()
+    @EnvironmentObject var notificationService: NotificationService
     @State private var fetchedProperties: [Property] = []
+    let isGuestMode: Bool
     let onComplete: ([Property]) -> Void
+
+    init(isGuestMode: Bool = false, onComplete: @escaping ([Property]) -> Void) {
+        self.isGuestMode = isGuestMode
+        self.onComplete = onComplete
+        _viewModel = StateObject(wrappedValue: OnboardingViewModel(isGuestMode: isGuestMode))
+    }
 
     var body: some View {
         ZStack {
@@ -37,7 +45,10 @@ struct PreferencesOnboardingView: View {
                         OnboardingPlacesStep(viewModel: viewModel, locationsManager: locationsManager)
                             .tag(OnboardingStep.places)
 
-                        OnboardingSummaryStep(viewModel: viewModel, locationsManager: locationsManager) { properties in
+                        OnboardingNotificationsStep(viewModel: viewModel)
+                            .tag(OnboardingStep.notifications)
+
+                        OnboardingSummaryStep(viewModel: viewModel, locationsManager: locationsManager, isGuestMode: isGuestMode) { properties in
                             fetchedProperties = properties
                             viewModel.goToNextStep()
                         }
@@ -86,7 +97,7 @@ struct PreferencesOnboardingView: View {
 }
 
 #Preview {
-    PreferencesOnboardingView { properties in
+    PreferencesOnboardingView(isGuestMode: false) { properties in
         print("Completed with \(properties.count) properties")
     }
 }

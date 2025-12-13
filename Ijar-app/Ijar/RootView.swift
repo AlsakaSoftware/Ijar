@@ -56,8 +56,20 @@ struct RootContentView: View {
                 if hasCompletedPreferencesOnboarding {
                     mainTabView
                 } else {
-                    PreferencesOnboardingView { properties in
+                    PreferencesOnboardingView(isGuestMode: false) { properties in
                         initialPropertiesStore.properties = properties
+                        withAnimation(.easeOut(duration: 0.3)) {
+                            hasCompletedPreferencesOnboarding = true
+                        }
+                    }
+                }
+            } else if authService.isGuestMode {
+                if hasCompletedPreferencesOnboarding {
+                    mainTabView
+                } else {
+                    PreferencesOnboardingView(isGuestMode: true) { properties in
+                        initialPropertiesStore.properties = properties
+                        GuestPreferencesStore.shared.properties = properties
                         withAnimation(.easeOut(duration: 0.3)) {
                             hasCompletedPreferencesOnboarding = true
                         }
@@ -66,6 +78,7 @@ struct RootContentView: View {
             } else {
                 SignInView()
                     .environmentObject(authService)
+                    .environmentObject(coordinator)
             }
         }
     }

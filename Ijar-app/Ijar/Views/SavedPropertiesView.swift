@@ -2,12 +2,16 @@ import SwiftUI
 
 struct SavedPropertiesView: View {
     @EnvironmentObject var coordinator: SavedPropertiesCoordinator
+    @EnvironmentObject var authService: AuthenticationService
     @StateObject private var propertyService = PropertyService()
     @State private var animateContent = false
-    
+
+
     var body: some View {
         VStack(spacing: 0) {
-            if propertyService.isLoading && propertyService.savedProperties.isEmpty {
+            if authService.isInGuestMode {
+                guestEmptyStateView
+            } else if propertyService.isLoading && propertyService.savedProperties.isEmpty {
                 loadingView
             } else if propertyService.savedProperties.isEmpty {
                 emptyStateView
@@ -23,7 +27,7 @@ struct SavedPropertiesView: View {
         .tint(.rusticOrange)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
-                if !propertyService.savedProperties.isEmpty {
+                if !propertyService.savedProperties.isEmpty && !authService.isInGuestMode {
                     HStack(spacing: 6) {
                         Image(systemName: "heart.fill")
                             .font(.system(size: 14))
@@ -44,7 +48,9 @@ struct SavedPropertiesView: View {
             }
         }
         .task {
-            await propertyService.loadSavedProperties()
+            if !authService.isInGuestMode {
+                await propertyService.loadSavedProperties()
+            }
             withAnimation(.easeOut(duration: 0.4)) {
                 animateContent = true
             }
@@ -80,10 +86,91 @@ struct SavedPropertiesView: View {
         }
     }
     
+    private var guestEmptyStateView: some View {
+        VStack(spacing: 0) {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 32) {
+                    Spacer()
+                        .frame(height: 40)
+
+                    // Title and subtitle - Hinge style
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Save your favorites")
+                            .font(.system(size: 32, weight: .bold))
+                            .foregroundColor(.coffeeBean)
+                            .opacity(animateContent ? 1 : 0)
+                            .offset(y: animateContent ? 0 : 15)
+
+                        Text("Create a free account to save properties you love and access them anytime.")
+                            .font(.system(size: 17))
+                            .foregroundColor(.warmBrown.opacity(0.7))
+                            .opacity(animateContent ? 1 : 0)
+                            .offset(y: animateContent ? 0 : 15)
+                    }
+                    .padding(.horizontal, 24)
+
+                    // Visual placeholder
+                    VStack(spacing: 16) {
+                        ForEach(0..<3, id: \.self) { index in
+                            HStack(spacing: 12) {
+                                RoundedRectangle(cornerRadius: 8)
+                                    .fill(Color.warmBrown.opacity(0.08))
+                                    .frame(width: 80, height: 80)
+
+                                VStack(alignment: .leading, spacing: 6) {
+                                    RoundedRectangle(cornerRadius: 4)
+                                        .fill(Color.warmBrown.opacity(0.1))
+                                        .frame(width: 140, height: 14)
+
+                                    RoundedRectangle(cornerRadius: 4)
+                                        .fill(Color.warmBrown.opacity(0.06))
+                                        .frame(width: 100, height: 12)
+
+                                    RoundedRectangle(cornerRadius: 4)
+                                        .fill(Color.warmBrown.opacity(0.06))
+                                        .frame(width: 80, height: 12)
+                                }
+
+                                Spacer()
+
+                                Image(systemName: "heart")
+                                    .font(.system(size: 18))
+                                    .foregroundColor(.warmBrown.opacity(0.2))
+                            }
+                            .padding(12)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(Color.white.opacity(0.5))
+                            )
+                            .opacity(animateContent ? 1 : 0)
+                            .offset(y: animateContent ? 0 : 20)
+                            .animation(.easeOut(duration: 0.4).delay(Double(index) * 0.1 + 0.2), value: animateContent)
+                        }
+                    }
+                    .padding(.horizontal, 24)
+
+                    Spacer()
+                        .frame(height: 100)
+                }
+            }
+
+            // Bottom button
+            VStack(spacing: 0) {
+                SignInWithAppleButtonView()
+                    .padding(.horizontal, 24)
+                    .opacity(animateContent ? 1 : 0)
+                    .animation(.easeOut(duration: 0.4).delay(0.4), value: animateContent)
+            }
+            .padding(.vertical, 16)
+            .background(Color.warmCream)
+        }
+        .animation(.easeOut(duration: 0.35), value: animateContent)
+    }
+
     private var emptyStateView: some View {
         VStack(spacing: 24) {
             Spacer()
-            
+
             // Animated heart icon
             ZStack {
                 Circle()
@@ -91,7 +178,7 @@ struct SavedPropertiesView: View {
                     .frame(width: 120, height: 120)
                     .scaleEffect(animateContent ? 1 : 0)
                     .animation(.spring(response: 0.6, dampingFraction: 0.6), value: animateContent)
-                
+
                 Image(systemName: "heart.slash")
                     .font(.system(size: 50, weight: .light))
                     .foregroundStyle(
@@ -104,12 +191,12 @@ struct SavedPropertiesView: View {
                     .rotationEffect(.degrees(animateContent ? 0 : -10))
                     .animation(.spring(response: 0.8, dampingFraction: 0.5), value: animateContent)
             }
-            
+
             VStack(spacing: 12) {
                 Text("No favorites yet")
                     .font(.system(size: 28, weight: .semibold, design: .rounded))
                     .foregroundColor(.coffeeBean)
-                
+
                 Text("Heart the homes you love, and\nwe'll keep them here for you")
                     .font(.system(size: 16, weight: .regular))
                     .foregroundColor(.warmBrown.opacity(0.8))
@@ -119,7 +206,7 @@ struct SavedPropertiesView: View {
             .opacity(animateContent ? 1 : 0)
             .offset(y: animateContent ? 0 : 20)
             .animation(.easeOut(duration: 0.5).delay(0.2), value: animateContent)
-            
+
             Spacer()
             Spacer()
         }

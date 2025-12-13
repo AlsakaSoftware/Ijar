@@ -9,4 +9,7 @@ struct UserDefaultsKeys {
 
     /// Track if user has seen the swipe tutorial
     static let hasSeenSwipeTutorial = "has_seen_swipe_tutorial"
+
+    /// Track if user is in guest mode (browsing without account)
+    static let isGuestMode = "is_guest_mode"
 }

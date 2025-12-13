@@ -1,5 +1,4 @@
 import SwiftUI
-import AuthenticationServices
 
 struct SignInView: View {
     @EnvironmentObject var authService: AuthenticationService
@@ -43,7 +42,7 @@ struct SignInView: View {
 
                 // Slogan slightly above center
                 VStack(spacing: 8) {
-                    Text("We fixed Rightmove.")
+                    Text("We fixed Renting.")
                         .font(.system(size: 34, weight: .bold))
                         .foregroundColor(.coffeeBean)
 
@@ -65,19 +64,16 @@ struct SignInView: View {
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 16)
 
-                    SignInWithAppleButton(
-                        onRequest: { request in
-                            request.requestedScopes = [.fullName, .email]
-                        },
-                        onCompletion: { result in
-                            Task {
-                                await handleSignInWithApple(result: result)
-                            }
-                        }
-                    )
-                    .signInWithAppleButtonStyle(.black)
-                    .frame(height: 56)
-                    .cornerRadius(28)
+                    SignInWithAppleButtonView()
+
+                    Button {
+                        authService.continueAsGuest()
+                    } label: {
+                        Text("Continue as Guest")
+                            .font(.system(size: 16, weight: .medium))
+                            .foregroundColor(.warmBrown)
+                    }
+                    .padding(.top, 4)
 
                     if authService.isLoading {
                         ProgressView()
@@ -101,26 +97,6 @@ struct SignInView: View {
             }
         } message: {
             Text(authService.error ?? "")
-        }
-    }
-
-    private func handleSignInWithApple(result: Result<ASAuthorization, Error>) async {
-        switch result {
-        case .success(let authorization):
-            if let appleIDCredential = authorization.credential as? ASAuthorizationAppleIDCredential {
-                await authService.signInWithApple(credential: appleIDCredential)
-            }
-        case .failure(let error):
-            if let authError = error as? ASAuthorizationError {
-                switch authError.code {
-                case .canceled, .unknown:
-                    return
-                default:
-                    authService.error = error.localizedDescription
-                }
-            } else {
-                authService.error = error.localizedDescription
-            }
         }
     }
 }

@@ -6,13 +6,14 @@ import RevenueCat
 @MainActor
 class AuthenticationService: ObservableObject {
     @Published var isAuthenticated = false
+    @Published var isGuestMode = false
     @Published var user: User?
     @Published var isLoading = false
     @Published var error: String?
-    
+
     private let supabase: SupabaseClient
     private let notificationService: NotificationService
-    
+
     init(notificationService: NotificationService) {
         self.notificationService = notificationService
         // Initialize Supabase client using ConfigManager
@@ -27,6 +28,9 @@ class AuthenticationService: ObservableObject {
         #if DEBUG
         config.debugPrint()
         #endif
+
+        // Check if user was in guest mode
+        self.isGuestMode = UserDefaults.standard.bool(forKey: UserDefaultsKeys.isGuestMode)
 
         // Start with loading state
         self.isLoading = true
@@ -74,9 +78,6 @@ class AuthenticationService: ObservableObject {
 
             // Save user ID to UserDefaults for device token registration
             UserDefaults.standard.set(session.user.id.uuidString, forKey: "currentUserId")
-
-            // Register for push notifications and save device token
-            await registerForNotifications()
 
             // Login to RevenueCat with user ID AFTER main sign-in flow completes
             // This will migrate anonymous user to identified user if needed
@@ -140,6 +141,80 @@ class AuthenticationService: ObservableObject {
         isLoading = false
     }
 
+    // MARK: - Guest Mode
+
+    /// Returns true if user is in guest mode and not authenticated
+    var isInGuestMode: Bool {
+        isGuestMode && !isAuthenticated
+    }
+
+    func continueAsGuest() {
+        isGuestMode = true
+        UserDefaults.standard.set(true, forKey: UserDefaultsKeys.isGuestMode)
+    }
+
+    func exitGuestMode() {
+        isGuestMode = false
+        UserDefaults.standard.set(false, forKey: UserDefaultsKeys.isGuestMode)
+        // Clear guest onboarding state
+        UserDefaults.standard.set(false, forKey: UserDefaultsKeys.hasCompletedPreferencesOnboarding)
+        // Clear guest preferences
+        GuestPreferencesStore.shared.clear()
+    }
+
+    /// Exit guest mode but keep onboarding progress (used after successful conversion)
+    func exitGuestModeKeepProgress() {
+        isGuestMode = false
+        UserDefaults.standard.set(false, forKey: UserDefaultsKeys.isGuestMode)
+        // Keep hasCompletedPreferencesOnboarding = true so user goes to main tabs
+    }
+
+    /// Convert guest session to authenticated user by saving their preferences to the database
+    func convertGuestToAuthenticatedUser() async {
+        guard GuestPreferencesStore.shared.hasValidPreferences,
+              let query = GuestPreferencesStore.shared.toSearchQuery() else {
+            #if DEBUG
+            print("⚠️ Guest conversion: No valid preferences to convert")
+            #endif
+            exitGuestMode()
+            return
+        }
+
+        let searchQueryService = SearchQueryService()
+        let liveSearchService = LiveSearchService()
+
+        #if DEBUG
+        print("🔄 Guest conversion: Creating query '\(query.name)' in database")
+        #endif
+
+        // 1. Save the query to database
+        let success = await searchQueryService.createQuery(query)
+
+        guard success else {
+            #if DEBUG
+            print("❌ Guest conversion: Failed to create query")
+            #endif
+            // Still exit guest mode, but user will need to redo onboarding
+            exitGuestMode()
+            return
+        }
+
+        #if DEBUG
+        print("✅ Guest conversion: Query created, persisting properties")
+        #endif
+
+        // 2. Call onboarding search to persist properties with query association
+        await liveSearchService.onboardingSearch(queryId: query.id.uuidString, query: query)
+
+        #if DEBUG
+        print("✅ Guest conversion: Properties persisted")
+        #endif
+
+        // 3. Clear guest store and exit guest mode (keeping onboarding progress)
+        GuestPreferencesStore.shared.clear()
+        exitGuestModeKeepProgress()
+    }
+
     func deleteAccount() async throws {
         isLoading = true
         error = nil
@@ -183,33 +258,6 @@ class AuthenticationService: ObservableObject {
         }
 
         isLoading = false
-    }
-    
-    private func registerForNotifications() async {
-        guard let user = user else { 
-            print("❌ No user found for notification registration")
-            return 
-        }
-        
-        print("📱 Starting notification registration for user: \(user.id.uuidString)")
-        
-        // Request notification permission
-        let granted = await notificationService.requestNotificationPermission()
-        print("🔔 Notification permission granted: \(granted)")
-        
-        if granted {
-            // Check if we have a saved device token
-            if let tokenData = UserDefaults.standard.data(forKey: "deviceToken") {
-                let tokenString = tokenData.map { String(format: "%02.2hhx", $0) }.joined()
-                print("✅ Found saved device token: \(tokenString)")
-                await notificationService.saveDeviceToken(tokenData, for: user.id.uuidString)
-            } else {
-                print("⚠️ No device token found in UserDefaults")
-                // Try to register for remote notifications again
-                print("📲 Requesting remote notification registration...")
-                await UIApplication.shared.registerForRemoteNotifications()
-            }
-        }
     }
 }
 
