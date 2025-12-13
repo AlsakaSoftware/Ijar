@@ -28,11 +28,35 @@ struct GeocodingResult {
     let postcode: String
     let latitude: Double
     let longitude: Double
+    let formattedAddress: String
 }
 
 @MainActor
 class GeocodingService {
     private let geocoder = CLGeocoder()
+
+    /// Build a formatted address string from placemark components
+    private func formatAddress(from placemark: CLPlacemark) -> String {
+        var components: [String] = []
+
+        // Add locality (neighborhood/area) if available
+        if let subLocality = placemark.subLocality {
+            components.append(subLocality)
+        }
+
+        // Add city
+        if let locality = placemark.locality {
+            // Avoid duplicates
+            if !components.contains(locality) {
+                components.append(locality)
+            }
+        }
+
+        // Always add UK at the end
+        components.append("UK")
+
+        return components.joined(separator: ", ")
+    }
 
     /// Geocode an area name to get UK postcode
     /// Uses two-step approach: forward geocode, then reverse geocode if needed
@@ -68,14 +92,16 @@ class GeocodingService {
             // If placemark has a postcode, use it directly
             if let geocodedPostcode = ukPlacemark.postalCode,
                let location = ukPlacemark.location {
+                let formatted = formatAddress(from: ukPlacemark)
                 #if DEBUG
-                print("✅ Geocoded to postcode: \(geocodedPostcode)")
+                print("✅ Geocoded to postcode: \(geocodedPostcode), formatted: \(formatted)")
                 #endif
 
                 return GeocodingResult(
                     postcode: geocodedPostcode,
                     latitude: location.coordinate.latitude,
-                    longitude: location.coordinate.longitude
+                    longitude: location.coordinate.longitude,
+                    formattedAddress: formatted
                 )
             }
 
@@ -97,15 +123,18 @@ class GeocodingService {
             }
             #endif
 
-            if let reverseGeocodedPostcode = reverseGeocodedPlacemarks.first?.postalCode {
+            if let reversePlacemark = reverseGeocodedPlacemarks.first,
+               let reverseGeocodedPostcode = reversePlacemark.postalCode {
+                let formatted = formatAddress(from: reversePlacemark)
                 #if DEBUG
-                print("✅ Reverse geocoded to postcode: \(reverseGeocodedPostcode)")
+                print("✅ Reverse geocoded to postcode: \(reverseGeocodedPostcode), formatted: \(formatted)")
                 #endif
 
                 return GeocodingResult(
                     postcode: reverseGeocodedPostcode,
                     latitude: location.coordinate.latitude,
-                    longitude: location.coordinate.longitude
+                    longitude: location.coordinate.longitude,
+                    formattedAddress: formatted
                 )
             }
 

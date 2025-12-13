@@ -62,10 +62,16 @@ struct OnboardingLocationStep: View {
                                     .font(.system(size: 14))
                                     .foregroundColor(.red)
                                     .transition(.opacity)
+                            } else if let postcode = viewModel.postcode {
+                                Text("\(postcode), United Kingdom")
+                                    .font(.system(size: 14))
+                                    .foregroundColor(.warmBrown.opacity(0.6))
+                                    .transition(.opacity)
                             }
                         }
                         .padding(.horizontal, 24)
                         .animation(.easeInOut(duration: 0.2), value: viewModel.geocodingError)
+                        .animation(.easeInOut(duration: 0.2), value: viewModel.postcode)
                         .animation(.easeInOut(duration: 0.2), value: isAreaFieldFocused)
 
                         // Radius selection

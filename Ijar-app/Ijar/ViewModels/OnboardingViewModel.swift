@@ -39,6 +39,7 @@ class OnboardingViewModel: ObservableObject {
     @Published var areaName = ""
     @Published var latitude: Double?
     @Published var longitude: Double?
+    @Published var postcode: String?
     @Published var radius: Double = 1.0
     @Published var isGeocoding = false
     @Published var geocodingError: String?
@@ -235,6 +236,7 @@ class OnboardingViewModel: ObservableObject {
         geocodingTask?.cancel()
         latitude = nil
         longitude = nil
+        postcode = nil
         geocodingError = nil
 
         let trimmedArea = area.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -253,6 +255,7 @@ class OnboardingViewModel: ObservableObject {
                 isGeocoding = false
                 latitude = result.latitude
                 longitude = result.longitude
+                postcode = result.postcode
                 geocodingError = nil
 
             } catch let error as GeocodingError {
@@ -260,12 +263,14 @@ class OnboardingViewModel: ObservableObject {
                 isGeocoding = false
                 latitude = nil
                 longitude = nil
+                postcode = nil
                 geocodingError = error.localizedDescription
             } catch {
                 guard !Task.isCancelled else { return }
                 isGeocoding = false
                 latitude = nil
                 longitude = nil
+                postcode = nil
                 geocodingError = "Couldn't find this area"
             }
         }
