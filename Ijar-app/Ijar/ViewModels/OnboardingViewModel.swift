@@ -2,17 +2,19 @@ import Foundation
 import SwiftUI
 
 enum OnboardingStep: Int, CaseIterable {
-    case location = 0
-    case rooms = 1
-    case budget = 2
-    case furnishing = 3
-    case places = 4
-    case notifications = 5
-    case summary = 6
-    case complete = 7
+    case welcome = 0
+    case location = 1
+    case rooms = 2
+    case budget = 3
+    case furnishing = 4
+    case places = 5
+    case notifications = 6
+    case summary = 7
+    case complete = 8
 
     var title: String {
         switch self {
+        case .welcome: return "Welcome"
         case .location: return "Location"
         case .rooms: return "Rooms"
         case .budget: return "Budget"
@@ -28,7 +30,7 @@ enum OnboardingStep: Int, CaseIterable {
 @MainActor
 class OnboardingViewModel: ObservableObject {
     // MARK: - Step Navigation
-    @Published var currentStep: OnboardingStep = .location
+    @Published var currentStep: OnboardingStep = .welcome
     @Published var isComplete = false
     @Published var isSubmitting = false
     @Published var submissionError: String?
@@ -91,6 +93,7 @@ class OnboardingViewModel: ObservableObject {
 
     var canProceed: Bool {
         switch currentStep {
+        case .welcome: return true
         case .location: return canProceedFromLocation
         case .rooms: return canProceedFromRooms
         case .budget: return canProceedFromBudget
@@ -101,7 +104,7 @@ class OnboardingViewModel: ObservableObject {
     }
 
     var isFirstStep: Bool {
-        currentStep == .location
+        currentStep == .welcome
     }
 
     var isLastStep: Bool {

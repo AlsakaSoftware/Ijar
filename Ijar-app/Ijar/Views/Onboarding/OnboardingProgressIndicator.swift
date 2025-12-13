@@ -2,13 +2,17 @@ import SwiftUI
 
 struct OnboardingProgressIndicator: View {
     let currentStep: OnboardingStep
-    let totalSteps = OnboardingStep.allCases.count
+
+    // Steps shown in progress (excludes welcome and complete)
+    private let progressSteps: [OnboardingStep] = [
+        .location, .rooms, .budget, .furnishing, .places, .notifications, .summary
+    ]
 
     var body: some View {
         HStack(spacing: 8) {
-            ForEach(0..<totalSteps, id: \.self) { index in
+            ForEach(Array(progressSteps.enumerated()), id: \.offset) { index, step in
                 Circle()
-                    .fill(index <= currentStep.rawValue ? Color.rusticOrange : Color.warmBrown.opacity(0.25))
+                    .fill(currentStep.rawValue >= step.rawValue ? Color.rusticOrange : Color.warmBrown.opacity(0.25))
                     .frame(width: 8, height: 8)
                     .animation(.spring(response: 0.3, dampingFraction: 0.7), value: currentStep)
             }

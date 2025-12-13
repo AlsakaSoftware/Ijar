@@ -23,6 +23,9 @@ struct PreferencesOnboardingView: View {
                 OnboardingCompleteStep {
                     onComplete(fetchedProperties)
                 }
+            } else if viewModel.currentStep == .welcome {
+                // Welcome step shown without header
+                OnboardingWelcomeStep(viewModel: viewModel)
             } else {
                 VStack(spacing: 0) {
                     // Header
