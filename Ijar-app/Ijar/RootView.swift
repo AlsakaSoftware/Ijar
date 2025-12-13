@@ -24,8 +24,8 @@ struct RootView: View {
             coordinator: coordinator,
             initialPropertiesStore: initialPropertiesStore
         )
-        .onAppear {
-            notificationService.checkNotificationStatus()
+        .task {
+            await notificationService.checkAndRequestNotificationPermission()
         }
     }
 }

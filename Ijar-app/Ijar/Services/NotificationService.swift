@@ -27,6 +27,16 @@ class NotificationService: ObservableObject {
             }
         }
     }
+
+    /// Check status and request permission if not determined
+    func checkAndRequestNotificationPermission() async {
+        let settings = await UNUserNotificationCenter.current().notificationSettings()
+        notificationPermissionStatus = settings.authorizationStatus
+
+        if settings.authorizationStatus == .notDetermined {
+            await requestNotificationPermission()
+        }
+    }
     
     func requestNotificationPermission() async -> Bool {
         let center = UNUserNotificationCenter.current()
