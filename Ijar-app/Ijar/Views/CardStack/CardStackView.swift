@@ -48,7 +48,7 @@ struct CardStackView<Content: View, LeftOverlay: View, RightOverlay: View>: View
                                 leftOverlay()
                                     .opacity(leftOverlayOpacity)
                             }
-                            .clipShape(RoundedRectangle(cornerRadius: 20))
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
                             .allowsHitTesting(false)
                         }
                     }
@@ -151,8 +151,7 @@ struct CardStackView<Content: View, LeftOverlay: View, RightOverlay: View>: View
         if stackIndex == 0 {
             return dragAmount
         } else {
-            let verticalOffset = CGFloat(stackIndex) * 8
-            return CGSize(width: 0, height: verticalOffset)
+            return .zero
         }
     }
 
@@ -176,8 +175,7 @@ struct CardStackView<Content: View, LeftOverlay: View, RightOverlay: View>: View
 
             return .degrees(clampedProportion * maxAngle)
         } else {
-            let randomTilt = cardRotations[propertyId] ?? 0
-            return .degrees(randomTilt)
+            return .zero
         }
     }
 

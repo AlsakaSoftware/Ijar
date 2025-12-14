@@ -87,17 +87,29 @@ struct PropertyCard: View {
             imagesCarousel
                 .background(Color.warmCream)
         }
-        .clipShape(RoundedRectangle(cornerRadius: 20))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
         .overlay(swipeUpBorderEffect)
+        // Layered shadows for depth
+        .shadow(color: .black.opacity(0.08), radius: 1, x: 0, y: 1)
+        .shadow(color: .black.opacity(0.06), radius: 4, x: dynamicShadowX * 0.3, y: 4)
         .shadow(color: {
             if dragAmount.height < -50 {
-                return .rusticOrange.opacity(0.3)
+                return .rusticOrange.opacity(0.25)
             } else {
-                return .coffeeBean.opacity(0.08)
+                return .black.opacity(0.08)
             }
-        }(),
-        radius: dragAmount.height < -50 ? 20 : 16,
-        y: 8)
+        }(), radius: 16, x: dynamicShadowX, y: 12)
+        // 3D perspective tilt based on drag
+        .rotation3DEffect(
+            .degrees(Double(-dragAmount.width) / 40),
+            axis: (x: 0, y: 1, z: 0),
+            perspective: 0.5
+        )
+        .rotation3DEffect(
+            .degrees(Double(dragAmount.height) / 60),
+            axis: (x: 1, y: 0, z: 0),
+            perspective: 0.5
+        )
         .scaleEffect(dragAmount.height < -50 ? 0.95 : 1.0)
         .rotationEffect(.degrees(dragAmount.height < -30 ? Double(dragAmount.height + 30) / 15 : 0), anchor: .bottom)
         .offset(y: dragAmount.height < -30 ? dragAmount.height / 4 : 0)
@@ -111,10 +123,19 @@ struct PropertyCard: View {
 
     }
 
+    // MARK: - Dynamic Shadow
+
+    private var dynamicShadowX: CGFloat {
+        // Shadow shifts opposite to drag direction (like light source is fixed)
+        let maxOffset: CGFloat = 8
+        let normalizedDrag = dragAmount.width / 150
+        return -normalizedDrag.clamped(to: -1...1) * maxOffset
+    }
+
     // MARK: - Swipe Up Effects
 
     private var swipeUpBorderEffect: some View {
-        RoundedRectangle(cornerRadius: 20)
+        RoundedRectangle(cornerRadius: 12)
             .stroke(
                 LinearGradient(
                     colors: {
@@ -141,7 +162,7 @@ struct PropertyCard: View {
                 Spacer()
 
                 ZStack {
-                    RoundedRectangle(cornerRadius: 20)
+                    RoundedRectangle(cornerRadius: 12)
                         .fill(
                             LinearGradient(
                                 colors: [
@@ -396,5 +417,13 @@ struct PropertyCard: View {
         .background(Color.warmCream)
     }
     .padding()
+}
+
+// MARK: - Helper Extension
+
+private extension CGFloat {
+    func clamped(to range: ClosedRange<CGFloat>) -> CGFloat {
+        return Swift.min(Swift.max(self, range.lowerBound), range.upperBound)
+    }
 }
 
