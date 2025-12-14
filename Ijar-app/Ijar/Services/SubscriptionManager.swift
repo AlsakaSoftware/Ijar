@@ -6,7 +6,8 @@ import RevenueCatUI
 class SubscriptionManager: ObservableObject {
     static let shared = SubscriptionManager()
 
-    @Published var isSubscribed = false
+//    Make app free for now
+    @Published var isSubscribed = true
 
     // Free tier limits
     private let freeQueryLimit = 1
