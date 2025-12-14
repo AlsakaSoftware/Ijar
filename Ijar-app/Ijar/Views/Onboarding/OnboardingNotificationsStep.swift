@@ -74,7 +74,16 @@ struct OnboardingNotificationsStep: View {
             }
 
             // Buttons
-            VStack(spacing: 12) {
+            VStack(spacing: 8) {
+                Button {
+                    viewModel.goToNextStep()
+                } label: {
+                    Text("Maybe later")
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundColor(.warmBrown.opacity(0.6))
+                        .padding(.vertical, 8)
+                }
+                
                 Button {
                     Task {
                         await enableNotifications()
@@ -99,14 +108,6 @@ struct OnboardingNotificationsStep: View {
                 }
                 .disabled(isRequesting)
 
-                Button {
-                    viewModel.goToNextStep()
-                } label: {
-                    Text("Maybe later")
-                        .font(.system(size: 16, weight: .medium))
-                        .foregroundColor(.warmBrown.opacity(0.6))
-                        .padding(.vertical, 8)
-                }
             }
             .padding(.horizontal, 24)
             .padding(.vertical, 16)

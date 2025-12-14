@@ -15,10 +15,28 @@ struct OnboardingWelcomeStep: View {
                     .font(.system(size: 32, weight: .bold))
                     .foregroundColor(.coffeeBean)
 
-                Text("Let's find your next home \n...without pulling out your hair.")
-                    .font(.system(size: 18))
-                    .lineSpacing(1)
-                    .foregroundColor(.warmBrown.opacity(0.7))
+                VStack(spacing: 0) {
+                    
+                    HStack {
+                        Text("Let's find your next home…")
+                            .font(.system(size: 18))
+                            .lineSpacing(1)
+                            .foregroundColor(.warmBrown.opacity(0.8))
+                        Spacer()
+                    }
+                                        
+                    HStack {
+                        Spacer()
+                        Text("without pulling out your hair")
+                            .font(.system(size: 18))
+                            .lineSpacing(1)
+                            .foregroundColor(.warmBrown.opacity(0.8))
+                    }
+                }
+//                Text("Let's find your next home \n          …without pulling out your hair")
+//                    .font(.system(size: 18))
+//                    .lineSpacing(1)
+//                    .foregroundColor(.warmBrown.opacity(0.7))
 
             }
             .frame(maxWidth: .infinity, alignment: .leading)

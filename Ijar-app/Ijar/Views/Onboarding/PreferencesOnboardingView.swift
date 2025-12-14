@@ -23,16 +23,18 @@ struct PreferencesOnboardingView: View {
                 OnboardingCompleteStep {
                     onComplete(fetchedProperties)
                 }
-            } else if viewModel.currentStep == .welcome {
-                // Welcome step shown without header
-                OnboardingWelcomeStep(viewModel: viewModel)
             } else {
                 VStack(spacing: 0) {
-                    // Header
-                    headerView
+                    // Header (hidden on welcome step)
+                    if viewModel.currentStep != .welcome {
+                        headerView
+                    }
 
-                    // Step content (swipeable steps only)
+                    // Step content
                     TabView(selection: $viewModel.currentStep) {
+                        OnboardingWelcomeStep(viewModel: viewModel)
+                            .tag(OnboardingStep.welcome)
+
                         OnboardingLocationStep(viewModel: viewModel)
                             .tag(OnboardingStep.location)
 

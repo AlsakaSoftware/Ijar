@@ -105,7 +105,7 @@ class OnboardingViewModel: ObservableObject {
     }
 
     var isFirstStep: Bool {
-        currentStep == .welcome
+        currentStep == .welcome  || currentStep == .location
     }
 
     var isLastStep: Bool {
