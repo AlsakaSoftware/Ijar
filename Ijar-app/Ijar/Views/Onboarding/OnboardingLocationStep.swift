@@ -18,7 +18,7 @@ struct OnboardingLocationStep: View {
                                 .font(.system(size: 32, weight: .bold))
                                 .foregroundColor(.coffeeBean)
 
-                            Text("Enter a city, area, or postcode in the United Kingdom")
+                            Text("Enter a city, area, or postcoder")
                                 .font(.system(size: 17))
                                 .foregroundColor(.warmBrown.opacity(0.7))
                         }

@@ -71,7 +71,7 @@ struct SearchQueriesView: View {
             .alert("Your First Search is Live!", isPresented: $showingSearchStartedAlert) {
                 Button("Got it!") { }
             } message: {
-                Text("We'll send you some properties in a few minutes. We'll keep sending suitable matches for your area as we find them.")
+                Text("We'll send you some properties in a few minutes. We'll keep sending suitable matches for your area as we find them")
             }
             .task {
                 await searchService.loadUserQueries()

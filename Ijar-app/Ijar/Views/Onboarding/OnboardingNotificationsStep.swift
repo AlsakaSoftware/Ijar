@@ -17,7 +17,7 @@ struct OnboardingNotificationsStep: View {
                         .font(.system(size: 32, weight: .bold))
                         .foregroundColor(.coffeeBean)
 
-                    Text("We'll send you new listings as we find them.")
+                    Text("We'll send you new listings as we find them")
                         .font(.system(size: 17))
                         .foregroundColor(.warmBrown.opacity(0.7))
                 }

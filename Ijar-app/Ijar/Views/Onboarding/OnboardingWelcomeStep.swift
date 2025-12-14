@@ -11,7 +11,7 @@ struct OnboardingWelcomeStep: View {
 
             // Title and subtitle - left aligned like other steps
             VStack(alignment: .leading, spacing: 15) {
-                Text("Welcome to SupHomey.")
+                Text("Welcome to SupHomey")
                     .font(.system(size: 32, weight: .bold))
                     .foregroundColor(.coffeeBean)
 

@@ -59,8 +59,6 @@ struct SignInWithAppleButtonView: View {
                     }
 
                     await MainActor.run {
-                        // Navigate to For You tab after sign-in
-                        appCoordinator.selectedTab = .homeFeed
                         onSuccess?()
                     }
                 }

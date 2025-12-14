@@ -6,6 +6,7 @@ struct CardSwipeView: View {
     @EnvironmentObject var appCoordinator: AppCoordinator
     @EnvironmentObject var authService: AuthenticationService
     @EnvironmentObject var initialPropertiesStore: InitialPropertiesStore
+    @EnvironmentObject var notificationService: NotificationService
     @StateObject private var propertyService = PropertyService()
     @StateObject private var searchService = SearchQueryService()
     @StateObject private var monitorService = MonitorService()
@@ -64,6 +65,9 @@ struct CardSwipeView: View {
         }
         .background(Color.warmCream)
         .task {
+            // Request notification permission if not determined
+            await notificationService.checkAndRequestNotificationPermission()
+
             // Check if coming from onboarding (have initial properties)
             let comingFromOnboarding = !initialPropertiesStore.properties.isEmpty
 
@@ -144,7 +148,7 @@ struct CardSwipeView: View {
         .alert("Your First Search is Live!", isPresented: $showingSearchStartedAlert) {
             Button("Got it!") { }
         } message: {
-            Text("We'll send you some properties in a few minutes. We'll keep sending suitable matches for your area as we find them.")
+            Text("We'll send you some properties in a few minutes. We'll keep sending suitable matches for your area as we find them")
         }
         .sheet(isPresented: $showingGuestSignUpPrompt) {
             GuestSignUpPromptSheet(
@@ -181,49 +185,61 @@ struct CardSwipeView: View {
 
     private var emptyStateView: some View {
         let hasQueries = !searchService.queries.isEmpty
+        let isGuest = authService.isInGuestMode
 
         return VStack(spacing: 0) {
             Spacer()
 
-            VStack(spacing: 16) {
-                Image(systemName: hasQueries ? "sparkles" : "magnifyingglass.circle")
-                    .font(.system(size: 60, weight: .light))
-                    .foregroundStyle(Color.sunsetGradient)
-                    .padding(.bottom, 4)
+            VStack(alignment: .leading, spacing: 12) {
+                if isGuest {
+                    Text("Ready to find your next home?")
+                        .font(.system(size: 32, weight: .bold))
 
-                Text(hasQueries ? "You're all set" : "Let's find your place")
-                    .font(.system(size: 28, weight: .medium, design: .rounded))
-                    .foregroundColor(.coffeeBean)
+                    Text("Sign up to get tailored homes sent to you.")
+                        .font(.system(size: 17))
+                    .foregroundColor(.warmBrown.opacity(0.7))
+                } else {
+                    Text(hasQueries ? "You're all caught up" : "No properties yet")
+                        .font(.system(size: 32, weight: .bold))
 
-                Text(hasQueries ? "We'll notify you when new properties match your searches" : "Tell us where you want to live and we'll send you the best matches")
-                    .font(.system(size: 16, weight: .regular))
-                    .foregroundColor(.warmBrown.opacity(0.8))
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 32)
-
-                Button(action: {
-                    showingCreateQuery = true
-                }) {
-                    HStack(spacing: 8) {
-                        Image(systemName: "plus.circle.fill")
-                        Text(hasQueries ? "Add Another Area" : "Get Started")
-                    }
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(.warmCream)
-                    .padding(.horizontal, 24)
-                    .padding(.vertical, 14)
-                    .background(
-                        Capsule()
-                            .fill(Color.rusticOrange)
-                            .shadow(color: .rusticOrange.opacity(0.3), radius: 8, y: 4)
-                    )
+                    Text(hasQueries ? "We'll notify you when new properties match your searches." : "Add a search area to start receiving property matches.")
+                        .font(.system(size: 17))
+                        .foregroundColor(.warmBrown.opacity(0.7))
                 }
-                .padding(.top, 12)
             }
+            .padding(.horizontal, 24)
+            .padding(.bottom, 30)
+            .opacity(showContent ? 1 : 0)
+            .offset(y: showContent ? 0 : 15)
 
             Spacer()
+
+            if isGuest {
+                SignInWithAppleButtonView()
+                    .padding(.horizontal, 24)
+                    .padding(.bottom, 16)
+                    .opacity(showContent ? 1 : 0)
+            } else {
+                Button {
+                    showingCreateQuery = true
+                } label: {
+                    Text(hasQueries ? "Add Another Area" : "Add Search Area")
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(
+                            RoundedRectangle(cornerRadius: 30)
+                                .fill(Color.rusticOrange)
+                        )
+                }
+                .padding(.horizontal, 24)
+                .padding(.bottom, 30)
+                .opacity(showContent ? 1 : 0)
+            }
+            
         }
-        .frame(maxWidth: .infinity)
+        .animation(.easeOut(duration: 0.35), value: showContent)
     }
     
     private var cardStackSection: some View {
@@ -463,6 +479,7 @@ struct CardSwipeView: View {
             .environmentObject(HomeFeedCoordinator())
             .environmentObject(AppCoordinator())
             .environmentObject(InitialPropertiesStore())
+            .environmentObject(NotificationService())
     }
     .previewDevice("iPhone 15 Pro")
 }
@@ -473,6 +490,7 @@ struct CardSwipeView: View {
             .environmentObject(HomeFeedCoordinator())
             .environmentObject(AppCoordinator())
             .environmentObject(InitialPropertiesStore())
+            .environmentObject(NotificationService())
     }
     .previewDevice("iPhone SE (3rd generation)")
 }
@@ -483,6 +501,7 @@ struct CardSwipeView: View {
             .environmentObject(HomeFeedCoordinator())
             .environmentObject(AppCoordinator())
             .environmentObject(InitialPropertiesStore())
+            .environmentObject(NotificationService())
     }
     .previewDevice("iPhone 15 Pro Max")
 }

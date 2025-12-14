@@ -24,8 +24,8 @@ struct RootView: View {
             coordinator: coordinator,
             initialPropertiesStore: initialPropertiesStore
         )
-        .task {
-            await notificationService.checkAndRequestNotificationPermission()
+        .onAppear {
+            notificationService.checkNotificationStatus()
         }
     }
 }
@@ -48,34 +48,32 @@ struct RootContentView: View {
         )
     }
 
+    private var showMainTabs: Bool {
+        (authService.isAuthenticated || authService.isGuestMode) && hasCompletedPreferencesOnboarding
+    }
+
     var body: some View {
         ZStack {
             if authService.isLoading {
                 AppLogoLoadingView()
+            } else if showMainTabs {
+                mainTabView
             } else if authService.isAuthenticated {
-                if hasCompletedPreferencesOnboarding {
-                    mainTabView
-                } else {
-                    PreferencesOnboardingView(isGuestMode: false) { properties in
-                        initialPropertiesStore.properties = properties
-                        withAnimation(.easeOut(duration: 0.3)) {
-                            hasCompletedPreferencesOnboarding = true
-                        }
+                PreferencesOnboardingView(isGuestMode: false) { properties in
+                    initialPropertiesStore.properties = properties
+                    withAnimation(.easeOut(duration: 0.3)) {
+                        hasCompletedPreferencesOnboarding = true
                     }
                 }
             } else if authService.isGuestMode {
-                if hasCompletedPreferencesOnboarding {
-                    mainTabView
-                } else {
-                    PreferencesOnboardingView(isGuestMode: true) { properties in
-                        initialPropertiesStore.properties = properties
-                        GuestPreferencesStore.shared.properties = properties
-                        if properties.isEmpty {
-                            coordinator.selectedTab = .browse
-                        }
-                        withAnimation(.easeOut(duration: 0.3)) {
-                            hasCompletedPreferencesOnboarding = true
-                        }
+                PreferencesOnboardingView(isGuestMode: true) { properties in
+                    initialPropertiesStore.properties = properties
+                    GuestPreferencesStore.shared.properties = properties
+                    if properties.isEmpty {
+                        coordinator.selectedTab = .browse
+                    }
+                    withAnimation(.easeOut(duration: 0.3)) {
+                        hasCompletedPreferencesOnboarding = true
                     }
                 }
             } else {
@@ -120,6 +118,7 @@ struct RootContentView: View {
         .environmentObject(authService)
         .environmentObject(coordinator)
         .environmentObject(initialPropertiesStore)
+        .environmentObject(notificationService)
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
             // Clear notification badge when app enters foreground
             Task {

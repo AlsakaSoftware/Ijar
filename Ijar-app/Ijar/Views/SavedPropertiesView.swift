@@ -11,6 +11,7 @@ struct SavedPropertiesView: View {
         VStack(spacing: 0) {
             if authService.isInGuestMode {
                 guestEmptyStateView
+                    .padding(.top, 20)
             } else if propertyService.isLoading && propertyService.savedProperties.isEmpty {
                 loadingView
             } else if propertyService.savedProperties.isEmpty {
@@ -90,52 +91,40 @@ struct SavedPropertiesView: View {
         VStack(spacing: 0) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 32) {
-                    Spacer()
-                        .frame(height: 40)
-
-                    // Title and subtitle - Hinge style
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("Save your favorites")
-                            .font(.system(size: 32, weight: .bold))
-                            .foregroundColor(.coffeeBean)
-                            .opacity(animateContent ? 1 : 0)
-                            .offset(y: animateContent ? 0 : 15)
-
-                        Text("Create a free account to save properties you love and access them anytime.")
-                            .font(.system(size: 17))
-                            .foregroundColor(.warmBrown.opacity(0.7))
-                            .opacity(animateContent ? 1 : 0)
-                            .offset(y: animateContent ? 0 : 15)
-                    }
-                    .padding(.horizontal, 24)
+                    // Subtitle
+                    Text("Create a free account to save properties you love and access them anytime.")
+                        .font(.system(size: 17))
+                        .foregroundColor(.warmBrown.opacity(0.7))
+                        .opacity(animateContent ? 1 : 0)
+                        .offset(y: animateContent ? 0 : 15)
+                        .padding(.horizontal, 24)
 
                     // Visual placeholder
                     VStack(spacing: 16) {
                         ForEach(0..<3, id: \.self) { index in
-                            HStack(spacing: 12) {
+                            VStack(alignment: .leading, spacing: 0) {
                                 RoundedRectangle(cornerRadius: 8)
                                     .fill(Color.warmBrown.opacity(0.08))
-                                    .frame(width: 80, height: 80)
+                                    .frame(height: 120)
 
-                                VStack(alignment: .leading, spacing: 6) {
-                                    RoundedRectangle(cornerRadius: 4)
-                                        .fill(Color.warmBrown.opacity(0.1))
-                                        .frame(width: 140, height: 14)
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 6) {
+                                        RoundedRectangle(cornerRadius: 4)
+                                            .fill(Color.warmBrown.opacity(0.1))
+                                            .frame(width: 140, height: 14)
 
-                                    RoundedRectangle(cornerRadius: 4)
-                                        .fill(Color.warmBrown.opacity(0.06))
-                                        .frame(width: 100, height: 12)
+                                        RoundedRectangle(cornerRadius: 4)
+                                            .fill(Color.warmBrown.opacity(0.06))
+                                            .frame(width: 100, height: 12)
+                                    }
 
-                                    RoundedRectangle(cornerRadius: 4)
-                                        .fill(Color.warmBrown.opacity(0.06))
-                                        .frame(width: 80, height: 12)
+                                    Spacer()
+
+                                    Image(systemName: "heart")
+                                        .font(.system(size: 18))
+                                        .foregroundColor(.warmBrown.opacity(0.2))
                                 }
-
-                                Spacer()
-
-                                Image(systemName: "heart")
-                                    .font(.system(size: 18))
-                                    .foregroundColor(.warmBrown.opacity(0.2))
+                                .padding(.top, 12)
                             }
                             .padding(12)
                             .background(
@@ -147,7 +136,7 @@ struct SavedPropertiesView: View {
                             .animation(.easeOut(duration: 0.4).delay(Double(index) * 0.1 + 0.2), value: animateContent)
                         }
                     }
-                    .padding(.horizontal, 24)
+                    .padding(.horizontal, 80)
 
                     Spacer()
                         .frame(height: 100)
