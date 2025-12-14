@@ -104,9 +104,9 @@ struct CardSwipeView: View {
 
                 // Show tutorial only once ever
                 if !hasSeenSwipeTutorial {
+                    hasSeenSwipeTutorial = true // Set immediately to prevent race conditions
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                         showSwipeTutorial = true
-                        hasSeenSwipeTutorial = true
                     }
                 }
             }
