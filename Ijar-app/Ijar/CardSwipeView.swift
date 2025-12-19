@@ -49,8 +49,7 @@ struct CardSwipeView: View {
                     Spacer()
 
                     cardStackSection
-                        .padding(.horizontal, 15)
-                        .padding(.bottom, 40)
+                        .padding(.horizontal, 4)
                         .opacity(showContent ? 1 : 0)
                         .scaleEffect(showContent ? 1 : 0.95)
 
@@ -59,7 +58,7 @@ struct CardSwipeView: View {
                 }
             }
             .padding(.bottom, 16)
-            .padding(.horizontal, 12)
+            .padding(.horizontal, 4)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
 
         }
