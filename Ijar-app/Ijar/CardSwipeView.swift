@@ -18,7 +18,7 @@ struct CardSwipeView: View {
     @State private var showingSearchStartedAlert = false
     @State private var showingAreasSheet = false
     @State private var hasUsedInitialProperties = false
-    @State private var showingGuestSignUpPrompt = false
+    @State private var showingGuestSignUpPrompt = false 
     @State private var guestSignUpAction: GuestSignUpAction = .pass
 
     // Entrance animation states
@@ -246,13 +246,18 @@ struct CardSwipeView: View {
         CardStackView(
             items: propertyService.properties,
             topItem: .constant(0),
-            cardContent: { property, isTopCard, dragAmount in
-                PropertyCard(property: property, dragAmount: dragAmount) {
-                    coordinator.navigate(to: .propertyDetail(property: property))
-                }
+            cardContent: { property, isTopCard, dragAmount, saveProgress, passProgress, detailsProgress in
+                PropertyCard(
+                    property: property,
+                    onTap: {
+                        coordinator.navigate(to: .propertyDetail(property: property))
+                    },
+                    dragAmount: dragAmount,
+                    saveProgress: saveProgress,
+                    passProgress: passProgress,
+                    detailsProgress: detailsProgress
+                )
             },
-            leftOverlay: { PassOverlay() },
-            rightOverlay: { SaveOverlay() },
             onSwipeLeft: { property in
                 if authService.isInGuestMode {
                     guestSignUpAction = .pass
@@ -481,7 +486,6 @@ struct CardSwipeView: View {
             .environmentObject(InitialPropertiesStore())
             .environmentObject(NotificationService())
     }
-    .previewDevice("iPhone 15 Pro")
 }
 
 #Preview("iPhone SE") {
@@ -492,7 +496,7 @@ struct CardSwipeView: View {
             .environmentObject(InitialPropertiesStore())
             .environmentObject(NotificationService())
     }
-    .previewDevice("iPhone SE (3rd generation)")
+
 }
 
 #Preview("iPhone 15 Pro Max") {
@@ -503,6 +507,5 @@ struct CardSwipeView: View {
             .environmentObject(InitialPropertiesStore())
             .environmentObject(NotificationService())
     }
-    .previewDevice("iPhone 15 Pro Max")
 }
 

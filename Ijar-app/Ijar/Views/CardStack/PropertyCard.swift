@@ -5,6 +5,9 @@ struct PropertyCard: View {
     let property: Property
     let onTap: () -> Void
     var dragAmount: CGSize = .zero
+    var saveProgress: CGFloat = 0
+    var passProgress: CGFloat = 0
+    var detailsProgress: CGFloat = 0
     @State private var currentImageIndex = 0
     @State private var pulseAnimation = false
     
@@ -12,8 +15,8 @@ struct PropertyCard: View {
         VStack(spacing: 0) {
             // Image indicators at top
             imageIndicators
-            .padding(.top, 16)
-            .padding(.horizontal, 20)
+                .padding(.top, 16)
+                .padding(.horizontal, 20)
             
             Spacer()
             
@@ -58,27 +61,21 @@ struct PropertyCard: View {
             .padding(.top)
             .padding(.bottom, 8)
 
-            // Swipe up indicator - only show when not swiping horizontally
-            if abs(dragAmount.width) < 10 && dragAmount.height >= 0 {
-                VStack(spacing: 4) {
-                    Image(systemName: "chevron.up")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(.warmCream)
-                        .scaleEffect(pulseAnimation ? 1.2 : 1.0)
-                        .opacity(pulseAnimation ? 0.9 : 0.7)
+            VStack(spacing: 4) {
+                Image(systemName: "chevron.up")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(.warmCream)
+                    .scaleEffect(pulseAnimation ? 1.2 : 1.0)
+                    .opacity(pulseAnimation ? 0.9 : 0.7)
 
-                    Text("Details")
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundColor(.warmCream.opacity(0.9))
-                }
-                .padding(.bottom, 12)
-                .opacity(dragAmount.height < -30 ? max(0, 1.0 - ((abs(dragAmount.height) - 30.0) / 90.0)) : 1.0)
-                .offset(y: min(0, dragAmount.height / 3))
-                .animation(.spring(response: 0.3, dampingFraction: 0.6), value: dragAmount)
-                .onAppear {
-                    withAnimation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true)) {
-                        pulseAnimation = true
-                    }
+                Text("Swipe up for details")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(.warmCream.opacity(0.9))
+            }
+            .padding(.bottom, 12)
+            .onAppear {
+                withAnimation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true)) {
+                    pulseAnimation = true
                 }
             }
         }
@@ -87,36 +84,26 @@ struct PropertyCard: View {
             imagesCarousel
                 .background(Color.warmCream)
         }
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-        .overlay(swipeUpBorderEffect)
-        // Layered shadows for depth
+        .clipShape(RoundedRectangle(cornerRadius: CardConstants.cornerRadius))
+        .overlay {
+            // Swipe overlays
+            ZStack {
+                SaveOverlay(progress: saveProgress)
+                PassOverlay(progress: passProgress)
+                DetailsOverlay(progress: detailsProgress)
+            }
+            .clipShape(RoundedRectangle(cornerRadius: CardConstants.cornerRadius))
+        }
         .shadow(color: .black.opacity(0.08), radius: 1, x: 0, y: 1)
         .shadow(color: .black.opacity(0.06), radius: 4, x: dynamicShadowX * 0.3, y: 4)
-        .shadow(color: {
-            if dragAmount.height < -50 {
-                return .rusticOrange.opacity(0.25)
-            } else {
-                return .black.opacity(0.08)
-            }
-        }(), radius: 16, x: dynamicShadowX, y: 12)
-        // 3D perspective tilt based on drag
+        .shadow(color: .black.opacity(0.08), radius: 16, x: dynamicShadowX, y: 12)
+        // 3D perspective tilt based on horizontal drag
         .rotation3DEffect(
             .degrees(Double(-dragAmount.width) / 40),
             axis: (x: 0, y: 1, z: 0),
             perspective: 0.5
         )
-        .rotation3DEffect(
-            .degrees(Double(dragAmount.height) / 60),
-            axis: (x: 1, y: 0, z: 0),
-            perspective: 0.5
-        )
-        .scaleEffect(dragAmount.height < -50 ? 0.95 : 1.0)
-        .rotationEffect(.degrees(dragAmount.height < -30 ? Double(dragAmount.height + 30) / 15 : 0), anchor: .bottom)
-        .offset(y: dragAmount.height < -30 ? dragAmount.height / 4 : 0)
         .animation(.interactiveSpring(response: 0.3, dampingFraction: 0.8), value: dragAmount)
-        .overlay(alignment: .bottom) {
-            releaseToViewFeedback
-        }
         .overlay {
             imageTapZones
         }
@@ -132,70 +119,6 @@ struct PropertyCard: View {
         return -normalizedDrag.clamped(to: -1...1) * maxOffset
     }
 
-    // MARK: - Swipe Up Effects
-
-    private var swipeUpBorderEffect: some View {
-        RoundedRectangle(cornerRadius: 12)
-            .stroke(
-                LinearGradient(
-                    colors: {
-                        if dragAmount.height < -30 {
-                            return [
-                                Color.rusticOrange.opacity(min(0.8, abs(dragAmount.height) / 150.0)),
-                                Color.warmCream.opacity(min(0.6, abs(dragAmount.height) / 200.0))
-                            ]
-                        } else {
-                            return [Color.clear, Color.clear]
-                        }
-                    }(),
-                    startPoint: .top,
-                    endPoint: .bottom
-                ),
-                lineWidth: dragAmount.height < -30 ? 2 : 0
-            )
-    }
-
-    @ViewBuilder
-    private var releaseToViewFeedback: some View {
-        if dragAmount.height < -60 && abs(dragAmount.width) < 40 {
-            VStack {
-                Spacer()
-
-                ZStack {
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(
-                            LinearGradient(
-                                colors: [
-                                    Color.rusticOrange.opacity(0.3),
-                                    Color.rusticOrange.opacity(0.1),
-                                    Color.clear
-                                ],
-                                startPoint: .bottom,
-                                endPoint: .top
-                            )
-                        )
-                        .frame(height: 150)
-                        .blur(radius: 20)
-
-                    VStack(spacing: 8) {
-                        Image(systemName: "arrow.up.circle.fill")
-                            .font(.system(size: 32))
-                            .foregroundColor(.warmCream)
-                            .shadow(color: .black.opacity(0.3), radius: 10)
-
-                        Text("Release to view")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundColor(.warmCream)
-                            .shadow(radius: 5)
-                    }
-                    .offset(y: 30)
-                }
-            }
-            .opacity(min(1.0, (abs(dragAmount.height) - 60.0) / 60.0))
-            .animation(.interactiveSpring(response: 0.3, dampingFraction: 0.7), value: dragAmount)
-        }
-    }
-    
     private var imagesCarousel: some View {
         ZStack {
             TabView(selection: $currentImageIndex) {
@@ -216,21 +139,6 @@ struct PropertyCard: View {
                                     .tint(.coffeeBean)
                             }
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        }
-                        .onFailure { _ in
-                            LinearGradient(
-                                gradient: Gradient(colors: [
-                                    Color.warmCream,
-                                    Color.warmBrown
-                                ]),
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                            .overlay {
-                                Image(systemName: "photo")
-                                    .font(.system(size: 60))
-                                    .foregroundColor(.coffeeBean.opacity(0.6))
-                            }
                         }
                         .resizable()
                         .fade(duration: 0.25)
@@ -419,11 +327,41 @@ struct PropertyCard: View {
     .padding()
 }
 
-// MARK: - Helper Extension
-
-private extension CGFloat {
-    func clamped(to range: ClosedRange<CGFloat>) -> CGFloat {
-        return Swift.min(Swift.max(self, range.lowerBound), range.upperBound)
+#Preview("Save Overlay") {
+    VStack {
+        PropertyCard(
+            property: Property(
+                images: ["https://images.unsplash.com/photo-1560184897-ae75f418493e?w=800&q=80"],
+                price: "£2,500/month",
+                bedrooms: 3,
+                bathrooms: 2,
+                address: "123 Canary Wharf",
+                area: "London E14"
+            ),
+            onTap: {},
+            saveProgress: 0.8
+        )
+        .background(Color.warmCream)
     }
+    .padding()
+}
+
+#Preview("Pass Overlay") {
+    VStack {
+        PropertyCard(
+            property: Property(
+                images: ["https://images.unsplash.com/photo-1560184897-ae75f418493e?w=800&q=80"],
+                price: "£2,500/month",
+                bedrooms: 3,
+                bathrooms: 2,
+                address: "123 Canary Wharf",
+                area: "London E14"
+            ),
+            onTap: {},
+            passProgress: 0.8
+        )
+        .background(Color.warmCream)
+    }
+    .padding()
 }
 

@@ -5,13 +5,11 @@ enum SwipeDirection {
     case left, right, none
 }
 
-struct CardStackView<Content: View, LeftOverlay: View, RightOverlay: View>: View {
+struct CardStackView<Content: View>: View {
     let items: [Property]
     @Binding var topItem: Int
     let maxVisibleCards: Int = 3
-    let cardContent: (Property, Bool, CGSize) -> Content
-    let leftOverlay: () -> LeftOverlay
-    let rightOverlay: () -> RightOverlay
+    let cardContent: (Property, Bool, CGSize, CGFloat, CGFloat, CGFloat) -> Content // property, isTop, drag, saveProgress, passProgress, detailsProgress
     let onSwipeLeft: (Property) -> Void
     let onSwipeRight: (Property) -> Void
     var onSwipeUp: ((Property) -> Void)? = nil
@@ -29,29 +27,22 @@ struct CardStackView<Content: View, LeftOverlay: View, RightOverlay: View>: View
     private let impactFeedback = UIImpactFeedbackGenerator(style: .light)
     private let selectionFeedback = UISelectionFeedbackGenerator()
 
-    // Swipe thresholds
-    private let xThreshold: CGFloat = 95
+    // Swipe thresholds - threshold for haptic feedback
+    private let hapticThreshold: CGFloat = 95
 
     var body: some View {
         ZStack {
             ForEach(Array(items.prefix(maxVisibleCards).enumerated()), id: \.element.id) { stackIndex, property in
                 let isTopCard = stackIndex == 0
 
-                cardContent(property, isTopCard, isTopCard ? dragAmount : .zero)
-                    .overlay {
-                        // Swipe overlays on top card only
-                        if isTopCard {
-                            ZStack {
-                                rightOverlay()
-                                    .opacity(rightOverlayOpacity)
-
-                                leftOverlay()
-                                    .opacity(leftOverlayOpacity)
-                            }
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
-                            .allowsHitTesting(false)
-                        }
-                    }
+                cardContent(
+                    property,
+                    isTopCard,
+                    isTopCard ? dragAmount : .zero,
+                    isTopCard ? rightOverlayProgress : 0,
+                    isTopCard ? leftOverlayProgress : 0,
+                    isTopCard ? detailsOverlayProgress : 0
+                )
                 .scaleEffect(cardScale(for: stackIndex))
                 .offset(cardOffset(for: stackIndex))
                 .rotationEffect(
@@ -97,14 +88,14 @@ struct CardStackView<Content: View, LeftOverlay: View, RightOverlay: View>: View
 
         // Swipe right demo - past action threshold to show overlay
         withAnimation(.spring(response: 0.5, dampingFraction: 0.9)) {
-            dragAmount = CGSize(width: actionThreshold + 20, height: 0)
+            dragAmount = CGSize(width: CardConstants.horizontalActionThreshold + 20, height: 0)
         }
 
         try? await Task.sleep(nanoseconds: 900_000_000)
 
         // Swipe left demo - past action threshold to show overlay
         withAnimation(.spring(response: 0.55, dampingFraction: 0.9)) {
-            dragAmount = CGSize(width: -(actionThreshold + 20), height: 0)
+            dragAmount = CGSize(width: -(CardConstants.horizontalActionThreshold + 20), height: 0)
         }
 
         try? await Task.sleep(nanoseconds: 900_000_000)
@@ -118,22 +109,39 @@ struct CardStackView<Content: View, LeftOverlay: View, RightOverlay: View>: View
         showTutorial = false
     }
 
-    // MARK: - Overlay Opacity (only show when past action threshold, not when swiping up)
+    // MARK: - Overlay Progress (0 to 1 based on swipe distance)
 
-    private let actionThreshold: CGFloat = 100
+    private var rightOverlayProgress: CGFloat {
+        // Don't show if pure vertical swipe (details animation)
+        let isPureVertical = abs(dragAmount.width) < CardConstants.pureVerticalMaxWidth && dragAmount.height < -30
+        guard !isPureVertical else { return 0 }
+        guard dragAmount.width > CardConstants.horizontalProgressStart else { return 0 }
 
-    private var rightOverlayOpacity: Double {
-        // Don't show if swiping up (details animation)
-        guard dragAmount.height > -30 else { return 0 }
-        guard dragAmount.width > actionThreshold else { return 0 }
-        return 1.0
+        let effectiveDrag = dragAmount.width - CardConstants.horizontalProgressStart
+        let effectiveRange = CardConstants.horizontalActionThreshold - CardConstants.horizontalProgressStart
+        return min(1.0, effectiveDrag / effectiveRange)
     }
 
-    private var leftOverlayOpacity: Double {
-        // Don't show if swiping up (details animation)
-        guard dragAmount.height > -30 else { return 0 }
-        guard dragAmount.width < -actionThreshold else { return 0 }
-        return 1.0
+    private var leftOverlayProgress: CGFloat {
+        // Don't show if pure vertical swipe (details animation)
+        let isPureVertical = abs(dragAmount.width) < CardConstants.pureVerticalMaxWidth && dragAmount.height < -30
+        guard !isPureVertical else { return 0 }
+        guard dragAmount.width < -CardConstants.horizontalProgressStart else { return 0 }
+
+        let effectiveDrag = abs(dragAmount.width) - CardConstants.horizontalProgressStart
+        let effectiveRange = CardConstants.horizontalActionThreshold - CardConstants.horizontalProgressStart
+        return min(1.0, effectiveDrag / effectiveRange)
+    }
+
+    private var detailsOverlayProgress: CGFloat {
+        // Only show for pure vertical swipe (swipe up for details)
+        let isPureVertical = abs(dragAmount.width) < CardConstants.pureVerticalMaxWidth
+        guard isPureVertical else { return 0 }
+        guard dragAmount.height < -CardConstants.verticalProgressStart else { return 0 }
+
+        let effectiveDrag = abs(dragAmount.height) - CardConstants.verticalProgressStart
+        let effectiveRange = CardConstants.verticalActionThreshold - CardConstants.verticalProgressStart
+        return min(1.0, effectiveDrag / effectiveRange)
     }
 
     // MARK: - Rotation Anchor (based on drag start point)
@@ -168,12 +176,11 @@ struct CardStackView<Content: View, LeftOverlay: View, RightOverlay: View>: View
 
     private func cardRotation(for stackIndex: Int, propertyId: String) -> Angle {
         if stackIndex == 0 {
-            let maxAngle: Double = 20
-            let threshold = xThreshold * 2
+            let threshold = hapticThreshold * 2.5
             let dragProportion = Double(dragAmount.width / threshold)
             let clampedProportion = max(-1, min(1, dragProportion))
 
-            return .degrees(clampedProportion * maxAngle)
+            return .degrees(clampedProportion * CardConstants.cardRotationMax)
         } else {
             return .zero
         }
@@ -205,9 +212,9 @@ struct CardStackView<Content: View, LeftOverlay: View, RightOverlay: View>: View
                 dragAmount = value.translation
 
                 let newDirection: SwipeDirection
-                if value.translation.width > xThreshold {
+                if value.translation.width > hapticThreshold {
                     newDirection = .right
-                } else if value.translation.width < -xThreshold {
+                } else if value.translation.width < -hapticThreshold {
                     newDirection = .left
                 } else {
                     newDirection = .none
@@ -226,14 +233,14 @@ struct CardStackView<Content: View, LeftOverlay: View, RightOverlay: View>: View
             .onEnded { value in
                 isDragging = false
 
-                let horizontalThreshold: CGFloat = 100
-                let verticalThreshold: CGFloat = 120
+                let horizontalThreshold = CardConstants.horizontalActionThreshold
+                let verticalThreshold = CardConstants.verticalActionThreshold
                 let horizontalVelocity = value.predictedEndLocation.x - value.location.x
                 let verticalVelocity = value.predictedEndLocation.y - value.location.y
 
                 // Check for swipe up first
                 let isVerticalSwipe = value.translation.height < -verticalThreshold || verticalVelocity < -150
-                let isPureVertical = abs(value.translation.width) < 80
+                let isPureVertical = abs(value.translation.width) < CardConstants.pureVerticalMaxWidth
 
                 if isVerticalSwipe && isPureVertical {
                     if let onSwipeUp = onSwipeUp, topItem < items.count {
@@ -289,13 +296,5 @@ struct CardStackView<Content: View, LeftOverlay: View, RightOverlay: View>: View
         dragDirection = .none
         lastHapticDirection = .none
         isDragging = false
-    }
-}
-
-// MARK: - Helper Extension
-
-private extension Comparable {
-    func clamped(to limits: ClosedRange<Self>) -> Self {
-        return min(max(self, limits.lowerBound), limits.upperBound)
     }
 }
