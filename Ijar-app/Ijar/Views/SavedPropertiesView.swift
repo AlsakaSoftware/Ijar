@@ -1,10 +1,49 @@
 import SwiftUI
 
+enum SortOption: String, CaseIterable {
+    case newest = "Newest"
+    case priceLowToHigh = "Price: Low to High"
+    case priceHighToLow = "Price: High to Low"
+    case bedroomsLowToHigh = "Bedrooms: Low to High"
+    case bedroomsHighToLow = "Bedrooms: High to Low"
+
+    var icon: String {
+        switch self {
+        case .newest: return "clock"
+        case .priceLowToHigh: return "arrow.up"
+        case .priceHighToLow: return "arrow.down"
+        case .bedroomsLowToHigh: return "arrow.up"
+        case .bedroomsHighToLow: return "arrow.down"
+        }
+    }
+}
+
 struct SavedPropertiesView: View {
     @EnvironmentObject var coordinator: SavedPropertiesCoordinator
     @EnvironmentObject var authService: AuthenticationService
     @StateObject private var propertyService = PropertyService()
     @State private var animateContent = false
+    @State private var selectedSort: SortOption = .newest
+
+    private var sortedProperties: [Property] {
+        switch selectedSort {
+        case .newest:
+            return propertyService.savedProperties
+        case .priceLowToHigh:
+            return propertyService.savedProperties.sorted { extractPrice($0.price) < extractPrice($1.price) }
+        case .priceHighToLow:
+            return propertyService.savedProperties.sorted { extractPrice($0.price) > extractPrice($1.price) }
+        case .bedroomsLowToHigh:
+            return propertyService.savedProperties.sorted { $0.bedrooms < $1.bedrooms }
+        case .bedroomsHighToLow:
+            return propertyService.savedProperties.sorted { $0.bedrooms > $1.bedrooms }
+        }
+    }
+
+    private func extractPrice(_ priceString: String) -> Int {
+        let digitsOnly = priceString.components(separatedBy: CharacterSet.decimalDigits.inverted).joined()
+        return Int(digitsOnly) ?? 0
+    }
 
 
     var body: some View {
@@ -29,22 +68,25 @@ struct SavedPropertiesView: View {
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 if !propertyService.savedProperties.isEmpty && !authService.isInGuestMode {
-                    HStack(spacing: 6) {
-                        Image(systemName: "heart.fill")
-                            .font(.system(size: 14))
-                            .foregroundStyle(Color.rusticOrange)
-
-                        Text("\(propertyService.savedProperties.count)")
-                            .font(.system(size: 14, weight: .bold, design: .rounded))
-                            .foregroundColor(.coffeeBean)
+                    Menu {
+                        ForEach(SortOption.allCases, id: \.self) { option in
+                            Button {
+                                withAnimation(.easeInOut(duration: 0.2)) {
+                                    selectedSort = option
+                                }
+                            } label: {
+                                Label(option.rawValue, systemImage: selectedSort == option ? "checkmark" : option.icon)
+                            }
+                        }
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: "arrow.up.arrow.down")
+                                .font(.system(size: 12))
+                            Text("Sort")
+                                .font(.system(size: 15))
+                        }
+                        .foregroundColor(.rusticOrange)
                     }
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .background(
-                        Capsule()
-                            .fill(Color.warmCream)
-                            .shadow(color: .rusticOrange.opacity(0.1), radius: 3, y: 1)
-                    )
                 }
             }
         }
@@ -205,7 +247,7 @@ struct SavedPropertiesView: View {
     private var savedPropertiesList: some View {
         ScrollView {
             LazyVStack(spacing: 16) {
-                ForEach(Array(propertyService.savedProperties.enumerated()), id: \.element.id) { index, property in
+                ForEach(Array(sortedProperties.enumerated()), id: \.element.id) { index, property in
                     PropertyListCard(
                         property: property,
                         isSaved: true,
@@ -223,7 +265,7 @@ struct SavedPropertiesView: View {
                     .offset(y: animateContent ? 0 : 50)
                     .animation(
                         .spring(response: 0.5, dampingFraction: 0.8)
-                        .delay(Double(index) * 0.1),
+                        .delay(Double(min(index, 5)) * 0.1),
                         value: animateContent
                     )
                 }
