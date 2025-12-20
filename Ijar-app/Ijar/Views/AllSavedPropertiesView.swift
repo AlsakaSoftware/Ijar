@@ -1,6 +1,6 @@
 import SwiftUI
 
-enum SortOption: String, CaseIterable {
+enum SavedSortOption: String, CaseIterable {
     case newest = "Newest"
     case priceLowToHigh = "Price: Low to High"
     case priceHighToLow = "Price: High to Low"
@@ -18,12 +18,12 @@ enum SortOption: String, CaseIterable {
     }
 }
 
-struct SavedPropertiesView: View {
+struct AllSavedPropertiesView: View {
     @EnvironmentObject var coordinator: SavedPropertiesCoordinator
-    @EnvironmentObject var authService: AuthenticationService
-    @StateObject private var propertyService = PropertyService()
+    @EnvironmentObject var propertyService: PropertyService
     @State private var animateContent = false
-    @State private var selectedSort: SortOption = .newest
+    @State private var selectedSort: SavedSortOption = .newest
+    @State private var selectedProperty: Property?
 
     private var sortedProperties: [Property] {
         switch selectedSort {
@@ -45,31 +45,27 @@ struct SavedPropertiesView: View {
         return Int(digitsOnly) ?? 0
     }
 
-
     var body: some View {
         VStack(spacing: 0) {
-            if authService.isInGuestMode {
-                guestEmptyStateView
-                    .padding(.top, 20)
-            } else if propertyService.isLoading && propertyService.savedProperties.isEmpty {
+            if propertyService.isLoading && propertyService.savedProperties.isEmpty {
                 loadingView
             } else if propertyService.savedProperties.isEmpty {
                 emptyStateView
             } else {
-                savedPropertiesList
+                propertiesList
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.warmCream)
-        .navigationTitle("Your Favorites")
+        .navigationTitle("All Saved")
         .navigationBarTitleDisplayMode(.large)
         .toolbarColorScheme(.light, for: .navigationBar)
         .tint(.rusticOrange)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
-                if !propertyService.savedProperties.isEmpty && !authService.isInGuestMode {
+                if !propertyService.savedProperties.isEmpty {
                     Menu {
-                        ForEach(SortOption.allCases, id: \.self) { option in
+                        ForEach(SavedSortOption.allCases, id: \.self) { option in
                             Button {
                                 withAnimation(.easeInOut(duration: 0.2)) {
                                     selectedSort = option
@@ -90,21 +86,22 @@ struct SavedPropertiesView: View {
                 }
             }
         }
-        .task {
-            if !authService.isInGuestMode {
-                await propertyService.loadSavedProperties()
-            }
+        .onAppear {
+            // Data already loaded by SavedGroupsView - just animate
             withAnimation(.easeOut(duration: 0.4)) {
                 animateContent = true
             }
         }
+        .groupPicker(
+            propertyService: propertyService,
+            selectedProperty: $selectedProperty
+        )
     }
-    
+
     private var loadingView: some View {
         VStack(spacing: 24) {
             Spacer()
-            
-            // Animated loading indicator
+
             ZStack {
                 ForEach(0..<3) { index in
                     Circle()
@@ -114,95 +111,25 @@ struct SavedPropertiesView: View {
                         .scaleEffect(animateContent ? 1.2 : 0.8)
                         .animation(
                             .easeInOut(duration: 0.8)
-                            .repeatForever()
-                            .delay(Double(index) * 0.2),
+                                .repeatForever()
+                                .delay(Double(index) * 0.2),
                             value: animateContent
                         )
                 }
             }
-            
+
             Text("Finding your saved homes...")
                 .font(.system(size: 18, weight: .medium, design: .rounded))
                 .foregroundColor(.warmBrown)
-            
+
             Spacer()
         }
-    }
-    
-    private var guestEmptyStateView: some View {
-        VStack(spacing: 0) {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 32) {
-                    // Subtitle
-                    Text("Create a free account to save properties you love and access them anytime.")
-                        .font(.system(size: 17))
-                        .foregroundColor(.warmBrown.opacity(0.7))
-                        .opacity(animateContent ? 1 : 0)
-                        .offset(y: animateContent ? 0 : 15)
-                        .padding(.horizontal, 24)
-
-                    // Visual placeholder
-                    VStack(spacing: 16) {
-                        ForEach(0..<3, id: \.self) { index in
-                            VStack(alignment: .leading, spacing: 0) {
-                                RoundedRectangle(cornerRadius: 8)
-                                    .fill(Color.warmBrown.opacity(0.08))
-                                    .frame(height: 120)
-
-                                HStack {
-                                    VStack(alignment: .leading, spacing: 6) {
-                                        RoundedRectangle(cornerRadius: 4)
-                                            .fill(Color.warmBrown.opacity(0.1))
-                                            .frame(width: 140, height: 14)
-
-                                        RoundedRectangle(cornerRadius: 4)
-                                            .fill(Color.warmBrown.opacity(0.06))
-                                            .frame(width: 100, height: 12)
-                                    }
-
-                                    Spacer()
-
-                                    Image(systemName: "heart")
-                                        .font(.system(size: 18))
-                                        .foregroundColor(.warmBrown.opacity(0.2))
-                                }
-                                .padding(.top, 12)
-                            }
-                            .padding(12)
-                            .background(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .fill(Color.white.opacity(0.5))
-                            )
-                            .opacity(animateContent ? 1 : 0)
-                            .offset(y: animateContent ? 0 : 20)
-                            .animation(.easeOut(duration: 0.4).delay(Double(index) * 0.1 + 0.2), value: animateContent)
-                        }
-                    }
-                    .padding(.horizontal, 80)
-
-                    Spacer()
-                        .frame(height: 100)
-                }
-            }
-
-            // Bottom button
-            VStack(spacing: 0) {
-                SignInWithAppleButtonView()
-                    .padding(.horizontal, 24)
-                    .opacity(animateContent ? 1 : 0)
-                    .animation(.easeOut(duration: 0.4).delay(0.4), value: animateContent)
-            }
-            .padding(.vertical, 16)
-            .background(Color.warmCream)
-        }
-        .animation(.easeOut(duration: 0.35), value: animateContent)
     }
 
     private var emptyStateView: some View {
         VStack(spacing: 24) {
             Spacer()
 
-            // Animated heart icon
             ZStack {
                 Circle()
                     .fill(Color.rusticOrange.opacity(0.1))
@@ -243,8 +170,8 @@ struct SavedPropertiesView: View {
         }
         .padding(.horizontal, 40)
     }
-    
-    private var savedPropertiesList: some View {
+
+    private var propertiesList: some View {
         ScrollView {
             LazyVStack(spacing: 16) {
                 ForEach(Array(sortedProperties.enumerated()), id: \.element.id) { index, property in
@@ -255,9 +182,7 @@ struct SavedPropertiesView: View {
                             coordinator.navigate(to: .propertyDetail(property: property))
                         },
                         onSaveToggle: {
-                            Task {
-                                await propertyService.unsaveProperty(property)
-                            }
+                            selectedProperty = property
                         }
                     )
                     .padding(.horizontal, 20)
@@ -265,7 +190,7 @@ struct SavedPropertiesView: View {
                     .offset(y: animateContent ? 0 : 50)
                     .animation(
                         .spring(response: 0.5, dampingFraction: 0.8)
-                        .delay(Double(min(index, 5)) * 0.1),
+                            .delay(Double(min(index, 5)) * 0.1),
                         value: animateContent
                     )
                 }
@@ -274,32 +199,4 @@ struct SavedPropertiesView: View {
         }
         .scrollIndicators(.hidden)
     }
-}
-
-// Shimmer loading effect
-struct ShimmerView: View {
-    @State private var isAnimating = false
-    
-    var body: some View {
-        LinearGradient(
-            colors: [
-                Color.warmBrown.opacity(0.1),
-                Color.warmBrown.opacity(0.2),
-                Color.warmBrown.opacity(0.1)
-            ],
-            startPoint: .leading,
-            endPoint: .trailing
-        )
-        .offset(x: isAnimating ? 200 : -200)
-        .onAppear {
-            withAnimation(.linear(duration: 1.5).repeatForever(autoreverses: false)) {
-                isAnimating = true
-            }
-        }
-    }
-}
-
-#Preview {
-    SavedPropertiesView()
-        .environmentObject(SavedPropertiesCoordinator())
 }

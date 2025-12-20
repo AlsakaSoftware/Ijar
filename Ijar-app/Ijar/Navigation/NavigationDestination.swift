@@ -21,19 +21,32 @@ enum HomeFeedDestination: NavigationDestination {
 
 enum SavedPropertiesDestination: NavigationDestination {
     case propertyDetail(property: Property)
-    
+    case groupProperties(group: PropertyGroup)
+    case allSaved
+
     static func == (lhs: SavedPropertiesDestination, rhs: SavedPropertiesDestination) -> Bool {
         switch (lhs, rhs) {
         case let (.propertyDetail(lhsProperty), .propertyDetail(rhsProperty)):
             return lhsProperty.id == rhsProperty.id
+        case let (.groupProperties(lhsGroup), .groupProperties(rhsGroup)):
+            return lhsGroup.id == rhsGroup.id
+        case (.allSaved, .allSaved):
+            return true
+        default:
+            return false
         }
     }
-    
+
     func hash(into hasher: inout Hasher) {
         switch self {
         case .propertyDetail(let property):
             hasher.combine("propertyDetail")
             hasher.combine(property.id)
+        case .groupProperties(let group):
+            hasher.combine("groupProperties")
+            hasher.combine(group.id)
+        case .allSaved:
+            hasher.combine("allSaved")
         }
     }
 }

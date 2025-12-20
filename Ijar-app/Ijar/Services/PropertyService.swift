@@ -3,7 +3,7 @@ import Supabase
 
 @MainActor
 class PropertyService: ObservableObject {
-    private let supabase: SupabaseClient
+    let supabase: SupabaseClient
     @Published var properties: [Property] = []
     @Published var savedProperties: [Property] = []
     @Published var isLoading = false
@@ -626,6 +626,10 @@ class PropertyService: ObservableObject {
             return false
         }
     }
+
+    // MARK: - Property Groups
+
+    @Published var groups: [PropertyGroup] = []
 }
 
 enum PropertyAction: String {
@@ -633,7 +637,7 @@ enum PropertyAction: String {
     case passed = "passed"
 }
 
-private struct PropertyRow: Codable {
+struct PropertyRow: Codable {
     let id: String
     let rightmove_id: Int
     let images: [String]

@@ -62,7 +62,7 @@ struct PropertyDetailView: View {
     @StateObject private var propertyService = PropertyService()
     @State private var isLiked: Bool = false
     @State private var isLikeLoading = false
-    @State private var showingUnlikeConfirmation = false
+    @State private var showingGroupPicker = false
 
     private func loadOrCreateMetadata() {
         // Find existing metadata for this property
@@ -229,14 +229,6 @@ struct PropertyDetailView: View {
                 isPresented: $showingFloorplan
             )
         }
-        .alert("Remove from favorites?", isPresented: $showingUnlikeConfirmation) {
-            Button("Cancel", role: .cancel) { }
-            Button("Remove", role: .destructive) {
-                confirmUnlike()
-            }
-        } message: {
-            Text("This property will be removed from your saved list")
-        }
         .sheet(isPresented: $showingGuestSignUpPrompt) {
             GuestSignUpPromptSheet(
                 action: .save,
@@ -248,38 +240,44 @@ struct PropertyDetailView: View {
             .presentationDetents([.medium])
             .presentationDragIndicator(.visible)
         }
-        .onAppear {
-            // Set initial like state and load metadata for saved properties
+        .groupPicker(
+            property: property,
+            propertyService: propertyService,
+            isPresented: $showingGroupPicker,
+            onUnsave: {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                    isLiked = false
+                }
+            }
+        )
+        .onceTask {
+            // Fetch full property details from Rightmove API (via our server)
+            // This gets HD images, description, floorplans, etc.
+            isLoadingDetails = true
+            if let enrichedProperty = await searchService.fetchPropertyDetails(for: property) {
+                displayProperty = enrichedProperty
+                displayImages = enrichedProperty.images
+#if DEBUG
+                print("📋 Property details loaded: \(enrichedProperty.images.count) HD images, description: \(enrichedProperty.description != nil)")
+#endif
+            }
+            isLoadingDetails = false
+
+            // Check saved status from DB (runs once on first appear)
             if isSavedProperty {
                 isLiked = true
                 loadOrCreateMetadata()
             } else {
-                // Check if this live search property is saved
-                Task {
-                    isLiked = await propertyService.isLiveSearchPropertySaved(property)
-                }
+                let isSaved = await propertyService.isLiveSearchPropertySaved(property)
+                isLiked = isSaved
             }
 
-            // Always show existing images immediately while loading details
+            // Show existing images immediately while loading details
             if displayImages.isEmpty {
                 displayImages = property.images
             }
-
-            // Fetch full property details from Rightmove API (via our server)
-            // This gets HD images, description, floorplans, etc.
-            isLoadingDetails = true
-            Task {
-                if let enrichedProperty = await searchService.fetchPropertyDetails(for: property) {
-                    displayProperty = enrichedProperty
-                    displayImages = enrichedProperty.images
-#if DEBUG
-                    print("📋 Property details loaded: \(enrichedProperty.images.count) HD images, description: \(enrichedProperty.description != nil)")
-#endif
-                }
-                // Keep existing images if fetch fails
-                isLoadingDetails = false
-            }
-
+        }
+        .onAppear {
             // Reload locations in case new ones were added
             locationsManager.loadLocations()
 
@@ -564,8 +562,10 @@ struct PropertyDetailView: View {
         }
 
         if isLiked {
-            showingUnlikeConfirmation = true
+            // Already saved - show group picker to manage groups or unsave
+            showingGroupPicker = true
         } else {
+            // Save to All Saved first, then show group picker
             Task {
                 isLikeLoading = true
                 let success = await propertyService.saveLiveSearchProperty(property)
@@ -573,27 +573,12 @@ struct PropertyDetailView: View {
                     withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
                         isLiked = true
                     }
+                    // Reload to update counts
+                    await propertyService.loadSavedProperties()
                 }
                 isLikeLoading = false
+                showingGroupPicker = true
             }
-        }
-    }
-
-    private func confirmUnlike() {
-        Task {
-            isLikeLoading = true
-            let success: Bool
-            if isSavedProperty {
-                success = await propertyService.unsaveProperty(property)
-            } else {
-                success = await propertyService.unsaveLiveSearchProperty(property)
-            }
-            if success {
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
-                    isLiked = false
-                }
-            }
-            isLikeLoading = false
         }
     }
 

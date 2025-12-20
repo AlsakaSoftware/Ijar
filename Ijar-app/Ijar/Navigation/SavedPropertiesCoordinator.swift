@@ -12,6 +12,10 @@ class SavedPropertiesCoordinator: ObservableObject, Coordinator {
         switch destination {
         case .propertyDetail(let property):
             PropertyDetailView(property: property, isSavedProperty: true)
+        case .groupProperties(let group):
+            GroupPropertiesView(group: group)
+        case .allSaved:
+            AllSavedPropertiesView()
         }
     }
     
