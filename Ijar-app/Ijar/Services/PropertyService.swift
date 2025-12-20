@@ -1,8 +1,7 @@
 import Foundation
 import Supabase
 
-@MainActor
-class PropertyService: ObservableObject {
+final class PropertyService {
     let supabase: SupabaseClient
 
     init() {

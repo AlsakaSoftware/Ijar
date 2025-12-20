@@ -2,12 +2,17 @@ import SwiftUI
 
 struct GroupPropertiesView: View {
     @EnvironmentObject var coordinator: SavedPropertiesCoordinator
-    @EnvironmentObject var propertyService: PropertyService
+    private let propertyService: PropertyService
     @State private var properties: [Property] = []
     @State private var isLoading = true
     @State private var selectedProperty: Property?
 
     let group: PropertyGroup
+
+    init(group: PropertyGroup, propertyService: PropertyService = PropertyService()) {
+        self.group = group
+        self.propertyService = propertyService
+    }
 
     var body: some View {
         SavedPropertiesListView(

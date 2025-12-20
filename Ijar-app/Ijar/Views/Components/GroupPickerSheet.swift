@@ -3,7 +3,7 @@ import Kingfisher
 
 struct GroupPickerSheet: View {
     let property: Property
-    @ObservedObject var propertyService: PropertyService
+    let propertyService: PropertyService
     @Binding var selectedGroupIds: [String]
     let onDismiss: () -> Void
     var onSaveComplete: ((Bool) -> Void)? = nil

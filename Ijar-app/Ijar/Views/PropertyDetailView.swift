@@ -6,6 +6,7 @@ struct PropertyDetailView: View {
     let property: Property
     let isSavedProperty: Bool
     let showLikeButton: Bool
+    private let propertyService: PropertyService
     @State private var currentImageIndex = 0
     @State private var showingFullScreenImages = false
     @EnvironmentObject var appCoordinator: AppCoordinator
@@ -19,10 +20,11 @@ struct PropertyDetailView: View {
     @State private var isLoadingDetails = false
     @StateObject private var searchService = LiveSearchService()
 
-    init(property: Property, isSavedProperty: Bool, showLikeButton: Bool = true) {
+    init(property: Property, isSavedProperty: Bool, showLikeButton: Bool = true, propertyService: PropertyService = PropertyService()) {
         self.property = property
         self.isSavedProperty = isSavedProperty
         self.showLikeButton = showLikeButton
+        self.propertyService = propertyService
         _displayProperty = State(initialValue: property)
     }
 
@@ -59,7 +61,6 @@ struct PropertyDetailView: View {
     @State private var showingFloorplan = false
 
     // Like/Save state
-    @StateObject private var propertyService = PropertyService()
     @State private var isLiked: Bool = false
     @State private var isLikeLoading = false
     @State private var showingGroupPicker = false

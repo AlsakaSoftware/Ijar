@@ -3,10 +3,15 @@ import SwiftUI
 struct BrowseResultsView: View {
     @EnvironmentObject private var coordinator: BrowseCoordinator
     @StateObject private var searchService = LiveSearchService()
-    @StateObject private var propertyService = PropertyService()
+    private let propertyService: PropertyService
     @StateObject private var queryService = SearchQueryService()
 
     let params: BrowseSearchParams
+
+    init(params: BrowseSearchParams, propertyService: PropertyService = PropertyService()) {
+        self.params = params
+        self.propertyService = propertyService
+    }
 
     // Local filter state (for editing)
     @State private var minPrice: Int?

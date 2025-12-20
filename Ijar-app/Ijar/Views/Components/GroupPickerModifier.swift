@@ -13,7 +13,7 @@ struct PropertySheetItem: Identifiable {
 
 // Modifier for list views where property selection triggers the sheet
 struct GroupPickerModifier: ViewModifier {
-    @ObservedObject var propertyService: PropertyService
+    let propertyService: PropertyService
     @Binding var selectedProperty: Property?
     var onUnsave: (() -> Void)? = nil
     var onDismiss: (() -> Void)? = nil
@@ -55,7 +55,7 @@ struct GroupPickerModifier: ViewModifier {
 // Modifier for detail views where property is already known
 struct GroupPickerPresentedModifier: ViewModifier {
     let property: Property
-    @ObservedObject var propertyService: PropertyService
+    let propertyService: PropertyService
     @Binding var isPresented: Bool
     var onUnsave: (() -> Void)? = nil
     var onDismiss: (() -> Void)? = nil

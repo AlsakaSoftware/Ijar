@@ -7,8 +7,12 @@ struct CardSwipeView: View {
     @EnvironmentObject var authService: AuthenticationService
     @EnvironmentObject var initialPropertiesStore: InitialPropertiesStore
     @EnvironmentObject var notificationService: NotificationService
-    @StateObject private var propertyService = PropertyService()
+    private let propertyService: PropertyService
     @StateObject private var searchService = SearchQueryService()
+
+    init(propertyService: PropertyService = PropertyService()) {
+        self.propertyService = propertyService
+    }
     @StateObject private var monitorService = MonitorService()
     @Environment(\.scenePhase) private var scenePhase
     @State private var properties: [Property] = []

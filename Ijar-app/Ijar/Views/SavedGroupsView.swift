@@ -3,13 +3,17 @@ import SwiftUI
 struct SavedGroupsView: View {
     @EnvironmentObject var coordinator: SavedPropertiesCoordinator
     @EnvironmentObject var authService: AuthenticationService
-    @EnvironmentObject var propertyService: PropertyService
+    private let propertyService: PropertyService
     @State private var animateContent = false
     @State private var showCreateGroupSheet = false
     @State private var newGroupName = ""
     @State private var savedPropertiesCount = 0
     @State private var groups: [PropertyGroup] = []
     @State private var isLoading = true
+
+    init(propertyService: PropertyService = PropertyService()) {
+        self.propertyService = propertyService
+    }
 
     var body: some View {
         VStack(spacing: 0) {

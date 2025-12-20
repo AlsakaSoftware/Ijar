@@ -371,7 +371,6 @@ class OnboardingViewModel: ObservableObject {
             isComplete = true
 
             return liveSearchService.properties
-
         } catch {
             submissionError = error.localizedDescription
             isSubmitting = false

@@ -20,10 +20,14 @@ enum SavedSortOption: String, CaseIterable {
 
 struct AllSavedPropertiesView: View {
     @EnvironmentObject var coordinator: SavedPropertiesCoordinator
-    @EnvironmentObject var propertyService: PropertyService
+    private let propertyService: PropertyService
     @State private var properties: [Property] = []
     @State private var isLoading = true
     @State private var selectedProperty: Property?
+
+    init(propertyService: PropertyService = PropertyService()) {
+        self.propertyService = propertyService
+    }
 
     var body: some View {
         SavedPropertiesListView(
