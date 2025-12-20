@@ -4,84 +4,64 @@ import Supabase
 @MainActor
 class PropertyService: ObservableObject {
     let supabase: SupabaseClient
-    @Published var properties: [Property] = []
-    @Published var savedProperties: [Property] = []
-    @Published var isLoading = false
-    @Published var error: String?
-    
+
     init() {
         self.supabase = SupabaseClient(
             supabaseURL: URL(string: ConfigManager.shared.supabaseURL)!,
             supabaseKey: ConfigManager.shared.supabaseAnonKey
         )
     }
-    
-    func loadPropertiesForUser() async {
+
+    func fetchPropertiesForUser() async throws -> [Property] {
 #if DEBUG
-        print("🔥 PropertyService: loadPropertiesForUser called")
-#endif
-        isLoading = true
-        error = nil
-        
-        do {
-#if DEBUG
-            print("🔥 PropertyService: Getting user for property load...")
-#endif
-            // Get current user
-            let _ = try await supabase.auth.user()
-            
-#if DEBUG
-            print("🔥 PropertyService: Querying property_feed...")
-#endif
-            // Load properties from the property_feed view which shows new recommendations
-            let response: [PropertyRow] = try await supabase
-                .from("property_feed")
-                .select()
-                .execute()
-                .value
-            
-#if DEBUG
-            print("🔥 PropertyService: Got \(response.count) properties from Supabase")
-            print("🔥 PropertyService: Property IDs from DB: \(response.map { $0.id })")
-#endif
-            
-            properties = response.map { row in
-                Property(
-                    id: String(row.rightmove_id),  // Use Rightmove ID for consistent PropertyMetadata lookup
-                    images: row.images,
-                    price: row.price,
-                    bedrooms: row.bedrooms,
-                    bathrooms: row.bathrooms,
-                    address: row.address,
-                    area: row.area ?? "",
-                    rightmoveUrl: row.rightmove_url,
-                    agentPhone: row.agent_phone,
-                    agentName: row.agent_name,
-                    branchName: row.branch_name,
-                    latitude: row.latitude,
-                    longitude: row.longitude
-                )
-            }
-            
-#if DEBUG
-            print("✅ PropertyService: Loaded \(properties.count) properties from Supabase")
-            print("🔥 PropertyService: Final property IDs: \(properties.map { $0.id })")
-#endif
-            
-        } catch {
-            self.error = "Unable to load properties. Please check your connection and try again."
-#if DEBUG
-            print("❌ PropertyService: Error loading properties: \(error)")
-            print("❌ PropertyService: Error details: \(error.localizedDescription)")
+        print("🔥 PropertyService: fetchPropertiesForUser called")
 #endif
 
-            properties = []
-        }
-        
-        isLoading = false
 #if DEBUG
-        print("🔥 PropertyService: loadPropertiesForUser completed")
+        print("🔥 PropertyService: Getting user for property load...")
 #endif
+        // Get current user
+        let _ = try await supabase.auth.user()
+
+#if DEBUG
+        print("🔥 PropertyService: Querying property_feed...")
+#endif
+        // Load properties from the property_feed view which shows new recommendations
+        let response: [PropertyRow] = try await supabase
+            .from("property_feed")
+            .select()
+            .execute()
+            .value
+
+#if DEBUG
+        print("🔥 PropertyService: Got \(response.count) properties from Supabase")
+        print("🔥 PropertyService: Property IDs from DB: \(response.map { $0.id })")
+#endif
+
+        let fetchedProperties = response.map { row in
+            Property(
+                id: String(row.rightmove_id),  // Use Rightmove ID for consistent PropertyMetadata lookup
+                images: row.images,
+                price: row.price,
+                bedrooms: row.bedrooms,
+                bathrooms: row.bathrooms,
+                address: row.address,
+                area: row.area ?? "",
+                rightmoveUrl: row.rightmove_url,
+                agentPhone: row.agent_phone,
+                agentName: row.agent_name,
+                branchName: row.branch_name,
+                latitude: row.latitude,
+                longitude: row.longitude
+            )
+        }
+
+#if DEBUG
+        print("✅ PropertyService: Loaded \(fetchedProperties.count) properties from Supabase")
+        print("🔥 PropertyService: Final property IDs: \(fetchedProperties.map { $0.id })")
+#endif
+
+        return fetchedProperties
     }
 
     @discardableResult
@@ -138,129 +118,130 @@ class PropertyService: ObservableObject {
         }
     }
     
-    func removeTopProperty() {
-        if !properties.isEmpty {
-            properties.removeFirst()
+    func fetchSavedPropertiesCount() async throws -> Int {
+        let user = try await supabase.auth.user()
+
+        struct CountResult: Codable {
+            let count: Int
         }
+
+        let result: [CountResult] = try await supabase
+            .from("user_property_action")
+            .select("count", head: false)
+            .eq("user_id", value: user.id.uuidString)
+            .eq("action", value: "saved")
+            .execute()
+            .value
+
+#if DEBUG
+        print("🔥 PropertyService: Saved properties count: \(result.first?.count ?? 0)")
+#endif
+
+        return result.first?.count ?? 0
     }
 
-    /// Set properties directly (used for initial properties from onboarding)
-    func setProperties(_ newProperties: [Property]) {
-        properties = newProperties
-    }
-    
-    func loadSavedProperties() async {
-        isLoading = true
-        error = nil
-        
-        do {
-            let user = try await supabase.auth.user()
-            
+    func fetchSavedProperties() async throws -> [Property] {
+        let user = try await supabase.auth.user()
+
 #if DEBUG
-            print("🔥 PropertyService: Loading saved properties for user: \(user.id)")
+        print("🔥 PropertyService: Loading saved properties for user: \(user.id)")
 #endif
-            
-            // Try using the saved_properties view first
-            do {
-                let savedPropertyRows: [PropertyRow] = try await supabase
-                    .from("saved_properties")
+
+        // Try using the saved_properties view first
+        do {
+            let savedPropertyRows: [PropertyRow] = try await supabase
+                .from("saved_properties")
+                .select()
+                .execute()
+                .value
+
+            let fetchedProperties = savedPropertyRows.map { row in
+                Property(
+                    id: String(row.rightmove_id),  // Use Rightmove ID for consistent PropertyMetadata lookup
+                    images: row.images,
+                    price: row.price,
+                    bedrooms: row.bedrooms,
+                    bathrooms: row.bathrooms,
+                    address: row.address,
+                    area: row.area ?? "",
+                    rightmoveUrl: row.rightmove_url,
+                    agentPhone: row.agent_phone,
+                    agentName: row.agent_name,
+                    branchName: row.branch_name,
+                    latitude: row.latitude,
+                    longitude: row.longitude
+                )
+            }
+
+#if DEBUG
+            print("✅ PropertyService: Loaded \(fetchedProperties.count) saved properties from view")
+#endif
+
+            return fetchedProperties
+        } catch {
+#if DEBUG
+            print("⚠️ PropertyService: View failed, falling back to manual query: \(error)")
+#endif
+            // Fallback to manual query if view doesn't work
+            struct SavedAction: Codable {
+                let property_id: String
+                let created: String
+            }
+
+            let savedActions: [SavedAction] = try await supabase
+                .from("user_property_action")
+                .select("property_id, created")
+                .eq("user_id", value: user.id.uuidString)
+                .eq("action", value: "saved")
+                .order("created", ascending: false)
+                .execute()
+                .value
+
+            let propertyIds = savedActions.map { $0.property_id }
+
+#if DEBUG
+            print("🔥 PropertyService: Found \(propertyIds.count) saved property IDs: \(propertyIds)")
+#endif
+
+            if !propertyIds.isEmpty {
+                // Use PropertyRow to ensure consistency with property_feed
+                let properties: [PropertyRow] = try await supabase
+                    .from("property")
                     .select()
+                    .in("id", values: propertyIds)
                     .execute()
                     .value
-                
-                savedProperties = savedPropertyRows.map { row in
-                    Property(
-                        id: String(row.rightmove_id),  // Use Rightmove ID for consistent PropertyMetadata lookup
-                        images: row.images,
-                        price: row.price,
-                        bedrooms: row.bedrooms,
-                        bathrooms: row.bathrooms,
-                        address: row.address,
-                        area: row.area ?? "",
-                        rightmoveUrl: row.rightmove_url,
-                        agentPhone: row.agent_phone,
-                        agentName: row.agent_name,
-                        branchName: row.branch_name,
-                        latitude: row.latitude,
-                        longitude: row.longitude
+
+                var propertyDict: [String: Property] = [:]
+                for prop in properties {
+                    propertyDict[prop.id] = Property(
+                        id: String(prop.rightmove_id),  // Use Rightmove ID for consistent PropertyMetadata lookup
+                        images: prop.images,
+                        price: prop.price,
+                        bedrooms: prop.bedrooms,
+                        bathrooms: prop.bathrooms,
+                        address: prop.address,
+                        area: prop.area ?? "",
+                        rightmoveUrl: prop.rightmove_url,
+                        agentPhone: prop.agent_phone,
+                        agentName: prop.agent_name,
+                        branchName: prop.branch_name,
+                        latitude: prop.latitude,
+                        longitude: prop.longitude
                     )
                 }
-                
-#if DEBUG
-                print("✅ PropertyService: Loaded \(savedProperties.count) saved properties from view")
-#endif
-            } catch {
-#if DEBUG
-                print("⚠️ PropertyService: View failed, falling back to manual query: \(error)")
-#endif
-                // Fallback to manual query if view doesn't work
-                struct SavedAction: Codable {
-                    let property_id: String
-                    let created: String
-                }
 
-                let savedActions: [SavedAction] = try await supabase
-                    .from("user_property_action")
-                    .select("property_id, created")
-                    .eq("user_id", value: user.id.uuidString)
-                    .eq("action", value: "saved")
-                    .order("created", ascending: false)
-                    .execute()
-                    .value
-
-                let propertyIds = savedActions.map { $0.property_id }
+                let fetchedProperties = propertyIds.compactMap { propertyDict[$0] }
 
 #if DEBUG
-                print("🔥 PropertyService: Found \(propertyIds.count) saved property IDs: \(propertyIds)")
+                print("✅ PropertyService: Loaded \(fetchedProperties.count) saved properties via manual query")
 #endif
 
-                if !propertyIds.isEmpty {
-                    // Use PropertyRow to ensure consistency with property_feed
-                    let properties: [PropertyRow] = try await supabase
-                        .from("property")
-                        .select()
-                        .in("id", values: propertyIds)
-                        .execute()
-                        .value
-
-                    var propertyDict: [String: Property] = [:]
-                    for prop in properties {
-                        propertyDict[prop.id] = Property(
-                            id: String(prop.rightmove_id),  // Use Rightmove ID for consistent PropertyMetadata lookup
-                            images: prop.images,
-                            price: prop.price,
-                            bedrooms: prop.bedrooms,
-                            bathrooms: prop.bathrooms,
-                            address: prop.address,
-                            area: prop.area ?? "",
-                            rightmoveUrl: prop.rightmove_url,
-                            agentPhone: prop.agent_phone,
-                            agentName: prop.agent_name,
-                            branchName: prop.branch_name,
-                            latitude: prop.latitude,
-                            longitude: prop.longitude
-                        )
-                    }
-
-                    savedProperties = propertyIds.compactMap { propertyDict[$0] }
-
-#if DEBUG
-                    print("✅ PropertyService: Loaded \(savedProperties.count) saved properties via manual query")
-#endif
-                } else {
-                    savedProperties = []
-                }
+                return fetchedProperties
+            } else {
+                return []
             }
-            
-        } catch {
-            self.error = "Unable to load saved properties."
-            savedProperties = []
-#if DEBUG
-            print("❌ PropertyService: Error loading saved properties: \(error)")
-#endif
         }
-        
-        isLoading = false
     }
 
     /// Save a property from live search results (inserts into Supabase first if needed)
@@ -611,9 +592,6 @@ class PropertyService: ObservableObject {
                 .eq("property_id", value: existingProp.id)
                 .execute()
 
-            // Remove from local array immediately for UI responsiveness
-            savedProperties.removeAll { $0.id == property.id }
-
 #if DEBUG
             print("✅ PropertyService: Successfully unsaved property \(property.id)")
 #endif
@@ -626,10 +604,6 @@ class PropertyService: ObservableObject {
             return false
         }
     }
-
-    // MARK: - Property Groups
-
-    @Published var groups: [PropertyGroup] = []
 }
 
 enum PropertyAction: String {

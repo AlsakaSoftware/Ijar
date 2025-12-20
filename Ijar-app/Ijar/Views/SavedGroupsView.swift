@@ -7,13 +7,16 @@ struct SavedGroupsView: View {
     @State private var animateContent = false
     @State private var showCreateGroupSheet = false
     @State private var newGroupName = ""
+    @State private var savedPropertiesCount = 0
+    @State private var groups: [PropertyGroup] = []
+    @State private var isLoading = true
 
     var body: some View {
         VStack(spacing: 0) {
             if authService.isInGuestMode {
                 guestEmptyStateView
                     .padding(.top, 20)
-            } else if propertyService.isLoading && propertyService.savedProperties.isEmpty {
+            } else if isLoading {
                 loadingView
             } else {
                 groupsListView
@@ -42,13 +45,24 @@ struct SavedGroupsView: View {
         }
         .task {
             if !authService.isInGuestMode {
-                async let savedTask: () = propertyService.loadSavedProperties()
+                async let countTask = try? propertyService.fetchSavedPropertiesCount()
                 async let groupsTask = propertyService.loadGroups()
-                await savedTask
-                propertyService.groups = await groupsTask
+                savedPropertiesCount = await countTask ?? 0
+                groups = await groupsTask
+                isLoading = false
             }
             withAnimation(.easeOut(duration: 0.4)) {
                 animateContent = true
+            }
+        }
+        .onAppear {
+            // Refresh data when returning to this view (handles stale data after mutations elsewhere)
+            guard !isLoading && !authService.isInGuestMode else { return }
+            Task {
+                async let countTask = try? propertyService.fetchSavedPropertiesCount()
+                async let groupsTask = propertyService.loadGroups()
+                savedPropertiesCount = await countTask ?? 0
+                groups = await groupsTask
             }
         }
     }
@@ -144,7 +158,7 @@ struct SavedGroupsView: View {
                 // All Saved card
                 GroupCard(
                     title: "All Saved",
-                    count: propertyService.savedProperties.count,
+                    count: savedPropertiesCount,
                     icon: "heart.fill",
                     iconColor: .warmRed
                 ) {
@@ -155,7 +169,7 @@ struct SavedGroupsView: View {
                 .offset(y: animateContent ? 0 : 30)
                 .animation(.spring(response: 0.5, dampingFraction: 0.8), value: animateContent)
 
-                if !propertyService.groups.isEmpty {
+                if !groups.isEmpty {
                     // Divider with label
                     HStack {
                         Text("Your Groups")
@@ -169,7 +183,7 @@ struct SavedGroupsView: View {
                     .padding(.bottom, 4)
 
                     // User groups
-                    ForEach(Array(propertyService.groups.enumerated()), id: \.element.id) { index, group in
+                    ForEach(Array(groups.enumerated()), id: \.element.id) { index, group in
                         GroupCard(
                             title: group.name,
                             count: group.propertyCount ?? 0,
@@ -189,7 +203,8 @@ struct SavedGroupsView: View {
                         .contextMenu {
                             Button(role: .destructive) {
                                 Task {
-                                    await propertyService.deleteGroup(groupId: group.id)
+                                    _ = await propertyService.deleteGroup(groupId: group.id)
+                                    groups = await propertyService.loadGroups()
                                 }
                             } label: {
                                 Label("Delete Group", systemImage: "trash")
@@ -199,7 +214,7 @@ struct SavedGroupsView: View {
                 }
 
                 // Empty state for no groups
-                if propertyService.groups.isEmpty && propertyService.savedProperties.isEmpty {
+                if groups.isEmpty && savedPropertiesCount == 0 {
                     VStack(spacing: 16) {
                         Image(systemName: "heart.slash")
                             .font(.system(size: 40, weight: .light))
@@ -258,7 +273,9 @@ struct SavedGroupsView: View {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Create") {
                         Task {
-                            await propertyService.createGroup(name: newGroupName)
+                            if let newGroup = await propertyService.createGroup(name: newGroupName) {
+                                groups.insert(newGroup, at: 0)
+                            }
                             newGroupName = ""
                             showCreateGroupSheet = false
                         }

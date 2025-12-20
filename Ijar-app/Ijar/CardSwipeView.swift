@@ -11,6 +11,8 @@ struct CardSwipeView: View {
     @StateObject private var searchService = SearchQueryService()
     @StateObject private var monitorService = MonitorService()
     @Environment(\.scenePhase) private var scenePhase
+    @State private var properties: [Property] = []
+    @State private var isLoading = true
     @State private var dragDirection: SwipeDirection = .none
     @State private var buttonPressed: SwipeDirection = .none
     @State private var ambientAnimation = false
@@ -18,7 +20,7 @@ struct CardSwipeView: View {
     @State private var showingSearchStartedAlert = false
     @State private var showingAreasSheet = false
     @State private var hasUsedInitialProperties = false
-    @State private var showingGuestSignUpPrompt = false 
+    @State private var showingGuestSignUpPrompt = false
     @State private var guestSignUpAction: GuestSignUpAction = .pass
 
     // Entrance animation states
@@ -35,8 +37,8 @@ struct CardSwipeView: View {
     var body: some View {
         ZStack {
             VStack {
-                if propertyService.properties.isEmpty {
-                    if propertyService.isLoading {
+                if properties.isEmpty {
+                    if isLoading {
                         loadingView
                     } else {
                         emptyStateView
@@ -72,22 +74,24 @@ struct CardSwipeView: View {
 
             // Use initial properties from onboarding if available
             if comingFromOnboarding {
-                propertyService.setProperties(initialPropertiesStore.properties)
+                properties = initialPropertiesStore.properties
                 initialPropertiesStore.clear()
                 hasUsedInitialProperties = true
                 isFirstTimeEntrance = true
             } else if authService.isInGuestMode {
                 // Guest mode: Use properties from GuestPreferencesStore
                 let guestProperties = GuestPreferencesStore.shared.properties
-                if !guestProperties.isEmpty && propertyService.properties.isEmpty {
-                    propertyService.setProperties(guestProperties)
+                if !guestProperties.isEmpty && properties.isEmpty {
+                    properties = guestProperties
                     isFirstTimeEntrance = !hasUsedInitialProperties
                     hasUsedInitialProperties = true
                 }
                 // Don't load from database for guests
             } else {
-                await propertyService.loadPropertiesForUser()
+                properties = (try? await propertyService.fetchPropertiesForUser()) ?? []
             }
+
+            isLoading = false
 
             if !authService.isInGuestMode {
                 await searchService.loadUserQueries()
@@ -112,19 +116,19 @@ struct CardSwipeView: View {
         }
         .refreshable {
             if !authService.isInGuestMode {
-                await propertyService.loadPropertiesForUser()
+                properties = (try? await propertyService.fetchPropertiesForUser()) ?? []
                 prefetchTopProperties()
             }
         }
         .onChange(of: scenePhase) { oldPhase, newPhase in
             if newPhase == .active && oldPhase == .background && !authService.isInGuestMode {
                 Task {
-                    await propertyService.loadPropertiesForUser()
+                    properties = (try? await propertyService.fetchPropertiesForUser()) ?? []
                     prefetchTopProperties()
                 }
             }
         }
-        .onChange(of: propertyService.properties.count) { _, _ in
+        .onChange(of: properties.count) { _, _ in
             prefetchTopProperties()
         }
         .sheet(isPresented: $showingCreateQuery) {
@@ -134,7 +138,7 @@ struct CardSwipeView: View {
                     // Automatically trigger search for the user's first query only
                     await triggerSearchForNewQuery()
                     // Reload properties after creating a new search query
-                    await propertyService.loadPropertiesForUser()
+                    properties = (try? await propertyService.fetchPropertiesForUser()) ?? []
                 }
             }
         }
@@ -243,7 +247,7 @@ struct CardSwipeView: View {
     
     private var cardStackSection: some View {
         CardStackView(
-            items: propertyService.properties,
+            items: properties,
             topItem: .constant(0),
             cardContent: { property, isTopCard, dragAmount, saveProgress, passProgress, detailsProgress in
                 PropertyCard(
@@ -266,7 +270,7 @@ struct CardSwipeView: View {
                 Task {
                     await MainActor.run {
                         withAnimation(.none) {
-                            propertyService.removeTopProperty()
+                            removeTopProperty()
                         }
                     }
                     await propertyService.trackPropertyAction(propertyId: property.id, action: .passed)
@@ -281,7 +285,7 @@ struct CardSwipeView: View {
                 Task {
                     await MainActor.run {
                         withAnimation(.none) {
-                            propertyService.removeTopProperty()
+                            removeTopProperty()
                         }
                     }
                     let success = await propertyService.trackPropertyAction(propertyId: property.id, action: .saved)
@@ -335,11 +339,11 @@ struct CardSwipeView: View {
                         .opacity((dragDirection == .left || buttonPressed == .left) ? 0.6 : 0)
                 )
         }
-        .disabled(propertyService.properties.isEmpty)
+        .disabled(properties.isEmpty)
         .animation(.easeOut(duration: 0.15), value: dragDirection)
         .animation(.easeOut(duration: 0.15), value: buttonPressed)
     }
-    
+
     private var saveButton: some View {
         Button(action: {
             selectionFeedback.selectionChanged()
@@ -366,7 +370,7 @@ struct CardSwipeView: View {
                         .opacity((dragDirection == .right || buttonPressed == .right) ? 0.6 : 0)
                 )
         }
-        .disabled(propertyService.properties.isEmpty)
+        .disabled(properties.isEmpty)
         .animation(.easeOut(duration: 0.15), value: dragDirection)
         .animation(.easeOut(duration: 0.15), value: buttonPressed)
     }
@@ -385,7 +389,7 @@ struct CardSwipeView: View {
                     .fill(Color.rusticOrange)
                     .frame(width: 8, height: 8)
 
-                Text("\(propertyService.properties.count) to review")
+                Text("\(properties.count) to review")
                     .font(.system(size: 15, weight: .bold, design: .rounded))
                     .foregroundColor(.coffeeBean)
 
@@ -414,26 +418,32 @@ struct CardSwipeView: View {
     }
     
     private func saveCard() {
-        if !propertyService.properties.isEmpty {
-            let property = propertyService.properties[0]
+        if !properties.isEmpty {
+            let property = properties[0]
             Task {
                 await propertyService.trackPropertyAction(propertyId: property.id, action: .saved)
                 await MainActor.run {
-                    propertyService.removeTopProperty()
+                    removeTopProperty()
                 }
             }
         }
     }
-    
+
     private func dismissCard() {
-        if !propertyService.properties.isEmpty {
-            let property = propertyService.properties[0]
+        if !properties.isEmpty {
+            let property = properties[0]
             Task {
                 await propertyService.trackPropertyAction(propertyId: property.id, action: .passed)
                 await MainActor.run {
-                    propertyService.removeTopProperty()
+                    removeTopProperty()
                 }
             }
+        }
+    }
+
+    private func removeTopProperty() {
+        if !properties.isEmpty {
+            properties.removeFirst()
         }
     }
 
@@ -458,7 +468,7 @@ struct CardSwipeView: View {
 
     private func prefetchTopProperties() {
         // Prefetch images for the top 3 properties
-        let propertiesToPrefetch = Array(propertyService.properties.prefix(3))
+        let propertiesToPrefetch = Array(properties.prefix(3))
 
         // Get all images from each property
         let urls = propertiesToPrefetch.flatMap { property in

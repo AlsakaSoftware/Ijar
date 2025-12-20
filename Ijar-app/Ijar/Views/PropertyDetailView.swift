@@ -573,8 +573,6 @@ struct PropertyDetailView: View {
                     withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
                         isLiked = true
                     }
-                    // Reload to update counts
-                    await propertyService.loadSavedProperties()
                 }
                 isLikeLoading = false
                 showingGroupPicker = true

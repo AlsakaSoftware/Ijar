@@ -9,6 +9,7 @@ struct GroupPickerSheet: View {
     var onSaveComplete: ((Bool) -> Void)? = nil
     var onUnsave: (() -> Void)? = nil
 
+    @State private var groups: [PropertyGroup] = []
     @State private var showCreateGroup = false
     @State private var newGroupName = ""
     @State private var isLoadingGroups = true
@@ -60,7 +61,7 @@ struct GroupPickerSheet: View {
                 }
             }
             .task {
-                propertyService.groups = await propertyService.loadGroups()
+                groups = await propertyService.loadGroups()
                 // Load which groups this property is already in
                 let currentGroups = await propertyService.getGroupsForProperty(propertyId: property.id)
                 originalGroupIds = currentGroups
@@ -144,7 +145,7 @@ struct GroupPickerSheet: View {
 
             // Groups list
             VStack(spacing: 12) {
-                ForEach(propertyService.groups) { group in
+                ForEach(groups) { group in
                     GroupRowItem(
                         group: group,
                         isSelected: localSelectedIds.contains(group.id),
@@ -187,7 +188,8 @@ struct GroupPickerSheet: View {
     private func createGroup() {
         Task {
             if let group = await propertyService.createGroup(name: newGroupName) {
-                // Auto-select the new group locally
+                // Add to local groups and auto-select
+                groups.insert(group, at: 0)
                 localSelectedIds.append(group.id)
             }
             newGroupName = ""
@@ -206,17 +208,12 @@ struct GroupPickerSheet: View {
 
             // Add to new groups
             for groupId in toAdd {
-                await propertyService.addPropertyToGroup(propertyId: property.id, groupId: groupId)
+               _ = await propertyService.addPropertyToGroup(propertyId: property.id, groupId: groupId)
             }
 
             // Remove from unselected groups
             for groupId in toRemove {
-                await propertyService.removePropertyFromGroup(propertyId: property.id, groupId: groupId)
-            }
-
-            // Reload counts if there were changes
-            if !toAdd.isEmpty || !toRemove.isEmpty {
-                propertyService.groups = await propertyService.loadGroups()
+                _ = await propertyService.removePropertyFromGroup(propertyId: property.id, groupId: groupId)
             }
 
             selectedGroupIds = localSelectedIds
@@ -231,15 +228,11 @@ struct GroupPickerSheet: View {
         Task {
             // Remove from all groups first
             for groupId in localSelectedIds {
-                await propertyService.removePropertyFromGroup(propertyId: property.id, groupId: groupId)
+                _ = await propertyService.removePropertyFromGroup(propertyId: property.id, groupId: groupId)
             }
 
             // Unsave from All Saved
             _ = await propertyService.unsaveLiveSearchProperty(property)
-
-            // Reload
-            await propertyService.loadSavedProperties()
-            propertyService.groups = await propertyService.loadGroups()
 
             isSaving = false
             onUnsave?()

@@ -108,8 +108,6 @@ extension PropertyService {
                 propertyCount: 0
             )
 
-            groups.insert(group, at: 0)
-
 #if DEBUG
             print("✅ PropertyService: Created group: \(group.name)")
 #endif
@@ -141,8 +139,6 @@ extension PropertyService {
                 .eq("id", value: groupId)
                 .execute()
 
-            groups.removeAll { $0.id == groupId }
-
 #if DEBUG
             print("✅ PropertyService: Deleted group")
 #endif
@@ -167,16 +163,6 @@ extension PropertyService {
                 .update(["name": newName])
                 .eq("id", value: groupId)
                 .execute()
-
-            if let index = groups.firstIndex(where: { $0.id == groupId }) {
-                groups[index] = PropertyGroup(
-                    id: groups[index].id,
-                    userId: groups[index].userId,
-                    name: newName,
-                    createdAt: groups[index].createdAt,
-                    propertyCount: groups[index].propertyCount
-                )
-            }
 
 #if DEBUG
             print("✅ PropertyService: Renamed group")
@@ -214,10 +200,6 @@ extension PropertyService {
                 .insert(MemberRow(group_id: groupId, property_id: dbPropertyId))
                 .execute()
 
-            if let index = groups.firstIndex(where: { $0.id == groupId }) {
-                groups[index].propertyCount = (groups[index].propertyCount ?? 0) + 1
-            }
-
 #if DEBUG
             print("✅ PropertyService: Added property to group")
 #endif
@@ -247,10 +229,6 @@ extension PropertyService {
                 .eq("group_id", value: groupId)
                 .eq("property_id", value: dbPropertyId)
                 .execute()
-
-            if let index = groups.firstIndex(where: { $0.id == groupId }) {
-                groups[index].propertyCount = max((groups[index].propertyCount ?? 1) - 1, 0)
-            }
 
 #if DEBUG
             print("✅ PropertyService: Removed property from group")
