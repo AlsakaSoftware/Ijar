@@ -18,7 +18,10 @@
       "WebSearch",
       "WebFetch(domain:60fps.design)",
       "WebFetch(domain:medium.com)",
-      "WebFetch(domain:userpilot.com)"
+      "WebFetch(domain:userpilot.com)",
+      "Bash(curl:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npm run:*)"
     ],
     "deny": []
   }

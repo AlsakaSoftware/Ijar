@@ -43,7 +43,7 @@ struct SavedGroupsView: View {
                     Button {
                         showCreateGroupSheet = true
                     } label: {
-                        Image(systemName: "folder.badge.plus")
+                        Image(systemName: "plus")
                             .foregroundColor(.rusticOrange)
                     }
                 }
