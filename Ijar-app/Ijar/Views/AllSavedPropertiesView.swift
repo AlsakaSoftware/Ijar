@@ -21,12 +21,16 @@ enum SavedSortOption: String, CaseIterable {
 struct AllSavedPropertiesView: View {
     @EnvironmentObject var coordinator: SavedPropertiesCoordinator
     private let propertyService: PropertyService
+    private let savedPropertyRepository: SavedPropertyRepository
     @State private var properties: [Property] = []
     @State private var isLoading = true
-    @State private var selectedProperty: Property?
 
-    init(propertyService: PropertyService = PropertyService()) {
+    init(
+        propertyService: PropertyService = PropertyService(),
+        savedPropertyRepository: SavedPropertyRepository = .shared
+    ) {
         self.propertyService = propertyService
+        self.savedPropertyRepository = savedPropertyRepository
     }
 
     var body: some View {
@@ -37,11 +41,15 @@ struct AllSavedPropertiesView: View {
             emptyIcon: "heart.slash",
             emptyTitle: "No favorites yet",
             emptyMessage: "Heart the homes you love, and\nwe'll keep them here for you",
+            propertyService: propertyService,
+            savedPropertyRepository: savedPropertyRepository,
             onPropertyTap: { property in
                 coordinator.navigate(to: .propertyDetail(property: property))
             },
-            onSaveToggle: { property in
-                selectedProperty = property
+            onSaveStateChanged: { property, isSaved in
+                if !isSaved {
+                    properties.removeAll { $0.id == property.id }
+                }
             }
         )
         .navigationTitle("All Saved")
@@ -49,22 +57,8 @@ struct AllSavedPropertiesView: View {
         .toolbarColorScheme(.light, for: .navigationBar)
         .tint(.rusticOrange)
         .task {
-            properties = (try? await propertyService.fetchSavedProperties()) ?? []
+            properties = (try? await savedPropertyRepository.loadAllSavedProperties()) ?? []
             isLoading = false
         }
-        .groupPicker(
-            propertyService: propertyService,
-            selectedProperty: $selectedProperty,
-            onUnsave: {
-                if let unsavedProperty = selectedProperty {
-                    properties.removeAll { $0.id == unsavedProperty.id }
-                }
-            },
-            onDismiss: {
-                Task {
-                    properties = (try? await propertyService.fetchSavedProperties()) ?? []
-                }
-            }
-        )
     }
 }

@@ -4,6 +4,7 @@ struct SavedGroupsView: View {
     @EnvironmentObject var coordinator: SavedPropertiesCoordinator
     @EnvironmentObject var authService: AuthenticationService
     private let propertyService: PropertyService
+    private let savedPropertyRepository: SavedPropertyRepository
     @State private var animateContent = false
     @State private var showCreateGroupSheet = false
     @State private var newGroupName = ""
@@ -11,8 +12,12 @@ struct SavedGroupsView: View {
     @State private var groups: [PropertyGroup] = []
     @State private var isLoading = true
 
-    init(propertyService: PropertyService = PropertyService()) {
+    init(
+        propertyService: PropertyService = PropertyService(),
+        savedPropertyRepository: SavedPropertyRepository = .shared
+    ) {
         self.propertyService = propertyService
+        self.savedPropertyRepository = savedPropertyRepository
     }
 
     var body: some View {
@@ -38,7 +43,7 @@ struct SavedGroupsView: View {
                     Button {
                         showCreateGroupSheet = true
                     } label: {
-                        Image(systemName: "folder.badge.plus")
+                        Image(systemName: "plus")
                             .foregroundColor(.rusticOrange)
                     }
                 }
@@ -49,10 +54,11 @@ struct SavedGroupsView: View {
         }
         .task {
             if !authService.isInGuestMode {
-                async let countTask = try? propertyService.fetchSavedPropertiesCount()
+                async let refreshTask: () = savedPropertyRepository.refreshSavedIds()
                 async let groupsTask = propertyService.loadGroups()
-                savedPropertiesCount = await countTask ?? 0
+                await refreshTask
                 groups = await groupsTask
+                savedPropertiesCount = savedPropertyRepository.savedCount
                 isLoading = false
             }
             withAnimation(.easeOut(duration: 0.4)) {
@@ -63,10 +69,11 @@ struct SavedGroupsView: View {
             // Refresh data when returning to this view (handles stale data after mutations elsewhere)
             guard !isLoading && !authService.isInGuestMode else { return }
             Task {
-                async let countTask = try? propertyService.fetchSavedPropertiesCount()
+                async let refreshTask: () = savedPropertyRepository.refreshSavedIds()
                 async let groupsTask = propertyService.loadGroups()
-                savedPropertiesCount = await countTask ?? 0
+                await refreshTask
                 groups = await groupsTask
+                savedPropertiesCount = savedPropertyRepository.savedCount
             }
         }
     }

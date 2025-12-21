@@ -4,10 +4,8 @@ import Kingfisher
 struct GroupPickerSheet: View {
     let property: Property
     let propertyService: PropertyService
-    @Binding var selectedGroupIds: [String]
-    let onDismiss: () -> Void
-    var onSaveComplete: ((Bool) -> Void)? = nil
-    var onUnsave: (() -> Void)? = nil
+    let savedPropertyRepository: SavedPropertyRepository
+    @Environment(\.dismiss) private var dismiss
 
     @State private var groups: [PropertyGroup] = []
     @State private var showCreateGroup = false
@@ -16,6 +14,10 @@ struct GroupPickerSheet: View {
     @State private var isSaving = false
     @State private var originalGroupIds: [String] = []
     @State private var localSelectedIds: [String] = []
+
+    private var isSaved: Bool {
+        savedPropertyRepository.isSaved(property.id)
+    }
 
     var body: some View {
         NavigationStack {
@@ -61,6 +63,11 @@ struct GroupPickerSheet: View {
                 }
             }
             .task {
+                // If property is not saved yet, save it first
+                if !isSaved {
+                    await savedPropertyRepository.save(property)
+                }
+
                 groups = await propertyService.loadGroups()
                 // Load which groups this property is already in
                 let currentGroups = await propertyService.getGroupsForProperty(propertyId: property.id)
@@ -216,9 +223,8 @@ struct GroupPickerSheet: View {
                 _ = await propertyService.removePropertyFromGroup(propertyId: property.id, groupId: groupId)
             }
 
-            selectedGroupIds = localSelectedIds
             isSaving = false
-            onDismiss()
+            dismiss()
         }
     }
 
@@ -232,11 +238,10 @@ struct GroupPickerSheet: View {
             }
 
             // Unsave from All Saved
-            _ = await propertyService.unsaveLiveSearchProperty(property)
+            await savedPropertyRepository.unsave(property)
 
             isSaving = false
-            onUnsave?()
-            onDismiss()
+            dismiss()
         }
     }
 }

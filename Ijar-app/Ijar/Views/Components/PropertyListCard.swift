@@ -9,8 +9,6 @@ struct PropertyListCard: View {
     let onSaveToggle: () -> Void
 
     @State private var isPressed = false
-    @State private var showingUnsaveConfirmation = false
-    @State private var isLoading = false
 
     var body: some View {
         Button(action: onTap) {
@@ -74,18 +72,6 @@ struct PropertyListCard: View {
                 isPressed = pressing
             }
         }, perform: {})
-        .alert("Remove from favorites?", isPresented: $showingUnsaveConfirmation) {
-            Button("Cancel", role: .cancel) { }
-            Button("Remove", role: .destructive) {
-                isLoading = true
-                onSaveToggle()
-            }
-        } message: {
-            Text("This property will be removed from your saved list")
-        }
-        .onChange(of: isSaved) { _, _ in
-            isLoading = false
-        }
     }
 
     @ViewBuilder
@@ -127,23 +113,58 @@ struct PropertyListCard: View {
     }
 
     private var saveButton: some View {
-        LikeButton(isLiked: isSaved, isLoading: isLoading, action: handleSaveToggle)
+        LikeButton(isLiked: isSaved, isLoading: false, action: onSaveToggle)
             .padding(12)
     }
+}
 
-    private func handleSaveToggle() {
-        if isSaved {
-            // Show confirmation before removing
-            showingUnsaveConfirmation = true
-        } else {
-            // Save immediately with animation
-            isLoading = true
-            onSaveToggle()
-            // Reset loading after a brief delay (the parent will update isSaved)
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                isLoading = false
+/// A property card with built-in save behavior - shows GroupPickerSheet when save is tapped
+struct SaveablePropertyCard: View {
+    let property: Property
+    let propertyService: PropertyService
+    let savedPropertyRepository: SavedPropertyRepository
+    let onTap: () -> Void
+    var onRemove: (() -> Void)? = nil  // Called when property is unsaved (for list removal)
+
+    @State private var showingSheet = false
+
+    init(
+        property: Property,
+        propertyService: PropertyService = PropertyService(),
+        savedPropertyRepository: SavedPropertyRepository = .shared,
+        onTap: @escaping () -> Void,
+        onRemove: (() -> Void)? = nil
+    ) {
+        self.property = property
+        self.propertyService = propertyService
+        self.savedPropertyRepository = savedPropertyRepository
+        self.onTap = onTap
+        self.onRemove = onRemove
+    }
+
+    private var isSaved: Bool {
+        savedPropertyRepository.isSaved(property.id)
+    }
+
+    var body: some View {
+        PropertyListCard(
+            property: property,
+            isSaved: isSaved,
+            onTap: onTap,
+            onSaveToggle: { showingSheet = true }
+        )
+        .onChange(of: isSaved) { oldValue, newValue in
+            // Only call onRemove when transitioning from saved to unsaved
+            if oldValue && !newValue {
+                onRemove?()
             }
         }
+        .groupPickerSheet(
+            isPresented: $showingSheet,
+            property: property,
+            propertyService: propertyService,
+            savedPropertyRepository: savedPropertyRepository
+        )
     }
 }
 

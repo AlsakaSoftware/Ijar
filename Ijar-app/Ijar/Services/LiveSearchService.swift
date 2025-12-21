@@ -131,25 +131,9 @@ class LiveSearchService: ObservableObject {
     }
 
     private struct OnboardingAPIResponse: Decodable {
-        let properties: [OnboardingProperty]
+        let properties: [Property]
         let total: Int
         let saved: Int
-    }
-
-    private struct OnboardingProperty: Decodable {
-        let id: String
-        let images: [String]
-        let price: String
-        let bedrooms: Int
-        let bathrooms: Int
-        let address: String
-        let area: String
-        let rightmoveUrl: String
-        let agentPhone: String?
-        let agentName: String?
-        let branchName: String?
-        let latitude: Double?
-        let longitude: Double?
     }
 
     /// Perform onboarding search - fetches properties, gets HD images, saves to Supabase
@@ -209,24 +193,7 @@ class LiveSearchService: ObservableObject {
 
             let apiResponse = try JSONDecoder().decode(OnboardingAPIResponse.self, from: data)
 
-            properties = apiResponse.properties.map { prop in
-                Property(
-                    id: prop.id,
-                    images: prop.images,
-                    price: prop.price,
-                    bedrooms: prop.bedrooms,
-                    bathrooms: prop.bathrooms,
-                    address: prop.address,
-                    area: prop.area,
-                    rightmoveUrl: prop.rightmoveUrl,
-                    agentPhone: prop.agentPhone,
-                    agentName: prop.agentName,
-                    branchName: prop.branchName,
-                    latitude: prop.latitude,
-                    longitude: prop.longitude
-                )
-            }
-
+            properties = apiResponse.properties
             total = apiResponse.total
             hasMore = false // Onboarding only returns first batch
 

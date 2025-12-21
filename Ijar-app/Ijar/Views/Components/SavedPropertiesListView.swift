@@ -8,8 +8,10 @@ struct SavedPropertiesListView: View {
     let emptyIcon: String
     let emptyTitle: String
     let emptyMessage: String
+    let propertyService: PropertyService
+    let savedPropertyRepository: SavedPropertyRepository
     let onPropertyTap: (Property) -> Void
-    let onSaveToggle: (Property) -> Void
+    let onSaveStateChanged: (Property, Bool) -> Void
 
     @State private var animateContent = false
     @State private var selectedSort: SavedSortOption = .newest
@@ -164,14 +166,15 @@ struct SavedPropertiesListView: View {
         ScrollView {
             LazyVStack(spacing: 16) {
                 ForEach(Array(sortedProperties.enumerated()), id: \.element.id) { index, property in
-                    PropertyListCard(
+                    SaveablePropertyCard(
                         property: property,
-                        isSaved: true,
+                        propertyService: propertyService,
+                        savedPropertyRepository: savedPropertyRepository,
                         onTap: {
                             onPropertyTap(property)
                         },
-                        onSaveToggle: {
-                            onSaveToggle(property)
+                        onRemove: {
+                            onSaveStateChanged(property, false)
                         }
                     )
                     .padding(.horizontal, 20)

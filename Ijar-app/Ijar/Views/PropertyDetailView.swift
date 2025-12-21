@@ -7,6 +7,7 @@ struct PropertyDetailView: View {
     let isSavedProperty: Bool
     let showLikeButton: Bool
     private let propertyService: PropertyService
+    private let savedPropertyRepository: SavedPropertyRepository
     @State private var currentImageIndex = 0
     @State private var showingFullScreenImages = false
     @EnvironmentObject var appCoordinator: AppCoordinator
@@ -20,11 +21,18 @@ struct PropertyDetailView: View {
     @State private var isLoadingDetails = false
     @StateObject private var searchService = LiveSearchService()
 
-    init(property: Property, isSavedProperty: Bool, showLikeButton: Bool = true, propertyService: PropertyService = PropertyService()) {
+    init(
+        property: Property,
+        isSavedProperty: Bool,
+        showLikeButton: Bool = true,
+        propertyService: PropertyService = PropertyService(),
+        savedPropertyRepository: SavedPropertyRepository = .shared
+    ) {
         self.property = property
         self.isSavedProperty = isSavedProperty
         self.showLikeButton = showLikeButton
         self.propertyService = propertyService
+        self.savedPropertyRepository = savedPropertyRepository
         _displayProperty = State(initialValue: property)
     }
 
@@ -61,9 +69,11 @@ struct PropertyDetailView: View {
     @State private var showingFloorplan = false
 
     // Like/Save state
-    @State private var isLiked: Bool = false
-    @State private var isLikeLoading = false
     @State private var showingGroupPicker = false
+
+    private var isLiked: Bool {
+        savedPropertyRepository.isSaved(property.id)
+    }
 
     private func loadOrCreateMetadata() {
         // Find existing metadata for this property
@@ -241,15 +251,11 @@ struct PropertyDetailView: View {
             .presentationDetents([.medium])
             .presentationDragIndicator(.visible)
         }
-        .groupPicker(
+        .groupPickerSheet(
+            isPresented: $showingGroupPicker,
             property: property,
             propertyService: propertyService,
-            isPresented: $showingGroupPicker,
-            onUnsave: {
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
-                    isLiked = false
-                }
-            }
+            savedPropertyRepository: savedPropertyRepository
         )
         .onceTask {
             // Fetch full property details from Rightmove API (via our server)
@@ -264,13 +270,14 @@ struct PropertyDetailView: View {
             }
             isLoadingDetails = false
 
-            // Check saved status from DB (runs once on first appear)
+            // Load metadata if this is a saved property
             if isSavedProperty {
-                isLiked = true
                 loadOrCreateMetadata()
-            } else {
-                let isSaved = await propertyService.isLiveSearchPropertySaved(property)
-                isLiked = isSaved
+            }
+
+            // Ensure saved IDs cache is populated
+            if savedPropertyRepository.savedIds.isEmpty {
+                await savedPropertyRepository.refreshSavedIds()
             }
 
             // Show existing images immediately while loading details
@@ -552,7 +559,7 @@ struct PropertyDetailView: View {
     }
 
     private var likeButton: some View {
-        LikeButton(isLiked: isLiked, isLoading: isLikeLoading, action: handleLikeToggle)
+        LikeButton(isLiked: isLiked, isLoading: false, action: handleLikeToggle)
     }
 
     private func handleLikeToggle() {
@@ -562,23 +569,8 @@ struct PropertyDetailView: View {
             return
         }
 
-        if isLiked {
-            // Already saved - show group picker to manage groups or unsave
-            showingGroupPicker = true
-        } else {
-            // Save to All Saved first, then show group picker
-            Task {
-                isLikeLoading = true
-                let success = await propertyService.saveLiveSearchProperty(property)
-                if success {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
-                        isLiked = true
-                    }
-                }
-                isLikeLoading = false
-                showingGroupPicker = true
-            }
-        }
+        // Show group picker - it handles saving automatically if not already saved
+        showingGroupPicker = true
     }
 
     private var propertyHeaderSection: some View {

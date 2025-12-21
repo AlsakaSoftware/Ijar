@@ -4,13 +4,19 @@ struct BrowseResultsView: View {
     @EnvironmentObject private var coordinator: BrowseCoordinator
     @StateObject private var searchService = LiveSearchService()
     private let propertyService: PropertyService
+    private let savedPropertyRepository: SavedPropertyRepository
     @StateObject private var queryService = SearchQueryService()
 
     let params: BrowseSearchParams
 
-    init(params: BrowseSearchParams, propertyService: PropertyService = PropertyService()) {
+    init(
+        params: BrowseSearchParams,
+        propertyService: PropertyService = PropertyService(),
+        savedPropertyRepository: SavedPropertyRepository = .shared
+    ) {
         self.params = params
         self.propertyService = propertyService
+        self.savedPropertyRepository = savedPropertyRepository
     }
 
     // Local filter state (for editing)
@@ -25,7 +31,6 @@ struct BrowseResultsView: View {
 
     @State private var showFilters = false
     @State private var animateContent = false
-    @State private var savedPropertyIds: Set<String> = []
     @State private var isLoading = true
     @State private var showSaveSearchSheet = false
     @State private var hasSavedQuery = false
@@ -42,7 +47,6 @@ struct BrowseResultsView: View {
     }
 
     private var shouldShowSaveButton: Bool {
-        // Don't show if user already saved this search
         if hasSavedQuery { return false }
 
         // Check if a query with these exact coordinates already exists
@@ -135,7 +139,7 @@ struct BrowseResultsView: View {
                 }
             }
         }
-        .task(id: "\(params.latitude),\(params.longitude)") {
+        .onceTask/*(id: "\(params.latitude),\(params.longitude)")*/ {
             await queryService.loadUserQueries()
 
             minPrice = params.minPrice
@@ -301,28 +305,12 @@ struct BrowseResultsView: View {
 
                 // Property cards
                 ForEach(Array(searchService.properties.enumerated()), id: \.element.id) { index, property in
-                    PropertyListCard(
+                    SaveablePropertyCard(
                         property: property,
-                        isSaved: savedPropertyIds.contains(property.id),
+                        propertyService: propertyService,
+                        savedPropertyRepository: savedPropertyRepository,
                         onTap: {
-                            coordinator.navigate(to: .propertyDetail(property: property, isSaved: savedPropertyIds.contains(property.id)))
-                        },
-                        onSaveToggle: {
-                            Task {
-                                if savedPropertyIds.contains(property.id) {
-                                    // Unsave
-                                    let success = await propertyService.unsaveLiveSearchProperty(property)
-                                    if success {
-                                        savedPropertyIds.remove(property.id)
-                                    }
-                                } else {
-                                    // Save
-                                    let success = await propertyService.saveLiveSearchProperty(property)
-                                    if success {
-                                        savedPropertyIds.insert(property.id)
-                                    }
-                                }
-                            }
+                            coordinator.navigate(to: .propertyDetail(property: property, isSaved: savedPropertyRepository.isSaved(property.id)))
                         }
                     )
                     .padding(.horizontal, 20)
@@ -389,9 +377,8 @@ struct BrowseResultsView: View {
                 furnishType: furnishType
             )
 
-            // Check which properties are already saved
-            let saved = await propertyService.getSavedPropertyIds(from: searchService.properties)
-            savedPropertyIds = saved
+            // Load saved IDs to check which properties are saved
+            await savedPropertyRepository.refreshSavedIds()
 
             isLoading = false
             withAnimation {
