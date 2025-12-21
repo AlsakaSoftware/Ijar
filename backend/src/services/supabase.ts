@@ -20,6 +20,13 @@ export class SupabaseService {
     this.client = createClient(supabaseUrl, supabaseKey);
   }
 
+  /**
+   * Get the Supabase client for use by other services
+   */
+  getClient(): SupabaseClient {
+    return this.client;
+  }
+
   // ===========================================
   // Property Operations
   // ===========================================

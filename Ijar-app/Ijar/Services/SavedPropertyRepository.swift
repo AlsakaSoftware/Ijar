@@ -8,6 +8,7 @@ final class SavedPropertyRepository {
 
     private(set) var savedIds: Set<String> = []
     private let supabase: SupabaseClient
+    private var baseURL: String { ConfigManager.shared.liveSearchAPIURL }
 
     init() {
         self.supabase = SupabaseClient(
@@ -16,162 +17,93 @@ final class SavedPropertyRepository {
         )
     }
 
+    // MARK: - Auth Helper
+
+    private func getUserId() async -> String? {
+        do {
+            let user = try await supabase.auth.user()
+            return user.id.uuidString
+        } catch {
+#if DEBUG
+            print("❌ SavedPropertyRepository: Failed to get user: \(error)")
+#endif
+            return nil
+        }
+    }
+
     // MARK: - State Queries
 
     func isSaved(_ propertyId: String) -> Bool {
         savedIds.contains(propertyId)
     }
 
+    var savedCount: Int {
+        savedIds.count
+    }
+
     // MARK: - Save Operations
 
-    /// Save a property from live search results (inserts into Supabase first if needed)
+    /// Save a property
     @discardableResult
     func save(_ property: Property) async -> Bool {
+        guard let userId = await getUserId() else { return false }
+
+#if DEBUG
+        print("🔥 SavedPropertyRepository: Saving property - ID: \(property.id)")
+#endif
+
+        guard let url = URL(string: "\(baseURL)/api/properties/save") else { return false }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.timeoutInterval = 30
+
+        // Use snake_case keys to match backend
+        let body: [String: Any] = [
+            "userId": userId,
+            "property": [
+                "id": property.id,
+                "images": property.images,
+                "price": property.price,
+                "bedrooms": property.bedrooms,
+                "bathrooms": property.bathrooms,
+                "address": property.address,
+                "area": property.area,
+                "rightmove_url": property.rightmoveUrl as Any,
+                "agent_phone": property.agentPhone as Any,
+                "agent_name": property.agentName as Any,
+                "branch_name": property.branchName as Any,
+                "latitude": property.latitude as Any,
+                "longitude": property.longitude as Any
+            ]
+        ]
+
         do {
-            let user = try await supabase.auth.user()
+            request.httpBody = try JSONSerialization.data(withJSONObject: body)
+            let (data, response) = try await URLSession.shared.data(for: request)
 
+            guard let httpResponse = response as? HTTPURLResponse,
+                  httpResponse.statusCode == 200 else {
 #if DEBUG
-            print("🔥 SavedPropertyRepository: Saving property - ID: \(property.id)")
+                print("❌ SavedPropertyRepository: Save failed with status \((response as? HTTPURLResponse)?.statusCode ?? 0)")
 #endif
-
-            // First, check if property already exists by rightmove_id
-            let rightmoveId = Int(property.id) ?? 0
-
-            struct ExistingProperty: Codable {
-                let id: String
+                return false
             }
 
-            let existing: [ExistingProperty] = try await supabase
-                .from("property")
-                .select("id")
-                .eq("rightmove_id", value: rightmoveId)
-                .execute()
-                .value
-
-            let propertyUUID: String
-
-            if let existingProp = existing.first {
-                // Property already exists, use existing UUID
-                propertyUUID = existingProp.id
-#if DEBUG
-                print("🔥 SavedPropertyRepository: Property already exists with UUID: \(propertyUUID)")
-#endif
-            } else {
-                // Insert new property
-                struct NewProperty: Codable {
-                    let rightmove_id: Int
-                    let images: [String]
-                    let price: String
-                    let bedrooms: Int
-                    let bathrooms: Int
-                    let address: String
-                    let area: String?
-                    let rightmove_url: String?
-                    let agent_phone: String?
-                    let agent_name: String?
-                    let branch_name: String?
-                    let latitude: Double?
-                    let longitude: Double?
-                }
-
-                struct InsertedProperty: Codable {
-                    let id: String
-                }
-
-                let newProp = NewProperty(
-                    rightmove_id: rightmoveId,
-                    images: property.images,
-                    price: property.price,
-                    bedrooms: property.bedrooms,
-                    bathrooms: property.bathrooms,
-                    address: property.address,
-                    area: property.area.isEmpty ? nil : property.area,
-                    rightmove_url: property.rightmoveUrl,
-                    agent_phone: property.agentPhone,
-                    agent_name: property.agentName,
-                    branch_name: property.branchName,
-                    latitude: property.latitude,
-                    longitude: property.longitude
-                )
-
-                let inserted: [InsertedProperty] = try await supabase
-                    .from("property")
-                    .insert(newProp)
-                    .select("id")
-                    .execute()
-                    .value
-
-                guard let insertedProp = inserted.first else {
-                    throw NSError(domain: "SavedPropertyRepository", code: 1, userInfo: [NSLocalizedDescriptionKey: "Failed to insert property"])
-                }
-
-                propertyUUID = insertedProp.id
-#if DEBUG
-                print("🔥 SavedPropertyRepository: Inserted new property with UUID: \(propertyUUID)")
-#endif
+            struct SaveResponse: Decodable {
+                let success: Bool
             }
 
-            // Check if there's already a saved action for this property
-            struct ExistingAction: Codable {
-                let action: String
-            }
-
-            let existingActions: [ExistingAction] = try await supabase
-                .from("user_property_action")
-                .select("action")
-                .eq("user_id", value: user.id.uuidString)
-                .eq("property_id", value: propertyUUID)
-                .execute()
-                .value
-
-            if let existingAction = existingActions.first {
-                if existingAction.action == "saved" {
-                    // Already saved, just update cache
+            let result = try JSONDecoder().decode(SaveResponse.self, from: data)
+            if result.success {
+                savedIds.insert(property.id)
 #if DEBUG
-                    print("🔥 SavedPropertyRepository: Property already saved, updating cache")
+                print("✅ SavedPropertyRepository: Successfully saved property")
 #endif
-                    savedIds.insert(property.id)
-                    return true
-                } else {
-                    // Update from "passed" to "saved"
-                    try await supabase
-                        .from("user_property_action")
-                        .update(["action": "saved"])
-                        .eq("user_id", value: user.id.uuidString)
-                        .eq("property_id", value: propertyUUID)
-                        .execute()
-#if DEBUG
-                    print("✅ SavedPropertyRepository: Updated action to saved")
-#endif
-                    savedIds.insert(property.id)
-                    return true
-                }
             }
+            return result.success
 
-            // No existing action, insert new one
-            struct UserPropertyAction: Codable {
-                let user_id: String
-                let property_id: String
-                let action: String
-            }
-
-            let actionData = UserPropertyAction(
-                user_id: user.id.uuidString,
-                property_id: propertyUUID,
-                action: "saved"
-            )
-
-            try await supabase
-                .from("user_property_action")
-                .insert(actionData)
-                .execute()
-
-#if DEBUG
-            print("✅ SavedPropertyRepository: Successfully saved property")
-#endif
-
-            savedIds.insert(property.id)
-            return true
         } catch {
 #if DEBUG
             print("❌ SavedPropertyRepository: Failed to save property: \(error)")
@@ -183,45 +115,46 @@ final class SavedPropertyRepository {
     /// Unsave a property
     @discardableResult
     func unsave(_ property: Property) async -> Bool {
-        do {
-            let user = try await supabase.auth.user()
+        guard let userId = await getUserId() else { return false }
 
-            // Find the property UUID by rightmove_id
-            let rightmoveId = Int(property.id) ?? 0
-
-            struct ExistingProperty: Codable {
-                let id: String
-            }
-
-            let existing: [ExistingProperty] = try await supabase
-                .from("property")
-                .select("id")
-                .eq("rightmove_id", value: rightmoveId)
-                .execute()
-                .value
-
-            guard let existingProp = existing.first else {
 #if DEBUG
-                print("⚠️ SavedPropertyRepository: Property not found in database")
+        print("🔥 SavedPropertyRepository: Unsaving property - ID: \(property.id)")
 #endif
-                savedIds.remove(property.id)
+
+        guard let url = URL(string: "\(baseURL)/api/properties/unsave") else { return false }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.timeoutInterval = 30
+
+        let body: [String: Any] = [
+            "userId": userId,
+            "propertyId": property.id
+        ]
+
+        do {
+            request.httpBody = try JSONSerialization.data(withJSONObject: body)
+            let (data, response) = try await URLSession.shared.data(for: request)
+
+            guard let httpResponse = response as? HTTPURLResponse,
+                  httpResponse.statusCode == 200 else {
                 return false
             }
 
-            // Update the action to passed
-            try await supabase
-                .from("user_property_action")
-                .update(["action": "passed"])
-                .eq("user_id", value: user.id.uuidString)
-                .eq("property_id", value: existingProp.id)
-                .execute()
+            struct UnsaveResponse: Decodable {
+                let success: Bool
+            }
 
+            let result = try JSONDecoder().decode(UnsaveResponse.self, from: data)
+            if result.success {
+                savedIds.remove(property.id)
 #if DEBUG
-            print("✅ SavedPropertyRepository: Successfully unsaved property")
+                print("✅ SavedPropertyRepository: Successfully unsaved property")
 #endif
+            }
+            return result.success
 
-            savedIds.remove(property.id)
-            return true
         } catch {
 #if DEBUG
             print("❌ SavedPropertyRepository: Failed to unsave property: \(error)")
@@ -230,270 +163,53 @@ final class SavedPropertyRepository {
         }
     }
 
-    // MARK: - Batch Operations
+    // MARK: - Load Operations
 
-    /// Load saved IDs for a list of properties (used by BrowseResultsView)
-    func loadSavedIds(for properties: [Property]) async {
-        do {
-            let user = try await supabase.auth.user()
-
-            // Get all rightmove IDs from the properties
-            let rightmoveIds = properties.compactMap { Int($0.id) }
-
-#if DEBUG
-            print("🔥 SavedPropertyRepository: Checking \(rightmoveIds.count) rightmove IDs")
-#endif
-
-            guard !rightmoveIds.isEmpty else {
-                savedIds = []
-                return
-            }
-
-            struct PropertyWithRightmoveId: Codable {
-                let id: String
-                let rightmove_id: Int
-            }
-
-            // Find all properties that exist in our database
-            let existingProperties: [PropertyWithRightmoveId] = try await supabase
-                .from("property")
-                .select("id, rightmove_id")
-                .in("rightmove_id", values: rightmoveIds)
-                .execute()
-                .value
-
-#if DEBUG
-            print("🔥 SavedPropertyRepository: Found \(existingProperties.count) existing properties in DB")
-#endif
-
-            guard !existingProperties.isEmpty else {
-                savedIds = []
-                return
-            }
-
-            // Get the UUIDs of existing properties
-            let propertyUUIDs = existingProperties.map { $0.id }
-
-            struct SavedAction: Codable {
-                let property_id: String
-            }
-
-            // Check which ones are saved by this user
-            let savedActions: [SavedAction] = try await supabase
-                .from("user_property_action")
-                .select("property_id")
-                .eq("user_id", value: user.id.uuidString)
-                .eq("action", value: "saved")
-                .in("property_id", values: propertyUUIDs)
-                .execute()
-                .value
-
-#if DEBUG
-            print("🔥 SavedPropertyRepository: Found \(savedActions.count) saved actions")
-#endif
-
-            // Map back from UUID to rightmove_id
-            let savedUUIDs = Set(savedActions.map { $0.property_id })
-            let savedRightmoveIds = existingProperties
-                .filter { savedUUIDs.contains($0.id) }
-                .map { String($0.rightmove_id) }
-
-#if DEBUG
-            print("🔥 SavedPropertyRepository: Found \(savedRightmoveIds.count) saved properties out of \(properties.count)")
-#endif
-
-            savedIds = Set(savedRightmoveIds)
-        } catch {
-#if DEBUG
-            print("❌ SavedPropertyRepository: Failed to load saved IDs: \(error)")
-#endif
-            savedIds = []
-        }
-    }
-
-    /// Load all saved properties (used by AllSavedPropertiesView)
+    /// Load all saved properties (populates savedIds cache)
     func loadAllSavedProperties() async throws -> [Property] {
-        let user = try await supabase.auth.user()
-
-#if DEBUG
-        print("🔥 SavedPropertyRepository: Loading saved properties for user: \(user.id)")
-#endif
-
-        // Try using the saved_properties view first
-        do {
-            let savedPropertyRows: [PropertyRow] = try await supabase
-                .from("saved_properties")
-                .select()
-                .execute()
-                .value
-
-            let fetchedProperties = savedPropertyRows.map { row in
-                Property(
-                    id: String(row.rightmove_id),
-                    images: row.images,
-                    price: row.price,
-                    bedrooms: row.bedrooms,
-                    bathrooms: row.bathrooms,
-                    address: row.address,
-                    area: row.area ?? "",
-                    rightmoveUrl: row.rightmove_url,
-                    agentPhone: row.agent_phone,
-                    agentName: row.agent_name,
-                    branchName: row.branch_name,
-                    latitude: row.latitude,
-                    longitude: row.longitude
-                )
-            }
-
-            // Update cache with all saved property IDs
-            savedIds = Set(fetchedProperties.map { $0.id })
-
-#if DEBUG
-            print("✅ SavedPropertyRepository: Loaded \(fetchedProperties.count) saved properties from view")
-#endif
-
-            return fetchedProperties
-        } catch {
-#if DEBUG
-            print("⚠️ SavedPropertyRepository: View failed, falling back to manual query: \(error)")
-#endif
-            // Fallback to manual query if view doesn't work
-            struct SavedAction: Codable {
-                let property_id: String
-                let created: String
-            }
-
-            let savedActions: [SavedAction] = try await supabase
-                .from("user_property_action")
-                .select("property_id, created")
-                .eq("user_id", value: user.id.uuidString)
-                .eq("action", value: "saved")
-                .order("created", ascending: false)
-                .execute()
-                .value
-
-            let propertyIds = savedActions.map { $0.property_id }
-
-#if DEBUG
-            print("🔥 SavedPropertyRepository: Found \(propertyIds.count) saved property IDs")
-#endif
-
-            if !propertyIds.isEmpty {
-                let properties: [PropertyRow] = try await supabase
-                    .from("property")
-                    .select()
-                    .in("id", values: propertyIds)
-                    .execute()
-                    .value
-
-                var propertyDict: [String: Property] = [:]
-                for prop in properties {
-                    propertyDict[prop.id] = Property(
-                        id: String(prop.rightmove_id),
-                        images: prop.images,
-                        price: prop.price,
-                        bedrooms: prop.bedrooms,
-                        bathrooms: prop.bathrooms,
-                        address: prop.address,
-                        area: prop.area ?? "",
-                        rightmoveUrl: prop.rightmove_url,
-                        agentPhone: prop.agent_phone,
-                        agentName: prop.agent_name,
-                        branchName: prop.branch_name,
-                        latitude: prop.latitude,
-                        longitude: prop.longitude
-                    )
-                }
-
-                let fetchedProperties = propertyIds.compactMap { propertyDict[$0] }
-
-                // Update cache
-                savedIds = Set(fetchedProperties.map { $0.id })
-
-#if DEBUG
-                print("✅ SavedPropertyRepository: Loaded \(fetchedProperties.count) saved properties via manual query")
-#endif
-
-                return fetchedProperties
-            } else {
-                savedIds = []
-                return []
-            }
+        guard let userId = await getUserId() else {
+            throw NSError(domain: "SavedPropertyRepository", code: 401, userInfo: [NSLocalizedDescriptionKey: "Not authenticated"])
         }
+
+#if DEBUG
+        print("🔥 SavedPropertyRepository: Loading saved properties")
+#endif
+
+        guard let url = URL(string: "\(baseURL)/api/properties/saved?userId=\(userId)") else {
+            throw NSError(domain: "SavedPropertyRepository", code: 400, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.timeoutInterval = 30
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse,
+              httpResponse.statusCode == 200 else {
+            throw NSError(domain: "SavedPropertyRepository", code: (response as? HTTPURLResponse)?.statusCode ?? 500, userInfo: [NSLocalizedDescriptionKey: "Server error"])
+        }
+
+        let properties = try JSONDecoder().decode([Property].self, from: data)
+
+        // Update cache
+        savedIds = Set(properties.map { $0.id })
+
+#if DEBUG
+        print("✅ SavedPropertyRepository: Loaded \(properties.count) saved properties")
+#endif
+
+        return properties
     }
 
-    /// Get the count of saved properties
-    func getSavedCount() async throws -> Int {
-        let user = try await supabase.auth.user()
-
-        struct CountResult: Codable {
-            let count: Int
-        }
-
-        let result: [CountResult] = try await supabase
-            .from("user_property_action")
-            .select("count", head: false)
-            .eq("user_id", value: user.id.uuidString)
-            .eq("action", value: "saved")
-            .execute()
-            .value
-
-#if DEBUG
-        print("🔥 SavedPropertyRepository: Saved properties count: \(result.first?.count ?? 0)")
-#endif
-
-        return result.first?.count ?? 0
-    }
-
-    /// Check if a specific property is saved (with API fallback if not in cache)
-    func checkIfSaved(_ property: Property) async -> Bool {
-        // First check cache
-        if savedIds.contains(property.id) {
-            return true
-        }
-
-        // If not in cache, check API
+    /// Refresh saved IDs cache by loading all saved properties
+    func refreshSavedIds() async {
         do {
-            let user = try await supabase.auth.user()
-            let rightmoveId = Int(property.id) ?? 0
-
-            struct ExistingProperty: Codable {
-                let id: String
-            }
-
-            // First find the property by rightmove_id
-            let existing: [ExistingProperty] = try await supabase
-                .from("property")
-                .select("id")
-                .eq("rightmove_id", value: rightmoveId)
-                .execute()
-                .value
-
-            guard let existingProp = existing.first else {
-                return false
-            }
-
-            // Check if there's a saved action for this property
-            struct SavedAction: Codable {
-                let id: Int
-            }
-
-            let savedActions: [SavedAction] = try await supabase
-                .from("user_property_action")
-                .select("id")
-                .eq("user_id", value: user.id.uuidString)
-                .eq("property_id", value: existingProp.id)
-                .eq("action", value: "saved")
-                .execute()
-                .value
-
-            let isSaved = !savedActions.isEmpty
-            if isSaved {
-                savedIds.insert(property.id)
-            }
-            return isSaved
+            _ = try await loadAllSavedProperties()
         } catch {
-            return false
+#if DEBUG
+            print("❌ SavedPropertyRepository: Failed to refresh saved IDs: \(error)")
+#endif
         }
     }
 }

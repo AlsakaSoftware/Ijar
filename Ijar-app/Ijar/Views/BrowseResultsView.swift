@@ -47,7 +47,6 @@ struct BrowseResultsView: View {
     }
 
     private var shouldShowSaveButton: Bool {
-        // Don't show if user already saved this search
         if hasSavedQuery { return false }
 
         // Check if a query with these exact coordinates already exists
@@ -140,7 +139,7 @@ struct BrowseResultsView: View {
                 }
             }
         }
-        .task(id: "\(params.latitude),\(params.longitude)") {
+        .onceTask/*(id: "\(params.latitude),\(params.longitude)")*/ {
             await queryService.loadUserQueries()
 
             minPrice = params.minPrice
@@ -378,8 +377,8 @@ struct BrowseResultsView: View {
                 furnishType: furnishType
             )
 
-            // Load saved state for these properties
-            await savedPropertyRepository.loadSavedIds(for: searchService.properties)
+            // Load saved IDs to check which properties are saved
+            await savedPropertyRepository.refreshSavedIds()
 
             isLoading = false
             withAnimation {

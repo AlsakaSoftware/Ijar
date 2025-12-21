@@ -1,6 +1,6 @@
 import Foundation
 
-struct Property: Identifiable {
+struct Property: Identifiable, Codable {
     let id: String
     let images: [String]
     let price: String
@@ -15,7 +15,7 @@ struct Property: Identifiable {
     let latitude: Double?
     let longitude: Double?
 
-    // Property details (fetched on-demand)
+    // Property details (fetched on-demand, not decoded from API)
     var description: String?
     var keyFeatures: [String]?
     var propertyType: String?
@@ -26,6 +26,15 @@ struct Property: Identifiable {
     var listingDate: String?
     var availableFrom: String?
     var floorplanImages: [String]?
+
+    enum CodingKeys: String, CodingKey {
+        case id, images, price, bedrooms, bathrooms, address, area
+        case rightmoveUrl = "rightmove_url"
+        case agentPhone = "agent_phone"
+        case agentName = "agent_name"
+        case branchName = "branch_name"
+        case latitude, longitude
+    }
 
     /// Returns "Studio" if bedrooms is 0, otherwise returns the number as a string
     var bedroomText: String {
@@ -56,5 +65,34 @@ struct Property: Identifiable {
         self.listingDate = listingDate
         self.availableFrom = availableFrom
         self.floorplanImages = floorplanImages
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        images = try container.decode([String].self, forKey: .images)
+        price = try container.decode(String.self, forKey: .price)
+        bedrooms = try container.decode(Int.self, forKey: .bedrooms)
+        bathrooms = try container.decode(Int.self, forKey: .bathrooms)
+        address = try container.decode(String.self, forKey: .address)
+        area = try container.decodeIfPresent(String.self, forKey: .area) ?? ""
+        rightmoveUrl = try container.decodeIfPresent(String.self, forKey: .rightmoveUrl)
+        agentPhone = try container.decodeIfPresent(String.self, forKey: .agentPhone)
+        agentName = try container.decodeIfPresent(String.self, forKey: .agentName)
+        branchName = try container.decodeIfPresent(String.self, forKey: .branchName)
+        latitude = try container.decodeIfPresent(Double.self, forKey: .latitude)
+        longitude = try container.decodeIfPresent(Double.self, forKey: .longitude)
+
+        // Detail fields are not decoded from API
+        description = nil
+        keyFeatures = nil
+        propertyType = nil
+        floorArea = nil
+        epcRating = nil
+        councilTaxBand = nil
+        tenure = nil
+        listingDate = nil
+        availableFrom = nil
+        floorplanImages = nil
     }
 }

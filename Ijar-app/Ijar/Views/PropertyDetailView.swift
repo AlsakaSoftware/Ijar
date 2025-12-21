@@ -275,9 +275,9 @@ struct PropertyDetailView: View {
                 loadOrCreateMetadata()
             }
 
-            // Check if property is saved (updates repository cache if needed)
-            if !savedPropertyRepository.isSaved(property.id) {
-                _ = await savedPropertyRepository.checkIfSaved(property)
+            // Ensure saved IDs cache is populated
+            if savedPropertyRepository.savedIds.isEmpty {
+                await savedPropertyRepository.refreshSavedIds()
             }
 
             // Show existing images immediately while loading details
