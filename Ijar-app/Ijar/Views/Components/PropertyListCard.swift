@@ -127,7 +127,6 @@ struct SaveablePropertyCard: View {
     var onRemove: (() -> Void)? = nil  // Called when property is unsaved (for list removal)
 
     @State private var showingSheet = false
-    @State private var previousSavedState: Bool = false
 
     init(
         property: Property,
@@ -154,15 +153,11 @@ struct SaveablePropertyCard: View {
             onTap: onTap,
             onSaveToggle: { showingSheet = true }
         )
-        .onAppear {
-            previousSavedState = isSaved
-        }
-        .onChange(of: isSaved) { _, newValue in
+        .onChange(of: isSaved) { oldValue, newValue in
             // Only call onRemove when transitioning from saved to unsaved
-            if previousSavedState && !newValue {
+            if oldValue && !newValue {
                 onRemove?()
             }
-            previousSavedState = newValue
         }
         .groupPickerSheet(
             isPresented: $showingSheet,
