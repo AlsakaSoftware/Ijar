@@ -154,35 +154,28 @@ struct SearchQueriesView: View {
     
     private var emptyStateView: some View {
         VStack(spacing: 24) {
-            Image(systemName: "magnifyingglass.circle")
-                .font(.system(size: 80))
-                .foregroundColor(.warmBrown.opacity(0.3))
-            
             VStack(spacing: 8) {
                 Text("No searches yet")
-                    .font(.system(size: 22, weight: .semibold))
+                    .font(.system(size: 32, weight: .bold))
                     .foregroundColor(.coffeeBean)
 
                 Text("Tell us where you'd like to live and what you're looking for")
-                    .font(.system(size: 16))
+                    .font(.system(size: 17))
                     .foregroundColor(.warmBrown.opacity(0.7))
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 32)
             }
 
             Button(action: handleCreateQuery) {
-                HStack(spacing: 8) {
-                    Image(systemName: "plus.circle.fill")
-                    Text("Start Exploring")
-                }
-                .font(.system(size: 16, weight: .medium))
-                .foregroundColor(.warmCream)
-                .padding(.horizontal, 24)
-                .padding(.vertical, 12)
-                .background(
-                    Capsule()
-                        .fill(Color.rusticOrange)
-                )
+                Text("Start Exploring")
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 12)
+                    .background(
+                        Capsule()
+                            .fill(Color.rusticOrange)
+                    )
             }
         }
     }
