@@ -65,7 +65,11 @@ struct GroupPickerSheet: View {
             .task {
                 // If property is not saved yet, save it first
                 if !isSaved {
-                    await savedPropertyRepository.save(property)
+                    let success = await savedPropertyRepository.save(property)
+                    if !success {
+                        dismiss()
+                        return
+                    }
                 }
 
                 groups = await propertyService.loadGroups()
