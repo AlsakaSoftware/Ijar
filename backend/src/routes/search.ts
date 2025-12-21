@@ -7,25 +7,9 @@ import { Router } from './index';
 import { RightmoveAPI } from '../api';
 import { SupabaseService } from '../services/supabase';
 import { PropertySearchParams, PropertyWithDetails } from '../types';
-import { parseJsonBody, sendJson, sendError } from '../utils/http';
-
-interface SearchRequest {
-  latitude: number;
-  longitude: number;
-  minPrice?: number;
-  maxPrice?: number;
-  minBedrooms?: number;
-  maxBedrooms?: number;
-  minBathrooms?: number;
-  maxBathrooms?: number;
-  radius?: number;
-  furnishType?: string;
-  page?: number;
-}
-
-interface OnboardingSearchRequest extends SearchRequest {
-  queryId: string;
-}
+import { SearchRequest, OnboardingSearchRequest } from '../types/api';
+import { parseJsonBody, sendJson } from '../utils/http';
+import { sendApiError, requireFields, badRequest, ErrorCodes } from '../utils/errors';
 
 export function registerSearchRoutes(router: Router, api: RightmoveAPI, supabase: SupabaseService): void {
 
@@ -33,11 +17,7 @@ export function registerSearchRoutes(router: Router, api: RightmoveAPI, supabase
   router.post('/api/search', async (req, res) => {
     try {
       const body = await parseJsonBody<SearchRequest>(req);
-
-      if (body.latitude === undefined || body.longitude === undefined) {
-        sendError(res, 'latitude and longitude are required', 400);
-        return;
-      }
+      requireFields(body, ['latitude', 'longitude']);
 
       console.log('\n--- Search Request ---');
       console.log('Location:', body.latitude, body.longitude);
@@ -55,7 +35,7 @@ export function registerSearchRoutes(router: Router, api: RightmoveAPI, supabase
       sendJson(res, result);
     } catch (error) {
       console.error('Error:', error);
-      sendError(res, error instanceof Error ? error.message : 'Unknown error');
+      sendApiError(res, error);
     }
   });
 
@@ -63,16 +43,7 @@ export function registerSearchRoutes(router: Router, api: RightmoveAPI, supabase
   router.post('/api/onboarding-search', async (req, res) => {
     try {
       const body = await parseJsonBody<OnboardingSearchRequest>(req);
-
-      if (body.latitude === undefined || body.longitude === undefined) {
-        sendError(res, 'latitude and longitude are required', 400);
-        return;
-      }
-
-      if (!body.queryId) {
-        sendError(res, 'queryId is required', 400);
-        return;
-      }
+      requireFields(body, ['latitude', 'longitude', 'queryId']);
 
       const result = await handleOnboardingSearch(api, supabase, body);
 
@@ -84,7 +55,7 @@ export function registerSearchRoutes(router: Router, api: RightmoveAPI, supabase
       sendJson(res, result);
     } catch (error) {
       console.error('Error:', error);
-      sendError(res, error instanceof Error ? error.message : 'Unknown error');
+      sendApiError(res, error);
     }
   });
 
@@ -102,7 +73,7 @@ export function registerSearchRoutes(router: Router, api: RightmoveAPI, supabase
       sendJson(res, cleanResponse);
     } catch (error) {
       console.error('Error fetching property details:', error);
-      sendError(res, error instanceof Error ? error.message : 'Unknown error');
+      sendApiError(res, error);
     }
   });
 }

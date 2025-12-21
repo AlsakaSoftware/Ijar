@@ -2,6 +2,7 @@ import Foundation
 import Supabase
 import SwiftUI
 
+@MainActor
 @Observable
 final class SavedPropertyRepository {
     static let shared = SavedPropertyRepository()

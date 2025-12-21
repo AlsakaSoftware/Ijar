@@ -5,3 +5,4 @@
 
 export * from './rightmove';
 export * from './database';
+export * from './api';
