@@ -103,7 +103,7 @@ struct RootContentView: View {
             SavedPropertiesRootView()
                 .tabItem {
                     Image(systemName: "heart.fill")
-                    Text("Favourites")
+                    Text("Saved")
                 }
                 .tag(AppDestination.savedProperties)
 

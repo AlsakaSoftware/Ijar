@@ -2,40 +2,6 @@ import Foundation
 import Supabase
 import SwiftUI
 
-// MARK: - Request/Response Types
-
-private struct SaveRequest: Encodable {
-    let userId: String
-    let property: PropertyPayload
-
-    struct PropertyPayload: Encodable {
-        let id: String
-        let images: [String]
-        let price: String
-        let bedrooms: Int
-        let bathrooms: Int
-        let address: String
-        let area: String
-        let rightmove_url: String?
-        let agent_phone: String?
-        let agent_name: String?
-        let branch_name: String?
-        let latitude: Double?
-        let longitude: Double?
-    }
-}
-
-private struct UnsaveRequest: Encodable {
-    let userId: String
-    let propertyId: String
-}
-
-private struct SuccessResponse: Decodable {
-    let success: Bool
-}
-
-// MARK: - Repository
-
 @MainActor
 @Observable
 final class SavedPropertyRepository {
@@ -43,14 +9,13 @@ final class SavedPropertyRepository {
 
     private(set) var savedIds: Set<String> = []
     private let supabase: SupabaseClient
-    private let networkService: NetworkService
+    private var baseURL: String { ConfigManager.shared.liveSearchAPIURL }
 
-    init(networkService: NetworkService = .shared) {
+    init() {
         self.supabase = SupabaseClient(
             supabaseURL: URL(string: ConfigManager.shared.supabaseURL)!,
             supabaseKey: ConfigManager.shared.supabaseAnonKey
         )
-        self.networkService = networkService
     }
 
     // MARK: - Auth Helper
@@ -88,32 +53,50 @@ final class SavedPropertyRepository {
         print("🔥 SavedPropertyRepository: Saving property - ID: \(property.id)")
 #endif
 
-        let request = SaveRequest(
-            userId: userId,
-            property: SaveRequest.PropertyPayload(
-                id: property.id,
-                images: property.images,
-                price: property.price,
-                bedrooms: property.bedrooms,
-                bathrooms: property.bathrooms,
-                address: property.address,
-                area: property.area,
-                rightmove_url: property.rightmoveUrl,
-                agent_phone: property.agentPhone,
-                agent_name: property.agentName,
-                branch_name: property.branchName,
-                latitude: property.latitude,
-                longitude: property.longitude
-            )
-        )
+        guard let url = URL(string: "\(baseURL)/api/properties/save") else { return false }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.timeoutInterval = 30
+
+        // Use snake_case keys to match backend
+        let body: [String: Any] = [
+            "userId": userId,
+            "property": [
+                "id": property.id,
+                "images": property.images,
+                "price": property.price,
+                "bedrooms": property.bedrooms,
+                "bathrooms": property.bathrooms,
+                "address": property.address,
+                "area": property.area,
+                "rightmove_url": property.rightmoveUrl as Any,
+                "agent_phone": property.agentPhone as Any,
+                "agent_name": property.agentName as Any,
+                "branch_name": property.branchName as Any,
+                "latitude": property.latitude as Any,
+                "longitude": property.longitude as Any
+            ]
+        ]
 
         do {
-            let result: SuccessResponse = try await networkService.send(
-                endpoint: "/api/properties/save",
-                method: .post,
-                body: request
-            )
+            request.httpBody = try JSONSerialization.data(withJSONObject: body)
+            let (data, response) = try await URLSession.shared.data(for: request)
 
+            guard let httpResponse = response as? HTTPURLResponse,
+                  httpResponse.statusCode == 200 else {
+#if DEBUG
+                print("❌ SavedPropertyRepository: Save failed with status \((response as? HTTPURLResponse)?.statusCode ?? 0)")
+#endif
+                return false
+            }
+
+            struct SaveResponse: Decodable {
+                let success: Bool
+            }
+
+            let result = try JSONDecoder().decode(SaveResponse.self, from: data)
             if result.success {
                 savedIds.insert(property.id)
 #if DEBUG
@@ -139,15 +122,32 @@ final class SavedPropertyRepository {
         print("🔥 SavedPropertyRepository: Unsaving property - ID: \(property.id)")
 #endif
 
-        let request = UnsaveRequest(userId: userId, propertyId: property.id)
+        guard let url = URL(string: "\(baseURL)/api/properties/unsave") else { return false }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.timeoutInterval = 30
+
+        let body: [String: Any] = [
+            "userId": userId,
+            "propertyId": property.id
+        ]
 
         do {
-            let result: SuccessResponse = try await networkService.send(
-                endpoint: "/api/properties/unsave",
-                method: .post,
-                body: request
-            )
+            request.httpBody = try JSONSerialization.data(withJSONObject: body)
+            let (data, response) = try await URLSession.shared.data(for: request)
 
+            guard let httpResponse = response as? HTTPURLResponse,
+                  httpResponse.statusCode == 200 else {
+                return false
+            }
+
+            struct UnsaveResponse: Decodable {
+                let success: Bool
+            }
+
+            let result = try JSONDecoder().decode(UnsaveResponse.self, from: data)
             if result.success {
                 savedIds.remove(property.id)
 #if DEBUG
@@ -155,20 +155,6 @@ final class SavedPropertyRepository {
 #endif
             }
             return result.success
-
-        } catch let error as NetworkError {
-            // 404 means property was already not saved - treat as success
-            if error.isNotFound {
-                savedIds.remove(property.id)
-#if DEBUG
-                print("✅ SavedPropertyRepository: Property not found (already unsaved)")
-#endif
-                return true
-            }
-#if DEBUG
-            print("❌ SavedPropertyRepository: Failed to unsave property: \(error)")
-#endif
-            return false
 
         } catch {
 #if DEBUG
@@ -183,17 +169,29 @@ final class SavedPropertyRepository {
     /// Load all saved properties (populates savedIds cache)
     func loadAllSavedProperties() async throws -> [Property] {
         guard let userId = await getUserId() else {
-            throw NetworkError.unauthorized
+            throw NSError(domain: "SavedPropertyRepository", code: 401, userInfo: [NSLocalizedDescriptionKey: "Not authenticated"])
         }
 
 #if DEBUG
         print("🔥 SavedPropertyRepository: Loading saved properties")
 #endif
 
-        let properties: [Property] = try await networkService.send(
-            endpoint: "/api/properties/saved?userId=\(userId)",
-            method: .get
-        )
+        guard let url = URL(string: "\(baseURL)/api/properties/saved?userId=\(userId)") else {
+            throw NSError(domain: "SavedPropertyRepository", code: 400, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.timeoutInterval = 30
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse,
+              httpResponse.statusCode == 200 else {
+            throw NSError(domain: "SavedPropertyRepository", code: (response as? HTTPURLResponse)?.statusCode ?? 500, userInfo: [NSLocalizedDescriptionKey: "Server error"])
+        }
+
+        let properties = try JSONDecoder().decode([Property].self, from: data)
 
         // Update cache
         savedIds = Set(properties.map { $0.id })

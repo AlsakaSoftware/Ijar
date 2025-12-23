@@ -33,23 +33,8 @@ struct SavedGroupsView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.warmCream)
-        .safeAreaInset(edge: .top) {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Favourites")
-                    .font(.system(size: 28, weight: .bold))
-                    .foregroundColor(.coffeeBean)
-
-                Text("Your curated shortlist")
-                    .font(.system(size: 18))
-                    .foregroundColor(.warmBrown.opacity(0.7))
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 24)
-            .padding(.top, 16)
-            .padding(.bottom, 12)
-            .background(Color.warmCream)
-        }
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle("Saved")
+        .navigationBarTitleDisplayMode(.large)
         .toolbarColorScheme(.light, for: .navigationBar)
         .tint(.rusticOrange)
         .toolbar {
@@ -213,7 +198,7 @@ struct SavedGroupsView: View {
                         GroupCard(
                             title: group.name,
                             count: group.propertyCount ?? 0,
-                            icon: "list.bullet.rectangle.portrait",
+                            icon: "folder.fill",
                             iconColor: .rusticOrange
                         ) {
                             coordinator.navigate(to: .groupProperties(group: group))
