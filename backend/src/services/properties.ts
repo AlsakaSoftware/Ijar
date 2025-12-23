@@ -5,7 +5,7 @@
 
 import { SupabaseClient } from '@supabase/supabase-js';
 import { Property } from '../types/api';
-import { badRequest, databaseError, ErrorCodes } from '../utils/errors';
+import { badRequest, databaseError, notFound, ErrorCodes } from '../utils/errors';
 
 // Re-export Property type for backwards compatibility
 export type SavedProperty = Property;
@@ -120,8 +120,7 @@ export class PropertySaveService {
       .single();
 
     if (findError || !property) {
-      console.log('Property not found in database');
-      return { success: true };
+      throw notFound(ErrorCodes.PROPERTY_NOT_FOUND, 'Property not found');
     }
 
     // Update action to passed

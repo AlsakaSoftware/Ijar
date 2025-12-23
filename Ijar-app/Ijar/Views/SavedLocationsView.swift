@@ -29,23 +29,19 @@ struct SavedLocationsView: View {
             if locationsManager.locations.isEmpty {
                 Spacer()
                 VStack(spacing: 16) {
-                    Image(systemName: "mappin.circle")
-                        .font(.system(size: 60))
-                        .foregroundColor(.warmBrown.opacity(0.3))
-
                     VStack(spacing: 8) {
                         Text("No places yet")
-                            .font(.system(size: 20, weight: .semibold))
+                            .font(.system(size: 32, weight: .bold))
                             .foregroundColor(.coffeeBean)
 
                         Text("Add your work, gym, or other places")
-                            .font(.system(size: 15))
+                            .font(.system(size: 17))
                             .foregroundColor(.warmBrown.opacity(0.7))
                     }
 
                     Button(action: handleAddLocation) {
                         Text("Add a place")
-                            .font(.system(size: 16, weight: .semibold))
+                            .font(.system(size: 17, weight: .semibold))
                             .foregroundColor(.white)
                             .padding(.horizontal, 24)
                             .padding(.vertical, 12)

@@ -54,15 +54,9 @@ struct BrowseView: View {
                 Spacer()
 
                 VStack(spacing: 32) {
-                    VStack(spacing: 8) {
-                        Image(systemName: "magnifyingglass")
-                            .font(.system(size: 48, weight: .light))
-                            .foregroundColor(.rusticOrange)
-
-                        Text("Find your next home")
-                            .font(.system(size: 24, weight: .semibold, design: .rounded))
-                            .foregroundColor(.coffeeBean)
-                    }
+                    Text("Find your next home")
+                        .font(.system(size: 32, weight: .bold))
+                        .foregroundColor(.coffeeBean)
 
                     VStack(spacing: 16) {
                         HStack(spacing: 12) {

@@ -6,10 +6,11 @@ struct OnboardingNotificationsStep: View {
 
     @State private var isRequesting = false
     @State private var showContent = false
-    @State private var bellBounce = false
 
     var body: some View {
         VStack(spacing: 0) {
+            Spacer()
+
             VStack(spacing: 28) {
                 // Title
                 VStack(alignment: .leading, spacing: 8) {
@@ -23,55 +24,21 @@ struct OnboardingNotificationsStep: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 24)
-                .padding(.top, 24)
                 .opacity(showContent ? 1 : 0)
                 .offset(y: showContent ? 0 : 15)
 
-                // Bell icon
-                ZStack {
-                    Circle()
-                        .fill(
-                            RadialGradient(
-                                colors: [Color.rusticOrange.opacity(0.12), Color.clear],
-                                center: .center,
-                                startRadius: 20,
-                                endRadius: 70
-                            )
-                        )
-                        .frame(width: 140, height: 140)
-
-                    Image(systemName: "bell.badge.fill")
-                        .font(.system(size: 56, weight: .medium))
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: [.rusticOrange, .warmRed],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                        .rotationEffect(.degrees(bellBounce ? 10 : -10))
-                        .animation(
-                            .easeInOut(duration: 0.12)
-                            .repeatCount(6, autoreverses: true),
-                            value: bellBounce
-                        )
-                }
-                .opacity(showContent ? 1 : 0)
-                .scaleEffect(showContent ? 1 : 0.8)
-                .padding(.vertical, 8)
-
                 // Benefits
                 VStack(spacing: 14) {
-                    benefitRow(icon: "bolt.fill", text: "Get there before everyone else")
-                    benefitRow(icon: "heart.fill", text: "Only homes that match your search")
-                    benefitRow(icon: "moon.zzz.fill", text: "A few times a day, max")
+                    benefitRow(text: "Get there before everyone else")
+                    benefitRow(text: "Only homes that match your search")
+                    benefitRow(text: "A few times a day, max")
                 }
                 .padding(.horizontal, 24)
                 .opacity(showContent ? 1 : 0)
                 .offset(y: showContent ? 0 : 10)
-
-                Spacer()
             }
+
+            Spacer()
 
             // Buttons
             VStack(spacing: 8) {
@@ -117,25 +84,25 @@ struct OnboardingNotificationsStep: View {
             withAnimation(.easeOut(duration: 0.4)) {
                 showContent = true
             }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                bellBounce = true
-            }
         }
     }
 
-    private func benefitRow(icon: String, text: String) -> some View {
-        HStack(spacing: 14) {
-            Image(systemName: icon)
-                .font(.system(size: 15, weight: .semibold))
+    private func benefitRow(text: String) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: "checkmark")
+                .font(.system(size: 14, weight: .semibold))
                 .foregroundColor(.rusticOrange)
-                .frame(width: 20)
 
             Text(text)
-                .font(.system(size: 16))
+                .font(.system(size: 17))
                 .foregroundColor(.coffeeBean)
 
             Spacer()
         }
+        .padding(.vertical, 14)
+        .padding(.horizontal, 16)
+        .background(Color.rusticOrange.opacity(0.08))
+        .cornerRadius(12)
     }
 
     private func enableNotifications() async {
