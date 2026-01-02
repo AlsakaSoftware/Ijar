@@ -213,7 +213,7 @@ struct SavedGroupsView: View {
                         GroupCard(
                             title: group.name,
                             count: group.propertyCount ?? 0,
-                            icon: "list.bullet.rectangle.portrait",
+                            icon: "folder.fill",
                             iconColor: .rusticOrange
                         ) {
                             coordinator.navigate(to: .groupProperties(group: group))
