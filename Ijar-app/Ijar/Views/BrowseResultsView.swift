@@ -2,6 +2,7 @@ import SwiftUI
 
 struct BrowseResultsView: View {
     @EnvironmentObject private var coordinator: BrowseCoordinator
+    @EnvironmentObject private var authService: AuthenticationService
     @StateObject private var searchService = LiveSearchService()
     private let propertyService: PropertyService
     private let savedPropertyRepository: SavedPropertyRepository
@@ -33,6 +34,7 @@ struct BrowseResultsView: View {
     @State private var animateContent = false
     @State private var isLoading = true
     @State private var showSaveSearchSheet = false
+    @State private var showGuestSignUpSheet = false
     @State private var hasSavedQuery = false
     @State private var hasSeenFullExplainer = UserDefaults.standard.bool(forKey: "has_seen_save_search_explainer")
 
@@ -139,6 +141,12 @@ struct BrowseResultsView: View {
                 }
             }
         }
+        .sheet(isPresented: $showGuestSignUpSheet) {
+            GuestSignUpPromptSheet(action: .monitor) {
+                showGuestSignUpSheet = false
+            }
+            .presentationDetents([.medium])
+        }
         .onceTask/*(id: "\(params.latitude),\(params.longitude)")*/ {
             await queryService.loadUserQueries()
 
@@ -241,7 +249,11 @@ struct BrowseResultsView: View {
                     if hasSeenFullExplainer {
                         // Compact CTA for subsequent visits
                         Button {
-                            showSaveSearchSheet = true
+                            if authService.isInGuestMode {
+                                showGuestSignUpSheet = true
+                            } else {
+                                showSaveSearchSheet = true
+                            }
                         } label: {
                             HStack(spacing: 10) {
                                 Image(systemName: "bell.badge.fill")
@@ -278,9 +290,13 @@ struct BrowseResultsView: View {
                     } else {
                         // Full explainer card for first time
                         SaveSearchExplainerCard {
-                            showSaveSearchSheet = true
                             UserDefaults.standard.set(true, forKey: "has_seen_save_search_explainer")
                             hasSeenFullExplainer = true
+                            if authService.isInGuestMode {
+                                showGuestSignUpSheet = true
+                            } else {
+                                showSaveSearchSheet = true
+                            }
                         }
                         .padding(.horizontal, 20)
                         .padding(.top, 12)

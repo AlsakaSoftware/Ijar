@@ -24,6 +24,7 @@ struct OnboardingNotificationsStep: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 24)
+                .padding(.bottom, 25)
                 .opacity(showContent ? 1 : 0)
                 .offset(y: showContent ? 0 : 15)
 

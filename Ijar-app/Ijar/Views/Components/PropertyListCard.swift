@@ -120,6 +120,8 @@ struct PropertyListCard: View {
 
 /// A property card with built-in save behavior - shows GroupPickerSheet when save is tapped
 struct SaveablePropertyCard: View {
+    @EnvironmentObject private var authService: AuthenticationService
+
     let property: Property
     let propertyService: PropertyService
     let savedPropertyRepository: SavedPropertyRepository
@@ -127,6 +129,7 @@ struct SaveablePropertyCard: View {
     var onRemove: (() -> Void)? = nil  // Called when property is unsaved (for list removal)
 
     @State private var showingSheet = false
+    @State private var showingGuestSheet = false
 
     init(
         property: Property,
@@ -151,7 +154,13 @@ struct SaveablePropertyCard: View {
             property: property,
             isSaved: isSaved,
             onTap: onTap,
-            onSaveToggle: { showingSheet = true }
+            onSaveToggle: {
+                if authService.isInGuestMode {
+                    showingGuestSheet = true
+                } else {
+                    showingSheet = true
+                }
+            }
         )
         .onChange(of: isSaved) { oldValue, newValue in
             // Only call onRemove when transitioning from saved to unsaved
@@ -165,6 +174,12 @@ struct SaveablePropertyCard: View {
             propertyService: propertyService,
             savedPropertyRepository: savedPropertyRepository
         )
+        .sheet(isPresented: $showingGuestSheet) {
+            GuestSignUpPromptSheet(action: .save) {
+                showingGuestSheet = false
+            }
+            .presentationDetents([.medium])
+        }
     }
 }
 

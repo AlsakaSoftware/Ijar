@@ -4,12 +4,14 @@ enum GuestSignUpAction {
     case save
     case pass
     case areas
+    case monitor
 
     var title: String {
         switch self {
         case .save: return "Save this property"
         case .areas: return "Manage your searches"
         case .pass: return "Keep swiping"
+        case .monitor: return "Monitor this area"
         }
     }
 
@@ -21,6 +23,8 @@ enum GuestSignUpAction {
             return "Create a free account to save multiple search areas and get notified of new matches."
         case .pass:
             return "Create a free account to track your preferences and get personalized recommendations."
+        case .monitor:
+            return "Create a free account to monitor this area and get notified when new properties are listed."
         }
     }
 }

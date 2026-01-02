@@ -78,7 +78,8 @@ struct CardSwipeView: View {
 
             // Use initial properties from onboarding if available
             if comingFromOnboarding {
-                properties = initialPropertiesStore.properties
+                // Reverse to match property_feed order (newest first)
+                properties = initialPropertiesStore.properties.reversed()
                 initialPropertiesStore.clear()
                 hasUsedInitialProperties = true
                 isFirstTimeEntrance = true
@@ -86,7 +87,8 @@ struct CardSwipeView: View {
                 // Guest mode: Use properties from GuestPreferencesStore
                 let guestProperties = GuestPreferencesStore.shared.properties
                 if !guestProperties.isEmpty && properties.isEmpty {
-                    properties = guestProperties
+                    // Reverse to match property_feed order (newest first)
+                    properties = guestProperties.reversed()
                     isFirstTimeEntrance = !hasUsedInitialProperties
                     hasUsedInitialProperties = true
                 }
