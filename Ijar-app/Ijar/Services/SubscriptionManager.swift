@@ -60,17 +60,25 @@ class SubscriptionManager: ObservableObject {
     // MARK: - Subscription Status
 
     func checkSubscriptionStatus() async {
-        do {
-            let customerInfo = try await Purchases.shared.customerInfo()
-            isSubscribed = customerInfo.entitlements["premium"]?.isActive == true
-        } catch {
-            isSubscribed = false
-        }
+        // App is free for now - skip subscription check
+        isSubscribed = true
+
+        // Original RevenueCat check (disabled):
+        // do {
+        //     let customerInfo = try await Purchases.shared.customerInfo()
+        //     isSubscribed = customerInfo.entitlements["premium"]?.isActive == true
+        // } catch {
+        //     isSubscribed = false
+        // }
     }
 
     /// Update subscription status from existing CustomerInfo (e.g., from purchase completion)
     func updateSubscriptionStatus(from customerInfo: CustomerInfo) {
-        isSubscribed = customerInfo.entitlements["premium"]?.isActive == true
+        // App is free for now - always treat as subscribed
+        isSubscribed = true
+
+        // Original check (disabled):
+        // isSubscribed = customerInfo.entitlements["premium"]?.isActive == true
     }
 
     // MARK: - Limit Enforcement
