@@ -251,6 +251,7 @@ struct BrowseResultsView: View {
                                     Text("Monitor this for me")
                                         .font(.system(size: 15, weight: .semibold))
                                     Text("Get new properties sent directly to your 'For You' feed")
+                                        .multilineTextAlignment(.leading)
                                         .font(.system(size: 13))
                                         .opacity(0.8)
                                 }
