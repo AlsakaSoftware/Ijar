@@ -61,13 +61,8 @@ export class PropertyService {
   }
 
   async getSavedProperties(userId: string): Promise<Property[]> {
-    // Try optimized view first
-    const viewData = await this.actionRepo.getSavedPropertiesFromView(userId);
-    if (viewData) {
-      return viewData.map(row => this.mapRowToProperty(row));
-    }
-
-    // Fallback to manual join
+    // Query tables directly instead of saved_properties view,
+    // because the view uses auth.uid() which is NULL when using the service role key
     const propertyIds = await this.actionRepo.getSavedPropertyIds(userId);
     if (propertyIds.length === 0) return [];
 
