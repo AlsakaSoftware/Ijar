@@ -1,53 +1,37 @@
 import Foundation
-import Supabase
 
 final class UserRepository {
-    private let supabase: SupabaseClient
+    private let networkService: NetworkService
 
-    init(supabase: SupabaseClient? = nil) {
-        self.supabase = supabase ?? SupabaseClient(
-            supabaseURL: URL(string: ConfigManager.shared.supabaseURL)!,
-            supabaseKey: ConfigManager.shared.supabaseAnonKey
+    init(networkService: NetworkService = .shared) {
+        self.networkService = networkService
+    }
+
+    func fetchCurrentUser() async throws -> UserRow? {
+        do {
+            let user: UserRow = try await networkService.send(
+                endpoint: "/api/user",
+                method: .get
+            )
+            return user
+        } catch let error as NetworkError {
+            if error.isNotFound { return nil }
+            throw error
+        }
+    }
+
+    func upsertUser() async throws {
+        try await networkService.send(
+            endpoint: "/api/user",
+            method: .put
         )
     }
 
-    /// Fetches the current user's profile from the `users` table.
-    /// Returns nil if no row exists yet.
-    func fetchCurrentUser() async throws -> UserRow? {
-        let user = try await supabase.auth.user()
-
-        let rows: [UserRow] = try await supabase
-            .from("users")
-            .select()
-            .eq("id", value: user.id)
-            .execute()
-            .value
-
-        return rows.first
-    }
-
-    /// Ensures a row exists in the `users` table for the current auth user.
-    /// Uses upsert so it's safe to call multiple times.
-    func upsertUser() async throws {
-        let user = try await supabase.auth.user()
-
-        let row = UserInsertRow(id: user.id.uuidString)
-
-        try await supabase
-            .from("users")
-            .upsert(row, onConflict: "id", ignoreDuplicates: true)
-            .execute()
-    }
-
-    /// Marks onboarding as complete for the current user.
     func markOnboardingComplete() async throws {
-        let user = try await supabase.auth.user()
-
-        try await supabase
-            .from("users")
-            .update(OnboardingUpdateRow(has_completed_onboarding: true))
-            .eq("id", value: user.id)
-            .execute()
+        try await networkService.send(
+            endpoint: "/api/user/onboarding",
+            method: .patch
+        )
     }
 }
 
@@ -64,17 +48,5 @@ struct UserRow: Codable {
         case hasCompletedOnboarding = "has_completed_onboarding"
         case createdAt = "created_at"
         case updatedAt = "updated_at"
-    }
-}
-
-private struct UserInsertRow: Codable {
-    let id: String
-}
-
-private struct OnboardingUpdateRow: Codable {
-    let hasCompletedOnboarding: Bool
-
-    enum CodingKeys: String, CodingKey {
-        case hasCompletedOnboarding = "has_completed_onboarding"
     }
 }

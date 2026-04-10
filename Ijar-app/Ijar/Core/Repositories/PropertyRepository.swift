@@ -1,33 +1,19 @@
 import Foundation
-import Supabase
 
 final class PropertyRepository {
-    private let supabase: SupabaseClient
+    private let networkService: NetworkService
 
-    init() {
-        self.supabase = SupabaseClient(
-            supabaseURL: URL(string: ConfigManager.shared.supabaseURL)!,
-            supabaseKey: ConfigManager.shared.supabaseAnonKey
-        )
+    init(networkService: NetworkService = .shared) {
+        self.networkService = networkService
     }
 
     func fetchPropertiesForUser() async throws -> [Property] {
-#if DEBUG
-        print("PropertyRepository: Querying property_feed...")
-#endif
-        let _ = try await supabase.auth.user()
+        let rows: [PropertyRow] = try await networkService.send(
+            endpoint: "/api/feed",
+            method: .get
+        )
 
-        let response: [PropertyRow] = try await supabase
-            .from("property_feed")
-            .select()
-            .execute()
-            .value
-
-#if DEBUG
-        print("PropertyRepository: Got \(response.count) properties from Supabase")
-#endif
-
-        return response.map { row in
+        return rows.map { row in
             Property(
                 id: String(row.rightmove_id),
                 images: row.images,
@@ -49,41 +35,15 @@ final class PropertyRepository {
     @discardableResult
     func trackPropertyAction(propertyId: String, action: PropertyAction) async -> Bool {
         do {
-            let user = try await supabase.auth.user()
-            let rightmoveId = Int(propertyId) ?? 0
-
-            struct ExistingProperty: Codable {
-                let id: String
+            struct ActionBody: Encodable {
+                let action: String
             }
 
-            let existing: [ExistingProperty] = try await supabase
-                .from("property")
-                .select("id")
-                .eq("rightmove_id", value: rightmoveId)
-                .execute()
-                .value
-
-            guard let existingProp = existing.first else {
-#if DEBUG
-                print("PropertyRepository: Property not found for rightmove_id: \(rightmoveId)")
-#endif
-                return false
-            }
-
-            let actionData = UserPropertyAction(
-                user_id: user.id.uuidString,
-                property_id: existingProp.id,
-                action: action.rawValue
+            let _: SuccessResponse = try await networkService.send(
+                endpoint: "/api/properties/\(propertyId)/action",
+                method: .post,
+                body: ActionBody(action: action.rawValue)
             )
-
-            try await supabase
-                .from("user_property_action")
-                .insert(actionData)
-                .execute()
-
-#if DEBUG
-            print("PropertyRepository: Tracked \(action.rawValue) for property \(propertyId)")
-#endif
             return true
         } catch {
 #if DEBUG
@@ -91,11 +51,6 @@ final class PropertyRepository {
 #endif
             return false
         }
-    }
-
-    func getCurrentUserId() async throws -> String {
-        let user = try await supabase.auth.user()
-        return user.id.uuidString
     }
 }
 
@@ -123,8 +78,6 @@ struct PropertyRow: Codable {
     let found_by_query: String?
 }
 
-private struct UserPropertyAction: Codable {
-    let user_id: String
-    let property_id: String
-    let action: String
+private struct SuccessResponse: Decodable {
+    let success: Bool
 }

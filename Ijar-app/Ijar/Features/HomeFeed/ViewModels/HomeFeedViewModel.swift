@@ -21,6 +21,7 @@ class HomeFeedViewModel: ObservableObject {
     var isFirstTimeEntrance = false
     private var hasUsedInitialProperties = false
     private let searchQueryRepository = SearchQueryRepository()
+    private let userRepository = UserRepository()
     private(set) var queries: [SearchQuery] = []
 
     // MARK: - Dependencies
@@ -110,13 +111,19 @@ class HomeFeedViewModel: ObservableObject {
 
         guard isFirstQuery, !hasTriggeredFirstQuerySearch else { return }
 
-        guard let userId = try? await searchQueryRepository.getCurrentUserId() else { return }
+        do {
+            guard let user = try await userRepository.fetchCurrentUser() else { return }
 
-        let success = await monitorService.refreshPropertiesForUser(userId: userId)
+            let success = await monitorService.refreshPropertiesForUser(userId: user.id)
 
-        if success {
-            UserDefaults.standard.set(true, forKey: UserDefaultsKeys.hasTriggeredFirstQuerySearch)
-            showingSearchStartedAlert = true
+            if success {
+                UserDefaults.standard.set(true, forKey: UserDefaultsKeys.hasTriggeredFirstQuerySearch)
+                showingSearchStartedAlert = true
+            }
+        } catch {
+#if DEBUG
+            print("HomeFeedViewModel: Failed to get user for search trigger: \(error)")
+#endif
         }
     }
 

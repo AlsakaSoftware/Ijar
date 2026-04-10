@@ -1,4 +1,5 @@
 import Foundation
+import Supabase
 
 @MainActor
 class LiveSearchService: ObservableObject {
@@ -10,6 +11,21 @@ class LiveSearchService: ObservableObject {
 
     private var currentPage = 1
     private var currentParams: SearchParams?
+
+    private let supabase = SupabaseClient(
+        supabaseURL: URL(string: ConfigManager.shared.supabaseURL)!,
+        supabaseKey: ConfigManager.shared.supabaseAnonKey
+    )
+
+    private func getAuthToken() async -> String? {
+        try? await supabase.auth.session.accessToken
+    }
+
+    private func addAuthHeader(to request: inout URLRequest) async {
+        if let token = await getAuthToken() {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+    }
 
     struct SearchParams: Encodable {
         let latitude: Double
@@ -169,6 +185,7 @@ class LiveSearchService: ObservableObject {
         do {
             let encoder = JSONEncoder()
             request.httpBody = try encoder.encode(params)
+            await addAuthHeader(to: &request)
 
 #if DEBUG
             print("🔍 OnboardingSearch: Fetching properties for query \(queryId)")
@@ -235,6 +252,7 @@ class LiveSearchService: ObservableObject {
         do {
             let encoder = JSONEncoder()
             request.httpBody = try encoder.encode(params)
+            await addAuthHeader(to: &request)
 
 #if DEBUG
             print("🔍 LiveSearch: Searching at (\(params.latitude), \(params.longitude)) page \(params.page)")
@@ -363,7 +381,9 @@ class LiveSearchService: ObservableObject {
 #if DEBUG
             print("📋 Fetching property details for \(property.id)")
 #endif
-            let (data, response) = try await URLSession.shared.data(from: url)
+            var request = URLRequest(url: url)
+            await addAuthHeader(to: &request)
+            let (data, response) = try await URLSession.shared.data(for: request)
 
             guard let httpResponse = response as? HTTPURLResponse,
                   httpResponse.statusCode == 200 else {

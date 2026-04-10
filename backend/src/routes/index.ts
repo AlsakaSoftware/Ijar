@@ -1,14 +1,12 @@
-/**
- * Simple Router
- * Handles route registration and matching with path params
- */
-
 import * as http from 'http';
+import { authenticateRequest } from '../middleware/auth';
+import { sendApiError } from '../utils/errors';
 
 export type RouteHandler = (
   req: http.IncomingMessage,
   res: http.ServerResponse,
-  params: Record<string, string>
+  params: Record<string, string>,
+  userId: string
 ) => Promise<void>;
 
 interface Route {
@@ -21,14 +19,9 @@ interface Route {
 export class Router {
   private routes: Route[] = [];
 
-  /**
-   * Register a route
-   * Pattern can include :param placeholders like /api/groups/:id
-   */
   register(method: string, pattern: string, handler: RouteHandler): void {
     const paramNames: string[] = [];
 
-    // Convert /api/groups/:id to regex /api/groups/([^/]+)
     const regexPattern = pattern.replace(/:([^/]+)/g, (_, paramName) => {
       paramNames.push(paramName);
       return '([^/]+)';
@@ -38,17 +31,20 @@ export class Router {
       method: method.toUpperCase(),
       pattern: new RegExp(`^${regexPattern}$`),
       paramNames,
-      handler
+      handler,
     });
   }
 
-  // Convenience methods
   get(pattern: string, handler: RouteHandler): void {
     this.register('GET', pattern, handler);
   }
 
   post(pattern: string, handler: RouteHandler): void {
     this.register('POST', pattern, handler);
+  }
+
+  put(pattern: string, handler: RouteHandler): void {
+    this.register('PUT', pattern, handler);
   }
 
   patch(pattern: string, handler: RouteHandler): void {
@@ -59,10 +55,6 @@ export class Router {
     this.register('DELETE', pattern, handler);
   }
 
-  /**
-   * Match a request to a route
-   * Returns handler and extracted params, or null if no match
-   */
   match(method: string, url: string): { handler: RouteHandler; params: Record<string, string> } | null {
     const path = url.split('?')[0];
 
@@ -82,17 +74,18 @@ export class Router {
     return null;
   }
 
-  /**
-   * Handle a request
-   */
   async handle(req: http.IncomingMessage, res: http.ServerResponse): Promise<boolean> {
     const result = this.match(req.method || 'GET', req.url || '/');
 
-    if (result) {
-      await result.handler(req, res, result.params);
-      return true;
+    if (!result) return false;
+
+    try {
+      const userId = authenticateRequest(req);
+      await result.handler(req, res, result.params, userId);
+    } catch (error) {
+      sendApiError(res, error);
     }
 
-    return false;
+    return true;
   }
 }

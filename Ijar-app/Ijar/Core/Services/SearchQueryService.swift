@@ -5,6 +5,7 @@ import Foundation
 @MainActor
 class SearchQueryService: ObservableObject {
     private let repository = SearchQueryRepository()
+    private let userRepository = UserRepository()
     @Published var queries: [SearchQuery] = []
     @Published var error: String?
 
@@ -73,6 +74,9 @@ class SearchQueryService: ObservableObject {
     }
 
     func getCurrentUserId() async throws -> String {
-        try await repository.getCurrentUserId()
+        guard let user = try await userRepository.fetchCurrentUser() else {
+            throw NSError(domain: "SearchQueryService", code: 401, userInfo: [NSLocalizedDescriptionKey: "User not found"])
+        }
+        return user.id
     }
 }

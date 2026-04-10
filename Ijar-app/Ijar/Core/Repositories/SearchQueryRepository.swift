@@ -1,8 +1,7 @@
 import Foundation
-import Supabase
 
 final class SearchQueryRepository {
-    private let supabase: SupabaseClient
+    private let networkService: NetworkService
 
     private let dateFormatter: ISO8601DateFormatter = {
         let formatter = ISO8601DateFormatter()
@@ -10,23 +9,15 @@ final class SearchQueryRepository {
         return formatter
     }()
 
-    init() {
-        self.supabase = SupabaseClient(
-            supabaseURL: URL(string: ConfigManager.shared.supabaseURL)!,
-            supabaseKey: ConfigManager.shared.supabaseAnonKey
-        )
+    init(networkService: NetworkService = .shared) {
+        self.networkService = networkService
     }
 
     func fetchQueries() async throws -> [SearchQuery] {
-        let user = try await supabase.auth.user()
-
-        let response: [QueryRow] = try await supabase
-            .from("query")
-            .select()
-            .eq("user_id", value: user.id)
-            .order("created", ascending: false)
-            .execute()
-            .value
+        let response: [QueryRow] = try await networkService.send(
+            endpoint: "/api/queries",
+            method: .get
+        )
 
         return response.map { row in
             SearchQuery(
@@ -51,11 +42,9 @@ final class SearchQueryRepository {
     }
 
     func insertQuery(_ query: SearchQuery) async throws {
-        let user = try await supabase.auth.user()
-
-        let queryRow = QueryRow(
+        let body = QueryRow(
             id: query.id.uuidString,
-            user_id: user.id.uuidString,
+            user_id: nil,
             name: query.name,
             area_name: query.areaName,
             latitude: query.latitude,
@@ -73,14 +62,15 @@ final class SearchQueryRepository {
             updated: dateFormatter.string(from: query.updated)
         )
 
-        try await supabase
-            .from("query")
-            .insert(queryRow)
-            .execute()
+        try await networkService.send(
+            endpoint: "/api/queries",
+            method: .post,
+            body: body
+        )
     }
 
     func updateQuery(_ query: SearchQuery) async throws {
-        let updateRow = QueryUpdateRow(
+        let body = QueryUpdateRow(
             name: query.name,
             area_name: query.areaName,
             latitude: query.latitude,
@@ -97,31 +87,26 @@ final class SearchQueryRepository {
             updated: dateFormatter.string(from: Date())
         )
 
-        try await supabase
-            .from("query")
-            .update(updateRow)
-            .eq("id", value: query.id.uuidString)
-            .execute()
+        try await networkService.send(
+            endpoint: "/api/queries/\(query.id.uuidString)",
+            method: .put,
+            body: body
+        )
     }
 
     func deleteQuery(id: UUID) async throws {
-        try await supabase
-            .from("query")
-            .delete()
-            .eq("id", value: id.uuidString)
-            .execute()
+        try await networkService.send(
+            endpoint: "/api/queries/\(id.uuidString)",
+            method: .delete
+        )
     }
 
-    func getCurrentUserId() async throws -> String {
-        let user = try await supabase.auth.user()
-        return user.id.uuidString
-    }
 }
 
-// Database row structure matching Supabase schema
+// Database row structure matching API response
 private struct QueryRow: Codable {
     let id: String
-    let user_id: String
+    let user_id: String?
     let name: String
     let area_name: String
     let latitude: Double
@@ -139,7 +124,6 @@ private struct QueryRow: Codable {
     let updated: String
 }
 
-// Update row - excludes created field so it doesn't get modified
 private struct QueryUpdateRow: Codable {
     let name: String
     let area_name: String

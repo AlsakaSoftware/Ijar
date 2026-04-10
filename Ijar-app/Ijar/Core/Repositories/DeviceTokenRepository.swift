@@ -1,14 +1,10 @@
 import Foundation
-import Supabase
 
 final class DeviceTokenRepository {
-    private let supabase: SupabaseClient
+    private let networkService: NetworkService
 
-    init() {
-        self.supabase = SupabaseClient(
-            supabaseURL: URL(string: ConfigManager.shared.supabaseURL)!,
-            supabaseKey: ConfigManager.shared.supabaseAnonKey
-        )
+    init(networkService: NetworkService = .shared) {
+        self.networkService = networkService
     }
 
     func saveDeviceToken(_ tokenData: Data, for userId: String) async {
@@ -19,14 +15,16 @@ final class DeviceTokenRepository {
 #endif
 
         do {
-            try await supabase
-                .from("device_tokens")
-                .upsert([
-                    "user_id": userId,
-                    "device_token": tokenString,
-                    "device_type": "ios"
-                ])
-                .execute()
+            struct TokenBody: Encodable {
+                let token: String
+                let deviceType: String
+            }
+
+            try await networkService.send(
+                endpoint: "/api/device-tokens",
+                method: .put,
+                body: TokenBody(token: tokenString, deviceType: "ios")
+            )
 
 #if DEBUG
             print("DeviceTokenRepository: Successfully saved device token")
@@ -40,11 +38,10 @@ final class DeviceTokenRepository {
 
     func removeDeviceToken(for userId: String) async {
         do {
-            try await supabase
-                .from("device_tokens")
-                .delete()
-                .eq("user_id", value: userId)
-                .execute()
+            try await networkService.send(
+                endpoint: "/api/device-tokens",
+                method: .delete
+            )
 
 #if DEBUG
             print("DeviceTokenRepository: Removed device tokens for user \(userId)")

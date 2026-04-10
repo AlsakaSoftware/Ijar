@@ -43,10 +43,6 @@ struct ConfigManager {
         return environment == "Production"
     }
     
-    var githubToken: String? {
-        return config["GitHubToken"] as? String
-    }
-
     var revenueCatApiKey: String {
         guard let key = config["RevenueCatApiKey"] as? String,
               !key.isEmpty else {

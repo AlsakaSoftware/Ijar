@@ -1,4 +1,5 @@
 import Foundation
+import Supabase
 
 // MARK: - HTTP Method
 
@@ -78,9 +79,20 @@ final class NetworkService {
     private let decoder: JSONDecoder
     private var baseURL: String { ConfigManager.shared.liveSearchAPIURL }
 
+    private let supabase = SupabaseClient(
+        supabaseURL: URL(string: ConfigManager.shared.supabaseURL)!,
+        supabaseKey: ConfigManager.shared.supabaseAnonKey
+    )
+
     init(session: URLSession = .shared) {
         self.session = session
         self.decoder = JSONDecoder()
+    }
+
+    // MARK: - Auth Token
+
+    private func getAuthToken() async -> String? {
+        try? await supabase.auth.session.accessToken
     }
 
     // MARK: - Public API
@@ -93,11 +105,16 @@ final class NetworkService {
         headers: [String: String] = [:],
         timeout: TimeInterval = 30
     ) async throws -> T {
+        var allHeaders = headers
+        if let token = await getAuthToken() {
+            allHeaders["Authorization"] = "Bearer \(token)"
+        }
+
         let request = try buildRequest(
             endpoint: endpoint,
             method: method,
             body: body,
-            headers: headers,
+            headers: allHeaders,
             timeout: timeout
         )
 
@@ -118,11 +135,16 @@ final class NetworkService {
         headers: [String: String] = [:],
         timeout: TimeInterval = 30
     ) async throws {
+        var allHeaders = headers
+        if let token = await getAuthToken() {
+            allHeaders["Authorization"] = "Bearer \(token)"
+        }
+
         let request = try buildRequest(
             endpoint: endpoint,
             method: method,
             body: body,
-            headers: headers,
+            headers: allHeaders,
             timeout: timeout
         )
 
