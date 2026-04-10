@@ -6,9 +6,7 @@
 	<string>https://snkitffkozxfgkaoisxd.supabase.co</string>
 	<key>SupabaseAnonKey</key>
 	<string>eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNua2l0ZmZrb3p4ZmdrYW9pc3hkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM3NDg5NzgsImV4cCI6MjA2OTMyNDk3OH0._08hMX09Xp8noGPllIZiX6QSPaQiPjH2akv6TgUZzkc</string>
-	<key>GitHubToken</key>
-	<string>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</string>
-	<key>RevenueCatApiKey</key>
+<key>RevenueCatApiKey</key>
 	<string>appl_GqxVzuNYsOlBDWcBEYMuKOzizrI</string>
 	<key>LiveSearchAPIURL</key>
 	<string>https://ijar-production.up.railway.app</string>
