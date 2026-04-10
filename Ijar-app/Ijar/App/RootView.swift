@@ -49,7 +49,10 @@ struct RootContentView: View {
     }
 
     private var showMainTabs: Bool {
-        (authService.isAuthenticated || authService.isGuestMode) && hasCompletedPreferencesOnboarding
+        if authService.isAuthenticated {
+            return authService.hasCompletedOnboarding
+        }
+        return authService.isGuestMode && hasCompletedPreferencesOnboarding
     }
 
     var body: some View {
@@ -62,6 +65,7 @@ struct RootContentView: View {
                 PreferencesOnboardingView(isGuestMode: false) { properties in
                     initialPropertiesStore.properties = properties
                     withAnimation(.easeOut(duration: 0.3)) {
+                        authService.hasCompletedOnboarding = true
                         hasCompletedPreferencesOnboarding = true
                     }
                 }

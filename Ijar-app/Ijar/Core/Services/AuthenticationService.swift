@@ -10,11 +10,14 @@ class AuthenticationService: ObservableObject {
     @Published var user: User?
     @Published var isLoading = false
     @Published var error: String?
+    @Published var hasCompletedOnboarding = false
 
     private let supabase: SupabaseClient
     private let notificationService: NotificationService
+    private let userRepository: UserRepository
 
-    init(notificationService: NotificationService) {
+    init(notificationService: NotificationService, userRepository: UserRepository = UserRepository()) {
+        self.userRepository = userRepository
         self.notificationService = notificationService
         // Initialize Supabase client using ConfigManager
         let config = ConfigManager.shared
@@ -45,6 +48,9 @@ class AuthenticationService: ObservableObject {
                 let session = try await supabase.auth.session
                 self.isAuthenticated = true
                 self.user = session.user
+
+                // Fetch onboarding status from Supabase
+                await fetchOnboardingStatus()
             } catch {
                 self.isAuthenticated = false
                 self.user = nil
@@ -52,6 +58,22 @@ class AuthenticationService: ObservableObject {
 
             // Done checking auth
             self.isLoading = false
+        }
+    }
+
+    private func fetchOnboardingStatus() async {
+        do {
+            if let userRow = try await userRepository.fetchCurrentUser() {
+                self.hasCompletedOnboarding = userRow.hasCompletedOnboarding
+                // Sync local cache
+                UserDefaults.standard.set(userRow.hasCompletedOnboarding, forKey: UserDefaultsKeys.hasCompletedPreferencesOnboarding)
+            }
+        } catch {
+            // Fall back to local value if fetch fails
+            self.hasCompletedOnboarding = UserDefaults.standard.bool(forKey: UserDefaultsKeys.hasCompletedPreferencesOnboarding)
+            #if DEBUG
+            print("⚠️ Failed to fetch onboarding status: \(error.localizedDescription)")
+            #endif
         }
     }
     
@@ -78,6 +100,16 @@ class AuthenticationService: ObservableObject {
 
             // Save user ID to UserDefaults for device token registration
             UserDefaults.standard.set(session.user.id.uuidString, forKey: "currentUserId")
+
+            // Ensure user row exists in users table and fetch onboarding status
+            do {
+                try await userRepository.upsertUser()
+                await fetchOnboardingStatus()
+            } catch {
+                #if DEBUG
+                print("⚠️ Failed to upsert user row: \(error.localizedDescription)")
+                #endif
+            }
 
             // Login to RevenueCat with user ID AFTER main sign-in flow completes
             // This will migrate anonymous user to identified user if needed

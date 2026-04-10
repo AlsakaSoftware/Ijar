@@ -64,10 +64,12 @@ class OnboardingViewModel: ObservableObject {
     private let geocodingService = GeocodingService()
     private let searchQueryService = SearchQueryService()
     private let liveSearchService = LiveSearchService()
+    private let userRepository: UserRepository
     private var geocodingTask: Task<Void, Never>?
 
-    init(isGuestMode: Bool = false) {
+    init(isGuestMode: Bool = false, userRepository: UserRepository = UserRepository()) {
         self.isGuestMode = isGuestMode
+        self.userRepository = userRepository
     }
 
     // MARK: - Computed Properties
@@ -364,7 +366,16 @@ class OnboardingViewModel: ObservableObject {
                 print("Search warning: \(searchError)")
             }
 
-            // Mark onboarding complete
+            // Mark onboarding complete in Supabase
+            do {
+                try await userRepository.markOnboardingComplete()
+            } catch {
+                #if DEBUG
+                print("⚠️ Failed to mark onboarding complete in Supabase: \(error.localizedDescription)")
+                #endif
+            }
+
+            // Also mark locally as cache/fallback
             UserDefaults.standard.set(true, forKey: UserDefaultsKeys.hasCompletedPreferencesOnboarding)
 
             isSubmitting = false
