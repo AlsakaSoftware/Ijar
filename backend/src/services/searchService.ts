@@ -1,16 +1,15 @@
 import { RightmoveAPI } from '../api';
 import { PropertyRepository } from '../repositories/propertyRepository';
 import { PropertySearchParams, PropertyWithDetails } from '../types';
-import { SearchBody, OnboardingSearchBody } from '../schemas/searchSchemas';
-import { Property } from '../schemas/propertySchemas';
+import { SearchRequest, OnboardingSearchRequest, Property } from '../schemas';
 
 export class SearchService {
   constructor(
-    private api: RightmoveAPI,
-    private propertyRepo: PropertyRepository
+    private api: RightmoveAPI = new RightmoveAPI(),
+    private propertyRepo: PropertyRepository = new PropertyRepository()
   ) {}
 
-  async searchProperties(body: SearchBody): Promise<{
+  async searchProperties(body: SearchRequest): Promise<{
     properties: any[];
     total: number;
     hasMore: boolean;
@@ -27,7 +26,7 @@ export class SearchService {
     };
   }
 
-  async onboardingSearch(body: OnboardingSearchBody): Promise<{
+  async onboardingSearch(body: OnboardingSearchRequest): Promise<{
     properties: Property[];
     total: number;
     saved: number;
@@ -133,7 +132,7 @@ export class SearchService {
     };
   }
 
-  private buildSearchParams(body: SearchBody): PropertySearchParams {
+  private buildSearchParams(body: SearchRequest): PropertySearchParams {
     let furnishType: 'furnished' | 'unfurnished' | undefined;
     if (body.furnishType === 'furnished') furnishType = 'furnished';
     else if (body.furnishType === 'unfurnished') furnishType = 'unfurnished';

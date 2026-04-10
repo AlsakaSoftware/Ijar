@@ -1,10 +1,11 @@
 import { SupabaseClient } from '@supabase/supabase-js';
+import { supabase } from '../db';
 import { DbQuery } from '../types/database';
-import { CreateQueryBody, UpdateQueryBody } from '../schemas/querySchemas';
+import { CreateQueryRequest, UpdateQueryRequest } from '../schemas';
 import { databaseError } from '../utils/errors';
 
 export class QueryRepository {
-  constructor(private client: SupabaseClient) {}
+  constructor(private client: SupabaseClient = supabase) {}
 
   async findByUserId(userId: string): Promise<DbQuery[]> {
     const { data, error } = await this.client
@@ -17,7 +18,7 @@ export class QueryRepository {
     return data || [];
   }
 
-  async insert(userId: string, query: CreateQueryBody): Promise<DbQuery> {
+  async insert(userId: string, query: CreateQueryRequest): Promise<DbQuery> {
     const row: Record<string, unknown> = {
       user_id: userId,
       name: query.name,
@@ -49,7 +50,7 @@ export class QueryRepository {
     return data;
   }
 
-  async update(queryId: string, userId: string, updates: UpdateQueryBody): Promise<void> {
+  async update(queryId: string, userId: string, updates: UpdateQueryRequest): Promise<void> {
     const { error } = await this.client
       .from('query')
       .update(updates)

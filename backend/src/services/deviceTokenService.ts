@@ -1,7 +1,7 @@
 import { DeviceTokenRepository } from '../repositories/deviceTokenRepository';
 
 export class DeviceTokenService {
-  constructor(private tokenRepo: DeviceTokenRepository) {}
+  constructor(private tokenRepo: DeviceTokenRepository = new DeviceTokenRepository()) {}
 
   async upsertToken(userId: string, token: string, deviceType: string): Promise<{ success: boolean }> {
     await this.tokenRepo.upsert(userId, token, deviceType);

@@ -1,30 +1,14 @@
-import * as http from 'http';
 import { DeviceTokenService } from '../services/deviceTokenService';
-import { UpsertTokenBodySchema } from '../schemas/deviceTokenSchemas';
-import { parseJsonBody, sendJson } from '../utils/http';
-import { sendApiError } from '../utils/errors';
-import { validateBody } from '../utils/validate';
+import { UpsertTokenRequest } from '../schemas';
 
 export class DeviceTokenController {
-  constructor(private tokenService: DeviceTokenService) {}
+  constructor(private tokenService: DeviceTokenService = new DeviceTokenService()) {}
 
-  upsertToken = async (req: http.IncomingMessage, res: http.ServerResponse, _params: Record<string, string>, userId: string): Promise<void> => {
-    try {
-      const rawBody = await parseJsonBody(req);
-      const body = validateBody(UpsertTokenBodySchema, rawBody);
-      const result = await this.tokenService.upsertToken(userId, body.token, body.deviceType);
-      sendJson(res, result);
-    } catch (error) {
-      sendApiError(res, error);
-    }
-  };
+  async upsertToken(userId: string, data: UpsertTokenRequest) {
+    return this.tokenService.upsertToken(userId, data.token, data.deviceType);
+  }
 
-  removeTokens = async (_req: http.IncomingMessage, res: http.ServerResponse, _params: Record<string, string>, userId: string): Promise<void> => {
-    try {
-      const result = await this.tokenService.removeTokens(userId);
-      sendJson(res, result);
-    } catch (error) {
-      sendApiError(res, error);
-    }
-  };
+  async removeTokens(userId: string) {
+    return this.tokenService.removeTokens(userId);
+  }
 }

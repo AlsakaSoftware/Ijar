@@ -1,9 +1,9 @@
 import { UserRepository } from '../repositories/userRepository';
-import { DbUser } from '../schemas/userSchemas';
+import { DbUser } from '../schemas/userSchemas'; // DB row type stays in schema file
 import { notFound, ErrorCodes } from '../utils/errors';
 
 export class UserService {
-  constructor(private userRepo: UserRepository) {}
+  constructor(private userRepo: UserRepository = new UserRepository()) {}
 
   async getUser(userId: string): Promise<DbUser> {
     const user = await this.userRepo.findById(userId);

@@ -1,9 +1,10 @@
 import { SupabaseClient } from '@supabase/supabase-js';
+import { supabase } from '../db';
 import { DbUser } from '../schemas/userSchemas';
 import { databaseError } from '../utils/errors';
 
 export class UserRepository {
-  constructor(private client: SupabaseClient) {}
+  constructor(private client: SupabaseClient = supabase) {}
 
   async findById(userId: string): Promise<DbUser | null> {
     const { data, error } = await this.client

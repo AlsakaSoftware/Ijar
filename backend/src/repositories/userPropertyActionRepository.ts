@@ -1,4 +1,5 @@
 import { SupabaseClient } from '@supabase/supabase-js';
+import { supabase } from '../db';
 import { databaseError } from '../utils/errors';
 
 export interface UserPropertyAction {
@@ -9,7 +10,7 @@ export interface UserPropertyAction {
 }
 
 export class UserPropertyActionRepository {
-  constructor(private client: SupabaseClient) {}
+  constructor(private client: SupabaseClient = supabase) {}
 
   async findAction(userId: string, propertyId: string): Promise<{ action: string } | null> {
     const { data } = await this.client

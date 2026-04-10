@@ -1,8 +1,9 @@
 import { SupabaseClient } from '@supabase/supabase-js';
+import { supabase } from '../db';
 import { databaseError } from '../utils/errors';
 
 export class GroupMemberRepository {
-  constructor(private client: SupabaseClient) {}
+  constructor(private client: SupabaseClient = supabase) {}
 
   async getPropertyIds(groupId: string): Promise<string[]> {
     const { data, error } = await this.client

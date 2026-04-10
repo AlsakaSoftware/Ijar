@@ -1,7 +1,7 @@
 import { GroupRepository } from '../repositories/groupRepository';
 import { GroupMemberRepository } from '../repositories/groupMemberRepository';
 import { PropertyRepository } from '../repositories/propertyRepository';
-import { Property } from '../schemas/propertySchemas';
+import { Property } from '../schemas';
 import { badRequest, ErrorCodes } from '../utils/errors';
 
 export interface PropertyGroup {
@@ -14,9 +14,9 @@ export interface PropertyGroup {
 
 export class GroupService {
   constructor(
-    private groupRepo: GroupRepository,
-    private memberRepo: GroupMemberRepository,
-    private propertyRepo: PropertyRepository
+    private groupRepo: GroupRepository = new GroupRepository(),
+    private memberRepo: GroupMemberRepository = new GroupMemberRepository(),
+    private propertyRepo: PropertyRepository = new PropertyRepository()
   ) {}
 
   async getGroups(userId: string): Promise<PropertyGroup[]> {

@@ -1,9 +1,10 @@
 import { SupabaseClient } from '@supabase/supabase-js';
+import { supabase } from '../db';
 import { DbProperty } from '../types/database';
 import { databaseError } from '../utils/errors';
 
 export class PropertyRepository {
-  constructor(private client: SupabaseClient) {}
+  constructor(private client: SupabaseClient = supabase) {}
 
   async findByRightmoveId(rightmoveId: number): Promise<{ id: string } | null> {
     const { data, error } = await this.client

@@ -1,12 +1,12 @@
 import { PropertyRepository } from '../repositories/propertyRepository';
 import { UserPropertyActionRepository } from '../repositories/userPropertyActionRepository';
-import { Property } from '../schemas/propertySchemas';
+import { Property } from '../schemas';
 import { badRequest, notFound, ErrorCodes } from '../utils/errors';
 
 export class PropertyService {
   constructor(
-    private propertyRepo: PropertyRepository,
-    private actionRepo: UserPropertyActionRepository
+    private propertyRepo: PropertyRepository = new PropertyRepository(),
+    private actionRepo: UserPropertyActionRepository = new UserPropertyActionRepository()
   ) {}
 
   async saveProperty(userId: string, property: Property): Promise<{ success: boolean; property_id?: string }> {

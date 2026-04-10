@@ -1,35 +1,17 @@
-import * as http from 'http';
 import { UserService } from '../services/userService';
-import { sendJson } from '../utils/http';
-import { sendApiError } from '../utils/errors';
 
 export class UserController {
-  constructor(private userService: UserService) {}
+  constructor(private userService: UserService = new UserService()) {}
 
-  getUser = async (_req: http.IncomingMessage, res: http.ServerResponse, _params: Record<string, string>, userId: string): Promise<void> => {
-    try {
-      const user = await this.userService.getUser(userId);
-      sendJson(res, user);
-    } catch (error) {
-      sendApiError(res, error);
-    }
-  };
+  async getUser(userId: string) {
+    return this.userService.getUser(userId);
+  }
 
-  upsertUser = async (_req: http.IncomingMessage, res: http.ServerResponse, _params: Record<string, string>, userId: string): Promise<void> => {
-    try {
-      const user = await this.userService.upsertUser(userId);
-      sendJson(res, user);
-    } catch (error) {
-      sendApiError(res, error);
-    }
-  };
+  async upsertUser(userId: string) {
+    return this.userService.upsertUser(userId);
+  }
 
-  markOnboardingComplete = async (_req: http.IncomingMessage, res: http.ServerResponse, _params: Record<string, string>, userId: string): Promise<void> => {
-    try {
-      const result = await this.userService.markOnboardingComplete(userId);
-      sendJson(res, result);
-    } catch (error) {
-      sendApiError(res, error);
-    }
-  };
+  async markOnboardingComplete(userId: string) {
+    return this.userService.markOnboardingComplete(userId);
+  }
 }

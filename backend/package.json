@@ -14,7 +14,9 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0",
     "@types/node": "^20.10.5",
+    "cookie-parser": "^1.4.7",
     "dotenv": "^16.6.1",
+    "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
     "node-apn": "^3.0.0",
     "tsx": "^4.7.0",
@@ -22,6 +24,8 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@types/cookie-parser": "^1.4.10",
+    "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10"
   }
 }

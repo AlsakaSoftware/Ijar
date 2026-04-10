@@ -1,61 +1,26 @@
-import * as http from 'http';
 import { PropertyService } from '../services/propertyService';
-import { SavePropertyBodySchema, UnsavePropertyBodySchema, TrackActionBodySchema } from '../schemas/propertySchemas';
-import { parseJsonBody, sendJson } from '../utils/http';
-import { sendApiError } from '../utils/errors';
-import { validateBody } from '../utils/validate';
+import { SavePropertyRequest, UnsavePropertyRequest, TrackActionRequest, Property } from '../schemas';
 
 export class PropertyController {
-  constructor(private propertyService: PropertyService) {}
+  constructor(private propertyService: PropertyService = new PropertyService()) {}
 
-  saveProperty = async (req: http.IncomingMessage, res: http.ServerResponse, params: Record<string, string>, userId: string): Promise<void> => {
-    try {
-      const rawBody = await parseJsonBody(req);
-      const body = validateBody(SavePropertyBodySchema, rawBody);
-      const result = await this.propertyService.saveProperty(userId, body.property);
-      sendJson(res, result);
-    } catch (error) {
-      sendApiError(res, error);
-    }
-  };
+  async saveProperty(userId: string, data: SavePropertyRequest) {
+    return this.propertyService.saveProperty(userId, data.property);
+  }
 
-  unsaveProperty = async (req: http.IncomingMessage, res: http.ServerResponse, params: Record<string, string>, userId: string): Promise<void> => {
-    try {
-      const rawBody = await parseJsonBody(req);
-      const body = validateBody(UnsavePropertyBodySchema, rawBody);
-      const result = await this.propertyService.unsaveProperty(userId, body.propertyId);
-      sendJson(res, result);
-    } catch (error) {
-      sendApiError(res, error);
-    }
-  };
+  async unsaveProperty(userId: string, data: UnsavePropertyRequest) {
+    return this.propertyService.unsaveProperty(userId, data.propertyId);
+  }
 
-  getSavedProperties = async (_req: http.IncomingMessage, res: http.ServerResponse, _params: Record<string, string>, userId: string): Promise<void> => {
-    try {
-      const properties = await this.propertyService.getSavedProperties(userId);
-      sendJson(res, properties);
-    } catch (error) {
-      sendApiError(res, error);
-    }
-  };
+  async getSavedProperties(userId: string): Promise<Property[]> {
+    return this.propertyService.getSavedProperties(userId);
+  }
 
-  getFeed = async (_req: http.IncomingMessage, res: http.ServerResponse, _params: Record<string, string>, userId: string): Promise<void> => {
-    try {
-      const properties = await this.propertyService.getFeedProperties(userId);
-      sendJson(res, properties);
-    } catch (error) {
-      sendApiError(res, error);
-    }
-  };
+  async getFeed(userId: string): Promise<Property[]> {
+    return this.propertyService.getFeedProperties(userId);
+  }
 
-  trackAction = async (req: http.IncomingMessage, res: http.ServerResponse, params: Record<string, string>, userId: string): Promise<void> => {
-    try {
-      const rawBody = await parseJsonBody(req);
-      const body = validateBody(TrackActionBodySchema, rawBody);
-      const result = await this.propertyService.trackAction(userId, params.id, body.action);
-      sendJson(res, result);
-    } catch (error) {
-      sendApiError(res, error);
-    }
-  };
+  async trackAction(userId: string, rightmoveId: string, data: TrackActionRequest) {
+    return this.propertyService.trackAction(userId, rightmoveId, data.action);
+  }
 }

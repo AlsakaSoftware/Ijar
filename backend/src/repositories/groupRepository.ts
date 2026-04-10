@@ -1,4 +1,5 @@
 import { SupabaseClient } from '@supabase/supabase-js';
+import { supabase } from '../db';
 import { databaseError } from '../utils/errors';
 
 export interface DbGroup {
@@ -9,7 +10,7 @@ export interface DbGroup {
 }
 
 export class GroupRepository {
-  constructor(private client: SupabaseClient) {}
+  constructor(private client: SupabaseClient = supabase) {}
 
   async findByUserId(userId: string): Promise<DbGroup[]> {
     const { data, error } = await this.client

@@ -1,41 +1,18 @@
-import * as http from 'http';
 import { SearchService } from '../services/searchService';
-import { SearchBodySchema, OnboardingSearchBodySchema } from '../schemas/searchSchemas';
-import { parseJsonBody, sendJson } from '../utils/http';
-import { sendApiError } from '../utils/errors';
-import { validateBody } from '../utils/validate';
+import { SearchRequest, OnboardingSearchRequest } from '../schemas';
 
 export class SearchController {
-  constructor(private searchService: SearchService) {}
+  constructor(private searchService: SearchService = new SearchService()) {}
 
-  search = async (req: http.IncomingMessage, res: http.ServerResponse, _params: Record<string, string>, _userId: string): Promise<void> => {
-    try {
-      const rawBody = await parseJsonBody(req);
-      const body = validateBody(SearchBodySchema, rawBody);
-      const result = await this.searchService.searchProperties(body);
-      sendJson(res, result);
-    } catch (error) {
-      sendApiError(res, error);
-    }
-  };
+  async search(data: SearchRequest) {
+    return this.searchService.searchProperties(data);
+  }
 
-  onboardingSearch = async (req: http.IncomingMessage, res: http.ServerResponse, _params: Record<string, string>, _userId: string): Promise<void> => {
-    try {
-      const rawBody = await parseJsonBody(req);
-      const body = validateBody(OnboardingSearchBodySchema, rawBody);
-      const result = await this.searchService.onboardingSearch(body);
-      sendJson(res, result);
-    } catch (error) {
-      sendApiError(res, error);
-    }
-  };
+  async onboardingSearch(data: OnboardingSearchRequest) {
+    return this.searchService.onboardingSearch(data);
+  }
 
-  getPropertyDetails = async (_req: http.IncomingMessage, res: http.ServerResponse, params: Record<string, string>, _userId: string): Promise<void> => {
-    try {
-      const result = await this.searchService.getPropertyDetails(params.id);
-      sendJson(res, result);
-    } catch (error) {
-      sendApiError(res, error);
-    }
-  };
+  async getPropertyDetails(propertyId: string) {
+    return this.searchService.getPropertyDetails(propertyId);
+  }
 }

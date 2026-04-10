@@ -1,8 +1,9 @@
 import { SupabaseClient } from '@supabase/supabase-js';
+import { supabase } from '../db';
 import { databaseError } from '../utils/errors';
 
 export class DeviceTokenRepository {
-  constructor(private client: SupabaseClient) {}
+  constructor(private client: SupabaseClient = supabase) {}
 
   async upsert(userId: string, token: string, platform: string): Promise<void> {
     const { error } = await this.client
